@@ -1,0 +1,63 @@
+[
+    {
+        "name": "Dracoslayer",
+        "archetypes": [
+            "Dracoslayer",
+            "Dracoverlord",
+            "Igknight",
+            "Majespecter",
+            "Dinomist",
+            "Amorphage",
+            "Metalphosis",
+            "Crystron",
+            "Zoodiac",
+            "True Draco",
+            "True King"
+        ],
+        "cards": []
+    },
+    {
+        "name": "Abyss",
+        "archetypes": [
+            "Albaz Dragon",
+            "Branded",
+            "Dogmatika",
+            "Springans",
+            "Tri-Brigade",
+            "Despia",
+            "Swordsoul",
+            "Icejade",
+            "Bystial",
+            "Spright",
+            "Therion"
+        ],
+        "cards": [
+            "Fallen of Albaz"
+        ]
+    },
+    {
+        "name": "Visas",
+        "archetypes": [
+            "Visas",
+            "Veda",
+            "Scareclaw",
+            "Kashtira",
+            "Tearlaments",
+            "Mannadium",
+            "Broken World"
+        ],
+        "cards": [
+            "Visas Starfrost"
+        ]
+    },
+    {
+        "name": "Diabellestarr",
+        "archetypes": [
+            "Diabellstar",
+            "Sinful Spoils",
+            "Snake-Eye",
+            "Goblin Rider"
+        ],
+        "cards": []
+    }
+]
