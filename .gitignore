@@ -1,5 +1,3 @@
 __pycache__
-Configs.py
-data/Database.bytes
-data/config.json
-out/lore.xlsx
+out
+temp
