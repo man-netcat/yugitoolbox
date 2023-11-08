@@ -1,7 +1,9 @@
 from Configs import *
 import pandas as pd
 
+print("Building DB object...")
 db = Config.cards_db()
+print("Getting Latest DB...")
 db.latest_db()
 
 import json
@@ -18,6 +20,16 @@ with open("data/sets.txt") as set_file:
 #         archetypes.add(archetype)
 
 # print(archetypes)
+
+# set_names = (
+#     db.set_data[db.set_data.tcgdate != 253402214400]
+#     .sort_values("tcgdate")["name"]
+#     .drop_duplicates()
+# )
+
+
+# with open("data/sets2.txt", "w", encoding="utf-8") as set_file:
+#     set_file.write("\n".join(set_names))
 
 with pd.ExcelWriter("out/lore.xlsx", engine="xlsxwriter") as writer:
     for lore in lores:

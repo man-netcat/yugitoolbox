@@ -93,5 +93,13 @@
             "Goblin Rider"
         ],
         "cards": []
+    },
+    {
+        "name": "Noble Knights",
+        "archetypes": [
+            "Noble Knight",
+            "Infernoble Knight"
+        ],
+        "cards": []
     }
 ]
