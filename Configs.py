@@ -41,7 +41,7 @@ class Config:
     @staticmethod
     def load():
         try:
-            with open("data/config.json", "r+") as f:
+            with open("config/config.json", "r+") as f:
                 Config.data = json.load(f)
         except:
             Config.data = {"server status msg": "", "server status": False}
@@ -49,5 +49,5 @@ class Config:
 
     @staticmethod
     def save():
-        with open("data/config.json", "w+") as f:
+        with open("config/config.json", "w+") as f:
             json.dump(Config.data, f, indent=4)

@@ -1,5 +1,39 @@
 [
     {
+        "name": "Duel Terminal",
+        "archetypes": [
+            "Ally of Justice",
+            "Constellar",
+            "Dragunity",
+            "Fabled",
+            "Flamvell",
+            "Gem-Knight",
+            "Genex",
+            "R-Genex",
+            "Genex Ally",
+            "Gishki",
+            "Gusto",
+            "Ice Barrier",
+            "lswarm",
+            "Jurrac",
+            "Laval",
+            "Mist Valley",
+            "Naturia",
+            "Vylon",
+            "Worm",
+            "X-Saber",
+            "Zefra",
+            "Shaddoll",
+            "Infernoid",
+            "Qli",
+            "Yang Zing",
+            "Ritual Beast",
+            "Tellarknight",
+            "Tellar"
+        ],
+        "cards": []
+    },
+    {
         "name": "Dracoslayer",
         "archetypes": [
             "Dracoslayer",

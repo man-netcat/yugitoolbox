@@ -47,7 +47,7 @@ class CardDB(object):
         self.representors = {}
         self.tcg_date = ""
         self.ocg_date = ""
-        con = sqlite3.connect("data/Database.bytes")
+        con = sqlite3.connect("db/OmegaDB.cdb")
         cursor = con.execute(
             "SELECT * FROM setcodes WHERE (officialcode > 0 AND betacode=officialcode) OR (officialcode=0 AND betacode>0);"
         )
@@ -147,12 +147,12 @@ class CardDB(object):
 
     @staticmethod
     def can_connect():
-        my_file = Path("data/Database.bytes")
+        my_file = Path("db/OmegaDB.cdb")
         if not my_file.is_file():
             if not CardDB.latest_db():
                 return False
         try:
-            con = sqlite3.connect("data/Database.bytes")
+            con = sqlite3.connect("db/OmegaDB.cdb")
             con.close()
             return True
         except:
@@ -176,7 +176,7 @@ class CardDB(object):
             )
             if r.status_code >= 400:
                 return False
-            with open("data/Database.bytes", "wb") as f:
+            with open("db/OmegaDB.cdb", "wb") as f:
                 f.write(r.content)
         else:
             if Config.get_data()["database_hash"] != r.text:
@@ -187,7 +187,7 @@ class CardDB(object):
                 )
                 if r.status_code >= 400:
                     return False
-                with open("data/Database.bytes", "wb") as f:
+                with open("db/OmegaDB.cdb", "wb") as f:
                     f.write(r.content)
             else:
                 return False
