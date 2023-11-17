@@ -1,105 +1,176 @@
 [
     {
-        "name": "Duel Terminal",
         "archetypes": [
             "Ally of Justice",
             "Constellar",
             "Dragunity",
+            "Evilswarm",
             "Fabled",
             "Flamvell",
             "Gem-Knight",
-            "Genex",
-            "R-Genex",
             "Genex Ally",
+            "Genex",
             "Gishki",
             "Gusto",
             "Ice Barrier",
-            "lswarm",
+            "Infernoid",
             "Jurrac",
             "Laval",
+            "lswarm",
             "Mist Valley",
             "Naturia",
+            "Qli",
+            "R-Genex",
+            "Ritual Beast",
+            "Shaddoll",
+            "Steelswarm",
+            "Tellar",
+            "Tellarknight",
             "Vylon",
             "Worm",
             "X-Saber",
-            "Zefra",
-            "Shaddoll",
-            "Infernoid",
-            "Qli",
             "Yang Zing",
-            "Ritual Beast",
-            "Tellarknight",
-            "Tellar"
+            "Zefra"
         ],
-        "cards": []
+        "cards": [],
+        "name": "Duel Terminal"
     },
     {
-        "name": "Dracoslayer",
         "archetypes": [
+            "Amorphage",
+            "Crystron",
+            "Dinomist",
             "Dracoslayer",
             "Dracoverlord",
             "Igknight",
             "Majespecter",
-            "Dinomist",
-            "Amorphage",
             "Metalphosis",
-            "Crystron",
-            "Zoodiac",
             "True Draco",
-            "True King"
+            "True King",
+            "Zoodiac"
         ],
-        "cards": []
+        "cards": [],
+        "name": "Dracoslayer"
     },
     {
-        "name": "Abyss",
         "archetypes": [
             "Albaz Dragon",
             "Branded",
-            "Dogmatika",
-            "Springans",
-            "Tri-Brigade",
-            "Despia",
-            "Swordsoul",
-            "Icejade",
             "Bystial",
+            "Despia",
+            "Dogmatika",
+            "Icejade",
             "Spright",
-            "Therion"
+            "Springans",
+            "Swordsoul",
+            "Therion",
+            "Tri-Brigade"
         ],
         "cards": [
             "Fallen of Albaz"
-        ]
+        ],
+        "name": "Abyss"
     },
     {
-        "name": "Visas",
         "archetypes": [
-            "Visas",
-            "Veda",
-            "Scareclaw",
+            "Broken World",
             "Kashtira",
-            "Tearlaments",
             "Mannadium",
-            "Broken World"
+            "Scareclaw",
+            "Tearlaments",
+            "Veda",
+            "Visas"
         ],
         "cards": [
             "Visas Starfrost"
-        ]
+        ],
+        "name": "Visas"
     },
     {
-        "name": "Diabellestarr",
         "archetypes": [
             "Diabellstar",
+            "Goblin Rider",
             "Sinful Spoils",
-            "Snake-Eye",
-            "Goblin Rider"
+            "Snake-Eye"
         ],
-        "cards": []
+        "cards": [],
+        "name": "Diabellestarr"
     },
     {
-        "name": "Noble Knights",
         "archetypes": [
-            "Noble Knight",
-            "Infernoble Knight"
+            "Infernoble Knight",
+            "Noble Knight"
         ],
-        "cards": []
+        "cards": [],
+        "name": "Noble Knights"
+    },
+    {
+        "archetypes": [
+            "Battlin' Boxer",
+            "Bounzer",
+            "Butterspy",
+            "Chronomaly",
+            "Cxyz",
+            "Dododo",
+            "Gagaga",
+            "Galaxy-Eyes",
+            "Galaxy",
+            "Gimmick Puppet",
+            "Gogogo",
+            "Gorgonic",
+            "Hand",
+            "Heraldic",
+            "Heraldry",
+            "Heroic",
+            "Malicevorous",
+            "Number C",
+            "Number C39",
+            "Number",
+            "Numeron Gate",
+            "Numeron",
+            "Numerounius",
+            "Onomat",
+            "Photon",
+            "Utopia",
+            "Zexal",
+            "ZS -",
+            "ZW -"
+        ],
+        "cards": [],
+        "name": "Zexal"
+    },
+    {
+        "archetypes": [
+            "Abyss Actor",
+            "Aquaactress",
+            "Battlewasp",
+            "Clear Wing",
+            "D/D",
+            "D/D/D",
+            "Fluffal",
+            "Frightfur",
+            "Fusion Dragon",
+            "Lunalight",
+            "Magician",
+            "Melodious",
+            "Odd-Eyes",
+            "Pendulum Dragon",
+            "Performage",
+            "Performapal",
+            "Phantom Knights",
+            "Predaplant",
+            "Prediction Princess",
+            "Raidraptor",
+            "Rebellion",
+            "Speedroid",
+            "Starving Venom",
+            "Superheavy Samurai",
+            "Supreme King",
+            "Synchro Dragon",
+            "Windwitch",
+            "Xyz Dragon"
+        ],
+        "cards": [],
+        "name": "Arc-V"
     }
 ]
