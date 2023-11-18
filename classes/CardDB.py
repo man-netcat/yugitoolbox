@@ -62,14 +62,14 @@ class CardDB:
         CardDB.card_data: list[Card] = []
         for card in cards:
             card_type = apply_mask(card["type"], type_mask)
-            card_race = apply_mask(card["race"], race_mask)
-            card_attribute = apply_mask(card["attribute"], attribute_mask)
+            card_race = race_mask.get(card["race"], "")
+            card_attribute = attribute_mask.get(card["attribute"], "")
             card_category = apply_mask(card["category"], category_mask)
-            if card["type"] & type_mask["Pendulum"]:
-                card_lscale, _, card_level = parse_pendulum(card["level"])
+            if card["type"] & 0x1000000:
+                card_scale, _, card_level = parse_pendulum(card["level"])
             else:
-                card_lscale, _, card_level = 0, 0, card["level"]
-            if card["type"] & type_mask["Link"]:
+                card_scale, card_level = 0, card["level"]
+            if card["type"] & 0x4000000:
                 card_def = 0
                 card_markers = apply_mask(card["def"], linkmarker_mask)
             else:
@@ -77,7 +77,7 @@ class CardDB:
                 card_markers = []
 
             card_archetypes, card_support, card_related = CardDB._get_archetypes(card)
-            card_data = Card(
+            card = Card(
                 card["name"],
                 card["id"],
                 card_type,
@@ -85,7 +85,7 @@ class CardDB:
                 card_attribute,
                 card_category,
                 card_level,
-                card_lscale,
+                card_scale,
                 card["atk"],
                 card_def,
                 card_markers,
@@ -95,7 +95,7 @@ class CardDB:
                 card_related,
                 card["ot"],
             )
-            CardDB.card_data.append(card_data)
+            CardDB.card_data.append(card)
 
     @staticmethod
     def _get_archetypes(card):

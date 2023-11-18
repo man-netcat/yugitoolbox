@@ -6,8 +6,8 @@ class Card:
     name: str
     id: int
     type: list[str]
-    race: list[str]
-    attribute: list[str]
+    race: str
+    attribute: str
     category: list[str]
     level: int
     scale: int
