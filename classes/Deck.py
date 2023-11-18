@@ -13,11 +13,41 @@ class Deck:
     main: list[tuple[Card, int]]
     side: list[tuple[Card, int]]
 
+    def __str__(self) -> str:
+        reprstr = "Main/Extra Deck:\n"
+        for card in self.main:
+            reprstr += f"{card[0]} x{card[1]}\n"
+        reprstr += "\nSide Deck:\n"
+        for card in self.side:
+            reprstr += f"{card[0]} x{card[1]}\n"
+        return reprstr
+
     @staticmethod
-    def from_omegacode(code, name: str = ""):
-        def decode_card_tuples(start, end):
+    def from_omegacode(code: str, name: str = ""):
+        """
+        Creates a Deck instance from an Omega Code.
+
+        Parameters:
+        - code (str): The Omega Code representing the deck.
+        - name (str): Optional name for the deck (default is an empty string).
+
+        Returns:
+        - Deck: A Deck instance created from the Omega Code.
+        """
+
+        def decode_card_tuples(start: int, end: int):
+            """
+            Decodes card tuples from a range of bytes.
+
+            Parameters:
+            - start (int): The starting index of the byte range.
+            - end (int): The ending index of the byte range.
+
+            Returns:
+            - List[Tuple[Card, int]]: List of tuples containing cards and their counts.
+            """
             return [
-                (carddb.get_cards_by_field(by="id", value=card_id)[0], count)
+                (carddb.get_cards_by_value(by="id", value=card_id)[0], count)
                 for card_id, count in Counter(
                     int.from_bytes(bytes_arr[i : i + 4], byteorder="little")
                     for i in range(start, end, 4)

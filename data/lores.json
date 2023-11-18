@@ -89,7 +89,7 @@
     {
         "archetypes": [
             "Diabellstar",
-            "Goblin Rider",
+            "Goblin Biker",
             "Sinful Spoils",
             "Snake-Eye"
         ],
@@ -172,5 +172,14 @@
         ],
         "cards": [],
         "name": "Arc-V"
+    },
+    {
+        "archetypes": [
+            "Security Force",
+            "Time Thief",
+            "PSY-Frame"
+        ],
+        "cards": [],
+        "name": "S-Force"
     }
 ]
