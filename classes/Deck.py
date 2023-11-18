@@ -2,6 +2,7 @@ import base64
 import zlib
 from collections import Counter
 from dataclasses import dataclass
+from itertools import permutations
 
 from .Card import Card
 from .CardDB import carddb
@@ -61,3 +62,22 @@ class Deck:
         side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
 
         return Deck(name, main, side)
+
+    def small_world_triples(self) -> list[tuple[Card, ...]]:
+        """
+        Generates valid triples of cards for the Small World strategy.
+
+        Returns:
+        - list[tuple[Card, ...]]: List of tuples containing triples of cards that satisfy the Small World strategy.
+        """
+        md_cards = [
+            card[0] for card in self.main + self.side if card[0].is_main_deck_monster()
+        ]
+
+        valids = [
+            triple
+            for triple in permutations(md_cards, 3)
+            if Card.compare_small_world(*triple)
+        ]
+
+        return valids

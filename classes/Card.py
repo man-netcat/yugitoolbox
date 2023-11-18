@@ -10,7 +10,8 @@ class Card:
     attribute: str
     category: list[str]
     level: int
-    scale: int
+    lscale: int
+    rscale: int
     atk: int
     def_: int
     linkmarkers: list[str]
@@ -77,31 +78,31 @@ class Card:
     def is_main_deck_monster(self) -> bool:
         return "Monster" in self.type and not self.is_extra_deck_monster()
 
+    @staticmethod
+    def compare_small_world(handcard: "Card", deckcard: "Card", addcard: "Card"):
+        """
+        Compares three cards based on their attributes, ensuring each pair has exactly one matching attribute.
 
-def compare_small_world(handcard: Card, deckcard: Card, addcard: Card):
-    """
-    Compares three cards based on their attributes, ensuring each pair has exactly one matching attribute.
+        Parameters:
+        - handcard (Card): The first card for comparison.
+        - deckcard (Card): The second card for comparison.
+        - addcard (Card): The third card for comparison.
 
-    Parameters:
-    - handcard (Card): The first card for comparison.
-    - deckcard (Card): The second card for comparison.
-    - addcard (Card): The third card for comparison.
-
-    Returns:
-    - bool: True if each pair of cards has exactly one matching attribute, False otherwise.
-    """
-    return all(
-        [
-            sum(
-                [
-                    card1.attribute == card2.attribute,
-                    card1.race == card2.race,
-                    card1.atk == card2.atk,
-                    card1.def_ == card2.def_,
-                    card1.level == card2.level,
-                ]
-            )
-            == 1
-            for card1, card2 in zip([handcard, deckcard], [deckcard, addcard])
-        ]
-    )
+        Returns:
+        - bool: True if each pair of cards has exactly one matching attribute, False otherwise.
+        """
+        return all(
+            [
+                sum(
+                    [
+                        card1.attribute == card2.attribute,
+                        card1.race == card2.race,
+                        card1.atk == card2.atk,
+                        card1.def_ == card2.def_,
+                        card1.level == card2.level,
+                    ]
+                )
+                == 1
+                for card1, card2 in zip([handcard, deckcard], [deckcard, addcard])
+            ]
+        )

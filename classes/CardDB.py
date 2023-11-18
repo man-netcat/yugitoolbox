@@ -86,9 +86,9 @@ class CardDB:
             card_category = apply_mask(card["category"], category_mask)
 
             if card["type"] & 0x1000000:
-                card_scale, _, card_level = parse_pendulum(card["level"])
+                card_lscale, card_rscale, card_level = parse_pendulum(card["level"])
             else:
-                card_scale, card_level = 0, card["level"]
+                card_lscale, card_rscale, card_level = 0, 0, card["level"]
 
             if card["type"] & 0x4000000:
                 card_def = 0
@@ -106,7 +106,8 @@ class CardDB:
                 card_attribute,
                 card_category,
                 card_level,
-                card_scale,
+                card_lscale,
+                card_rscale,
                 card["atk"],
                 card_def,
                 card_markers,
@@ -119,7 +120,7 @@ class CardDB:
             CardDB.card_data.append(card_instance)
 
     @staticmethod
-    def _get_archetypes(card: dict):
+    def _get_archetypes(card: dict) -> tuple[list[str], list[str], list[str]]:
         """
         Extracts archetypes, support, and related archetypes from the setcode and support values of a card.
 
