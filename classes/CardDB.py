@@ -1,48 +1,38 @@
-import datetime
-import sqlite3
 import os
-import requests
+import sqlite3
+from typing import Callable
+
 import pandas as pd
-from dataclasses import dataclass
-from masks import *
+import requests
+
+from resources.masks import *
+
+from .Card import Card
 
 OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 DB_DIR = "db"
 
 
-@dataclass
-class Card:
-    name: str
-    id: int
-    type: list[str]
-    race: list[str]
-    attribute: list[str]
-    category: list[str]
-    level: int
-    scale: int
-    atk: int
-    def_: int
-    linkmarkers: list[str]
-    text: str
-    archetypes: list[str]
-    support: list[str]
-    related: list[str]
-
-    def __str__(self) -> str:
-        return str(self.__dataclass_fields__)
-
-
 class CardDB:
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(CardDB, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self):
+        if self._initialized:
+            return
+
+        self._initialized = True
         CardDB._update()
         with sqlite3.connect("db/cards.db") as con:
             CardDB.set_data = pd.read_sql_query("SELECT * FROM packs", con)
             CardDB.card_packs = pd.read_sql_query("SELECT * FROM relations", con)
-            print("Populating archetypes...")
             CardDB._populate_archetypes(con)
-            print("Populating cards...")
             CardDB._populate_cards(con)
-            print("Database ready")
 
     @staticmethod
     def _populate_archetypes(con):
@@ -103,6 +93,7 @@ class CardDB:
                 card_archetypes,
                 card_support,
                 card_related,
+                card["ot"],
             )
             CardDB.card_data.append(card_data)
 
@@ -127,49 +118,15 @@ class CardDB:
         ]
         related_to = [
             k
-            for k, v in CardDB.archetypes.items()
             for chunk in split_chunks(card_support >> 32, 2)
+            for k, v in CardDB.archetypes.items()
             if v == chunk
         ]
         return archetypes, support, related_to
 
-    def get_cards(self, by: str, value):
-        """
-        Filter the list of cards based on a specified attribute value.
-
-        Parameters:
-        - by: Attribute to search by
-        - value: Value to search for
-
-        Returns:
-        - List of cards that match the specified attribute value
-        """
-        return [
-            obj
-            for obj in self.card_data
-            if isinstance(getattr(obj, by), list)
-            and value in getattr(obj, by)
-            or getattr(obj, by) == value
-        ]
-
-    def related_cards(self, given_archetypes: list[str], given_cards: list[str] = []):
-        return [
-            card
-            for card in self.card_data
-            if any(
-                [
-                    archetype
-                    in set(card.related) | set(card.support) | set(card.archetypes)
-                    for archetype in given_archetypes
-                ]
-            )
-            or any(card_name in card.text for card_name in given_cards)
-        ]
-
     @staticmethod
     def _update():
         def dl(url, path):
-            print(f"Downloading {url}...")
             r = requests.get(url, allow_redirects=True)
             r.raise_for_status()
             with open(path, "wb") as f:
@@ -196,3 +153,37 @@ class CardDB:
         else:
             dl(db_url, db_path)
             dl(hash_url, hash_path)
+
+    def get_cards_by_id(self, ids: list[int]):
+        return [card for card in self.card_data if card.id in ids]
+
+    def get_cards_by_field(self, by: str, value):
+        if by not in Card.__dataclass_fields__.keys():
+            raise RuntimeError(
+                f"by not in {', '.join(Card.__dataclass_fields__.keys())}"
+            )
+        return [
+            card
+            for card in self.card_data
+            if isinstance(getattr(card, by), (list, str))
+            and value in getattr(card, by)
+            or getattr(card, by) == value
+        ]
+
+    def get_cards_by_query(self, query: Callable[[Card], bool]):
+        return [card for card in self.card_data if query(card)]
+
+    def related_cards(self, given_archetypes: list[str], given_cards: list[str] = []):
+        return [
+            card
+            for card in self.card_data
+            if any(card_name in card.text for card_name in given_cards)
+            or any(
+                archetype
+                in set(card.related) | set(card.support) | set(card.archetypes)
+                for archetype in given_archetypes
+            )
+        ]
+
+
+carddb = CardDB()
