@@ -5,8 +5,9 @@ from typing import Callable
 import pandas as pd
 import requests
 
-from resources.masks import *
+from res.masks import *
 
+from .Archetype import Archetype
 from .Card import Card
 
 OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
@@ -15,6 +16,7 @@ DB_DIR = "db"
 
 class CardDB:
     _instance = None
+    archetype_data: list[Archetype]
 
     def __new__(cls):
         if cls._instance is None:
@@ -27,12 +29,51 @@ class CardDB:
             return
 
         self._initialized = True
+        print("updating db...")
         CardDB._update()
         with sqlite3.connect("db/cards.db") as con:
-            CardDB.set_data = pd.read_sql_query("SELECT * FROM packs", con)
-            CardDB.card_packs = pd.read_sql_query("SELECT * FROM relations", con)
+            print("populating sets...")
+            CardDB._populate_sets(con)
+            print("populating archetypes...")
             CardDB._populate_archetypes(con)
+            print("populating cards...")
             CardDB._populate_cards(con)
+        print("building archetype db...")
+        CardDB._build_archetype_db()
+        print("done initialising")
+
+    @staticmethod
+    def _populate_sets(con):
+        """
+        Populates the TCG (Trading Card Game) and OCG (Official Card Game) sets from the database.
+
+        Retrieves set information from the database, including pack details and relations, for both TCG and OCG.
+        Filters out entries with invalid date values (253402214400) and orders the results by date.
+
+        Parameters:
+        - con: Database connection.
+        """
+        CardDB.tcgsets = pd.read_sql_query(
+            """
+            SELECT packs.*, relations.*
+            FROM packs
+            JOIN relations ON packs.id = relations.packid
+            WHERE tcgdate != 253402214400
+            ORDER BY tcgdate
+            """,
+            con,
+        ).to_dict(orient="records")
+
+        CardDB.ocgsets = pd.read_sql_query(
+            """
+            SELECT packs.*, relations.*
+            FROM packs
+            JOIN relations ON packs.id = relations.packid
+            WHERE ocgdate != 253402214400
+            ORDER BY ocgdate
+            """,
+            con,
+        ).to_dict(orient="records")
 
     @staticmethod
     def _populate_archetypes(con):
@@ -45,21 +86,18 @@ class CardDB:
         - con: Database connection.
 
         """
-        df = pd.read_sql_query(
-            "SELECT * FROM setcodes WHERE (officialcode>0 AND betacode=officialcode) OR (officialcode=0 AND betacode>0)",
+        CardDB.archetypes = pd.read_sql_query(
+            """
+            SELECT name,
+                CASE
+                    WHEN officialcode > 0 THEN officialcode
+                    ELSE betacode
+                END AS archetype_code
+            FROM setcodes
+            WHERE (officialcode > 0 AND betacode = officialcode) OR (officialcode = 0 AND betacode > 0);
+            """,
             con,
-        )
-        CardDB.archetypes = dict(
-            zip(
-                df["name"],
-                df.apply(
-                    lambda row: row["officialcode"]
-                    if row["officialcode"] != 0
-                    else row["betacode"],
-                    axis=1,
-                ),
-            )
-        )
+        ).to_dict(orient="records")
 
     @staticmethod
     def _populate_cards(con):
@@ -72,11 +110,10 @@ class CardDB:
         - con: Database connection.
 
         """
-        df = pd.read_sql_query(
+        cards: list[dict] = pd.read_sql_query(
             "SELECT * FROM datas INNER JOIN texts USING(id)",
             con,
-        )
-        cards: list[dict] = df.to_dict(orient="records")
+        ).to_dict(orient="records")
         CardDB.card_data: list[Card] = []
 
         for card in cards:
@@ -97,8 +134,12 @@ class CardDB:
                 card_def = card["def"]
                 card_markers = []
 
-            card_archetypes, card_support, card_related = CardDB._get_archetypes(card)
-            card_instance = Card(
+            card_archetypes, card_support, card_related = CardDB._get_archetypes(
+                card["setcode"], card["support"]
+            )
+            card_tcgsets, card_ocgsets = [], []
+            # card_tcgsets, card_ocgsets = CardDB._get_sets(card["id"])
+            card = Card(
                 card["name"],
                 card["id"],
                 card_type,
@@ -115,56 +156,88 @@ class CardDB:
                 card_archetypes,
                 card_support,
                 card_related,
+                card_tcgsets,
+                card_ocgsets,
                 card["ot"],
             )
-            CardDB.card_data.append(card_instance)
+            CardDB.card_data.append(card)
 
     @staticmethod
-    def _get_archetypes(card: dict) -> tuple[list[str], list[str], list[str]]:
+    def _build_archetype_db():
+        for archetype in CardDB.archetypes:
+            archetype["cards"] = [
+                card
+                for card in CardDB.card_data
+                if archetype["name"] in card.archetypes
+            ]
+            archetype["support"] = [
+                card for card in CardDB.card_data if archetype["name"] in card.support
+            ]
+            archetype["related"] = [
+                card for card in CardDB.card_data if archetype["name"] in card.related
+            ]
+        CardDB.archetype_data = [
+            Archetype(
+                archetype["name"],
+                archetype["cards"],
+                archetype["support"],
+                archetype["related"],
+            )
+            for archetype in CardDB.archetypes
+        ]
+
+    @staticmethod
+    def _get_archetypes(
+        archetype_code: int, support_code: int
+    ) -> tuple[list[str], list[str], list[str]]:
         """
-        Extracts archetypes, support, and related archetypes from the setcode and support values of a card.
+        Extracts archetypes, support, and related archetypes based on archetype and support codes.
 
         Parameters:
-        - card (dict): Dictionary representing a card with "setcode" and "support" attributes.
+        - archetype_code (int): The code representing the archetypes.
+        - support_code (int): The code representing the support archetypes.
 
         Returns:
         - Tuple[list[str], list[str], list[str]]: A tuple containing lists of archetypes, support, and related archetypes.
         """
 
         def split_chunks(n: int, nchunks: int):
-            """
-            Splits an integer into chunks of 16 bits.
-
-            Parameters:
-            - n (int): The integer to split.
-            - nchunks (int): The number of chunks to split the integer into.
-
-            Returns:
-            - List[int]: List of 16-bit chunks.
-            """
             return [(n >> (16 * i)) & 0xFFFF for i in range(nchunks)]
 
-        card_setcode = card["setcode"]
-        card_support = card["support"]
         archetypes = [
-            k
-            for chunk in split_chunks(card_setcode, 4)
-            for k, v in CardDB.archetypes.items()
-            if v == chunk
+            archetype["name"]
+            for chunk in split_chunks(archetype_code, 4)
+            for archetype in CardDB.archetypes
+            if archetype["archetype_code"] == chunk
         ]
         support = [
-            k
-            for chunk in split_chunks(card_support, 2)
-            for k, v in CardDB.archetypes.items()
-            if v == chunk
+            archetype["name"]
+            for chunk in split_chunks(support_code, 2)
+            for archetype in CardDB.archetypes
+            if archetype["archetype_code"] == chunk
         ]
         related_to = [
-            k
-            for chunk in split_chunks(card_support >> 32, 2)
-            for k, v in CardDB.archetypes.items()
-            if v == chunk
+            archetype["name"]
+            for chunk in split_chunks(support_code >> 32, 2)
+            for archetype in CardDB.archetypes
+            if archetype["archetype_code"] == chunk
         ]
         return archetypes, support, related_to
+
+    @staticmethod
+    def _get_sets(card_id: int) -> tuple[list[str], list[str]]:
+        """
+        Extracts the TCG (Trading Card Game) and OCG (Official Card Game) sets associated with a card ID.
+
+        Parameters:
+        - card_id (int): The ID of the card.
+
+        Returns:
+        - Tuple[list[str], list[str]]: A tuple containing lists of TCG sets and OCG sets.
+        """
+        tcg_sets = [set["name"] for set in CardDB.tcgsets if set["cardid"] == card_id]
+        ocg_sets = [set["name"] for set in CardDB.ocgsets if set["cardid"] == card_id]
+        return tcg_sets, ocg_sets
 
     @staticmethod
     def _update():
@@ -210,20 +283,12 @@ class CardDB:
             download(db_url, db_path)
             download(hash_url, hash_path)
 
-    def get_cards_by_values(self, by: str, values: list[int | str]):
-        """
-        Retrieves cards based on specified attribute values.
+    def get_cards_by_values(
+        self, by: str, values: list[int | str], first: bool = False
+    ):
+        return [self.get_cards_by_value(by, value, first) for value in values]
 
-        Parameters:
-        - by (str): The attribute by which to filter the cards.
-        - values (list[int | str]): The values to match for the specified attribute.
-
-        Returns:
-        - List[Card]: List of cards matching the specified attribute values.
-        """
-        return [self.get_cards_by_value(by, value) for value in values]
-
-    def get_cards_by_value(self, by: str, value: str | int):
+    def get_cards_by_value(self, by: str, value: str | int, first: bool = False):
         """
         Retrieves cards based on a specific attribute value.
 

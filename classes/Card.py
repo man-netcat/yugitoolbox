@@ -19,6 +19,8 @@ class Card:
     archetypes: list[str]
     support: list[str]
     related: list[str]
+    tcgsets: list[str]
+    ocgsets: list[str]
     ot: int
 
     def __str__(self) -> str:
