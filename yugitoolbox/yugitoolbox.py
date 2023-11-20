@@ -224,8 +224,8 @@ class CardDB:
             return
 
         self._initialised = True
-        CardDB._update()
-        CardDB._load_pickles()
+        CardDB._update_db()
+        CardDB._load_objects()
         print("initialised db.")
 
     @staticmethod
@@ -318,10 +318,12 @@ class CardDB:
                 if archetype["archetype_code"] == chunk
             ]
 
-            for archetype in card.archetypes + card.support + card.related:
+            combined_archetypes = set(card.archetypes + card.support + card.related)
+
+            for archetype in combined_archetypes:
                 archetype.cards.append(card)
 
-            CardDB.archetype_data.extend(card.archetypes + card.support + card.related)
+            CardDB.archetype_data.extend(combined_archetypes)
 
     @staticmethod
     def _build_set_db(con):
@@ -356,7 +358,18 @@ class CardDB:
             CardDB.set_data.extend(card.sets)
 
     @staticmethod
-    def _load_pickles():
+    def _load_objects():
+        if not all(
+            [
+                os.path.exists(file)
+                for file in [
+                    "pickles/cards.pkl",
+                    "pickles/sets.pkl",
+                    "pickles/archetypes.pkl",
+                ]
+            ]
+        ):
+            CardDB._build_objects()
         with open("pickles/cards.pkl", "rb") as file:
             CardDB.card_data = pickle.load(file)
         with open("pickles/archetypes.pkl", "rb") as file:
@@ -378,7 +391,6 @@ class CardDB:
 
     @staticmethod
     def _build_objects():
-        print("building objects...")
         with sqlite3.connect("db/cards.db") as con:
             print("building card db...")
             CardDB._build_card_db(con)
@@ -389,7 +401,7 @@ class CardDB:
         CardDB._build_pickles()
 
     @staticmethod
-    def _update():
+    def _update_db():
         def download(url: str, path: str):
             r = requests.get(url, allow_redirects=True)
             r.raise_for_status()
@@ -418,12 +430,10 @@ class CardDB:
             else:
                 print("downloading up-to-date db...")
                 download(db_url, db_path)
-                CardDB._build_objects()
         else:
             print("downloading up-to-date db...")
             download(db_url, db_path)
             download(hash_url, hash_path)
-            CardDB._build_objects()
 
     def get_card_by_id(self, id: int):
         return self.card_data[id]
