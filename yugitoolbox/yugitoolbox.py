@@ -23,9 +23,9 @@ DATE_UNAVAILABLE = 253402214400
 @dataclass()
 class Archetype:
     name: str
-    cards: list[Card]
-    support: list[Card]
-    related: list[Card]
+    cards: list[str]
+    support: list[str]
+    related: list[str]
 
     def __hash__(self):
         return hash(self.name)
@@ -40,7 +40,7 @@ class Set:
     abbr: str
     tcgdate: int
     ocgdate: int
-    contents: list[Card]
+    contents: list[str]
 
     def __hash__(self):
         return hash(self.name)
@@ -118,10 +118,10 @@ class Card:
     def_: int
     linkmarkers: list[str]
     text: str
-    archetypes: list[Archetype]
-    support: list[Archetype]
-    related: list[Archetype]
-    sets: list[Set]
+    archetypes: list[str]
+    support: list[str]
+    related: list[str]
+    sets: list[str]
     tcgdate: int
     ocgdate: int
     ot: int
@@ -209,9 +209,9 @@ class Card:
 
 class CardDB:
     _instance = None
-    archetype_data: list[Archetype] = []
-    card_data: dict[int, "Card"] = {}
-    set_data: list[Set] = []
+    archetype_data: dict[str, Archetype] = {}
+    card_data: dict[int, Card] = {}
+    set_data: dict[str, Set] = {}
 
     def __new__(cls):
         if cls._instance is None:
@@ -295,35 +295,36 @@ class CardDB:
             con,
         ).to_dict(orient="records")
 
+        CardDB.archetype_data = {
+            archetype["name"]: Archetype(archetype["name"], [], [], [])
+            for archetype in archetypes
+        }
+
         def split_chunks(n: int, nchunks: int):
             return [(n >> (16 * i)) & 0xFFFF for i in range(nchunks)]
 
         for card in CardDB.card_data.values():
             card.archetypes = [
-                Archetype(archetype["name"], [], [], [])
+                archetype["name"]
                 for chunk in split_chunks(card.archcode, 4)
                 for archetype in archetypes
                 if archetype["archetype_code"] == chunk
             ]
             card.support = [
-                Archetype(archetype["name"], [], [], [])
+                archetype["name"]
                 for chunk in split_chunks(card.supportcode, 2)
                 for archetype in archetypes
                 if archetype["archetype_code"] == chunk
             ]
             card.related = [
-                Archetype(archetype["name"], [], [], [])
+                archetype["name"]
                 for chunk in split_chunks(card.supportcode >> 32, 2)
                 for archetype in archetypes
                 if archetype["archetype_code"] == chunk
             ]
 
-            combined_archetypes = set(card.archetypes + card.support + card.related)
-
-            for archetype in combined_archetypes:
-                archetype.cards.append(card)
-
-            CardDB.archetype_data.extend(combined_archetypes)
+            for archetype in card.archetypes:
+                CardDB.archetype_data[archetype].cards.append(card.name)
 
     @staticmethod
     def _build_set_db(con):
@@ -345,17 +346,20 @@ class CardDB:
             con,
         ).to_dict(orient="records")
 
+        CardDB.set_data = {
+            set["name"]: Set(
+                set["name"], set["abbr"], set["tcgdate"], set["ocgdate"], []
+            )
+            for set in sets
+        }
+
         for card in CardDB.card_data.values():
             card.sets = [
-                Set(set["name"], set["abbr"], set["tcgdate"], set["ocgdate"], [])
-                for set in sets
-                if str(card.id) in set["cardids"].split(",")
+                set["name"] for set in sets if str(card.id) in set["cardids"].split(",")
             ]
 
-            for card_set in card.sets:
-                card_set.contents.append(card)
-
-            CardDB.set_data.extend(card.sets)
+            for set in card.sets:
+                CardDB.set_data[set].contents.append(card.name)
 
     @staticmethod
     def _load_objects():
@@ -430,10 +434,12 @@ class CardDB:
             else:
                 print("downloading up-to-date db...")
                 download(db_url, db_path)
+                CardDB._build_objects()
         else:
             print("downloading up-to-date db...")
             download(db_url, db_path)
             download(hash_url, hash_path)
+            CardDB._build_objects()
 
     def get_card_by_id(self, id: int):
         return self.card_data[id]
@@ -454,11 +460,17 @@ class CardDB:
             or getattr(card, by) == value
         ]
 
-    def get_cards_by_values(self, by: str, values: list[int | str]):
+    def get_cards_by_values(self, by: str, values: list[int] | list[str]):
         return [self.get_cards_by_value(by, value) for value in values]
 
     def get_cards_by_query(self, query: Callable[[Card], bool]):
         return [card for card in self.card_data.values() if query(card)]
+
+    def get_set_by_name(self, name: str):
+        return CardDB.set_data[name]
+
+    def get_archetype_by_name(self, name: str):
+        return CardDB.archetype_data[name]
 
     def related_cards(self, given_archetypes: list[str], given_cards: list[str] = []):
         return [
@@ -466,13 +478,7 @@ class CardDB:
             for card in self.card_data.values()
             if any(card_name in card.text for card_name in given_cards)
             or any(
-                archetype
-                in [
-                    archetype.name
-                    for archetype in set(card.related)
-                    | set(card.support)
-                    | set(card.archetypes)
-                ]
+                archetype in set(card.related + card.support + card.archetypes)
                 for archetype in given_archetypes
             )
         ]
