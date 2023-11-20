@@ -53,11 +53,15 @@ class Set:
 class Deck:
     name: str
     main: list[tuple[Card, int]]
+    extra: list[tuple[Card, int]]
     side: list[tuple[Card, int]]
 
     def __str__(self) -> str:
-        reprstr = "Main/Extra Deck:\n"
+        reprstr = "Main Deck:\n"
         for card in self.main:
+            reprstr += f"{card[0]} x{card[1]}\n"
+        reprstr += "\nExtra Deck:\n"
+        for card in self.extra:
             reprstr += f"{card[0]} x{card[1]}\n"
         reprstr += "\nSide Deck:\n"
         for card in self.side:
@@ -78,10 +82,12 @@ class Deck:
         bytes_arr = zlib.decompress(base64.b64decode(code), -8)
         main_size, side_size = bytes_arr[:2]
 
-        main = decode_card_tuples(2, 2 + 4 * main_size)
+        main_extra = decode_card_tuples(2, 2 + 4 * main_size)
+        main = [card for card in main_extra if card[0].is_main_deck_monster()]
+        extra = [card for card in main_extra if card[0].is_extra_deck_monster()]
         side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
 
-        return Deck(name, main, side)
+        return Deck(name, main, extra, side)
 
     def small_world_triples(self) -> list[tuple[Card, ...]]:
         md_cards = [
