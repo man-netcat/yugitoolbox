@@ -18,6 +18,7 @@ class Deck:
     main: list[tuple[Card, int]]
     extra: list[tuple[Card, int]]
     side: list[tuple[Card, int]]
+    isvalid: bool
 
     def __str__(self) -> str:
         reprstr = "Main Deck:\n"
@@ -47,14 +48,24 @@ class Deck:
 
         main_extra = decode_card_tuples(2, 2 + 4 * main_size)
         main = [
-            (card, count) for card, count in main_extra if card.is_main_deck_monster()
+            (card, count)
+            for card, count in main_extra
+            if not card.is_extra_deck_monster()
         ]
         extra = [
             (card, count) for card, count in main_extra if card.is_extra_deck_monster()
         ]
         side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
+        isvalid = all(
+            [
+                sum([count for _, count in main]) >= 40,
+                sum([count for _, count in main]) <= 60,
+                sum([count for _, count in extra]) <= 15,
+                sum([count for _, count in side]) <= 15,
+            ]
+        ) and all([count <= 3 for _, count in main + extra + side])
 
-        return Deck(name, main, extra, side)
+        return Deck(name, main, extra, side, isvalid)
 
     def small_world_triples(self) -> list[tuple[Card, ...]]:
         md_cards = [
