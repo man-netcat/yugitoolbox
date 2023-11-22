@@ -21,14 +21,14 @@ class Deck:
 
     def __str__(self) -> str:
         reprstr = "Main Deck:\n"
-        for card in self.main:
-            reprstr += f"{card[0]} x{card[1]}\n"
+        for card, count in self.main:
+            reprstr += f"{card} x{count}\n"
         reprstr += "\nExtra Deck:\n"
-        for card in self.extra:
-            reprstr += f"{card[0]} x{card[1]}\n"
+        for card, count in self.extra:
+            reprstr += f"{card} x{count}\n"
         reprstr += "\nSide Deck:\n"
-        for card in self.side:
-            reprstr += f"{card[0]} x{card[1]}\n"
+        for card, count in self.side:
+            reprstr += f"{card} x{count}\n"
         return reprstr
 
     @staticmethod
@@ -46,15 +46,19 @@ class Deck:
         main_size, side_size = bytes_arr[:2]
 
         main_extra = decode_card_tuples(2, 2 + 4 * main_size)
-        main = [card for card in main_extra if card[0].is_main_deck_monster()]
-        extra = [card for card in main_extra if card[0].is_extra_deck_monster()]
+        main = [
+            (card, count) for card, count in main_extra if card.is_main_deck_monster()
+        ]
+        extra = [
+            (card, count) for card, count in main_extra if card.is_extra_deck_monster()
+        ]
         side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
 
         return Deck(name, main, extra, side)
 
     def small_world_triples(self) -> list[tuple[Card, ...]]:
         md_cards = [
-            card[0] for card in self.main + self.side if card[0].is_main_deck_monster()
+            card for card, _ in self.main + self.side if card.is_main_deck_monster()
         ]
 
         valids = [
