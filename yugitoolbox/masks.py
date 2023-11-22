@@ -3,6 +3,7 @@ type_mask = {
     0x1: "Monster",
     0x2: "Spell",
     0x4: "Trap",
+    0x8: "Unknown",
     0x10: "Normal",
     0x20: "Effect",
     0x40: "Fusion",
@@ -14,6 +15,7 @@ type_mask = {
     0x1000: "Tuner",
     0x2000: "Synchro",
     0x4000: "Token",
+    0x8000: "Unknown",
     0x10000: "QuickPlay",
     0x20000: "Continuous",
     0x40000: "Equip",
@@ -32,6 +34,7 @@ linkmarker_mask = {
     0x02: "Bottom",
     0x04: "BottomRight",
     0x08: "Left",
+    0x10: "Center",
     0x20: "Right",
     0x40: "TopLeft",
     0x80: "Top",
@@ -39,6 +42,7 @@ linkmarker_mask = {
 }
 
 race_mask = {
+    0x0: "?",
     0x1: "Warrior",
     0x2: "Spellcaster",
     0x4: "Fairy",
@@ -74,6 +78,7 @@ race_mask = {
 }
 
 attribute_mask = {
+    0x00: "?",
     0x01: "EARTH",
     0x02: "WATER",
     0x04: "FIRE",

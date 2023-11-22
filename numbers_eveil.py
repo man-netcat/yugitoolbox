@@ -29,7 +29,7 @@ def numbers_eveil(card: Card):
 
 
 def main():
-    for combo in numbers_eveil(card_db.get_card_by_id(90126061)):
+    for combo in numbers_eveil(card_db.get_card_by_id(88177324)):
         print([card.name for card in combo])
 
 

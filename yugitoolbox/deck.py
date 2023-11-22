@@ -9,8 +9,6 @@ from itertools import permutations
 from .card import Card
 from .carddb import card_db
 
-from .masks import *
-
 
 @dataclass()
 class Deck:
@@ -21,16 +19,19 @@ class Deck:
     isvalid: bool
 
     def __str__(self) -> str:
-        reprstr = "Main Deck:\n"
-        for card, count in self.main:
-            reprstr += f"{card} x{count}\n"
-        reprstr += "\nExtra Deck:\n"
-        for card, count in self.extra:
-            reprstr += f"{card} x{count}\n"
-        reprstr += "\nSide Deck:\n"
-        for card, count in self.side:
-            reprstr += f"{card} x{count}\n"
-        return reprstr
+        def format_deck_section(cards, section_name):
+            return f"{section_name}:\n" + "\n".join(
+                [f"  {card} x{count}" for card, count in cards]
+            )
+
+        main_str = format_deck_section(self.main, "Main Deck")
+        extra_str = format_deck_section(self.extra, "Extra Deck")
+        side_str = format_deck_section(self.side, "Side Deck")
+
+        return "\n\n".join([main_str, extra_str, side_str])
+
+    def __repr__(self) -> str:
+        return self.name if self.name else "Anonymous Deck"
 
     @staticmethod
     def from_omegacode(code: str, name: str = ""):

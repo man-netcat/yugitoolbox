@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from datetime import datetime
+
 
 @dataclass()
 class Card:
@@ -19,17 +21,34 @@ class Card:
     support: list[str]
     related: list[str]
     sets: list[str]
-    tcgdate: int
-    ocgdate: int
+    tcgdate: datetime | None
+    ocgdate: datetime | None
     ot: int
     archcode: int
     supportcode: int
+    alias: int
+    scripted: bool
 
     def __hash__(self):
         return hash(self.name)
 
     def __str__(self) -> str:
+        if "Monster" in self.type:
+            return f"{self.name} ({self.id}): {self._levelstr()} {self.attribute} {self.race} {' '.join(reversed(self.type))}"
+        else:
+            return f"{self.name} ({self.id}): {'Normal ' if len(self.type) == 1 else ''}{' '.join(reversed(self.type))}"
+
+    def __repr__(self) -> str:
         return self.name
+
+    def _levelstr(self) -> str:
+        return (
+            "Rank "
+            if "Xyz" in self.type
+            else "Link "
+            if "Link" in self.type
+            else "Level "
+        ) + (str(self.level) if self.level >= 0 else "?")
 
     def has_atk_equ_def(self) -> bool:
         return "Monster" in self.type and self.atk == self.def_

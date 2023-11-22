@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import math
 import os
 import pickle
 import sqlite3
+from datetime import datetime
 from typing import Callable
 
 import pandas as pd
@@ -37,10 +39,16 @@ class CardDB:
         self._initialised = True
         CardDB._update_db()
         CardDB._load_objects()
-        print("initialised db.")
 
     @staticmethod
     def _build_card_db(con):
+        def make_datetime(timestamp: int):
+            try:
+                dt = datetime.fromtimestamp(timestamp)
+            except:
+                dt = None
+            return dt
+
         cards: list[dict] = pd.read_sql_query(
             "SELECT * FROM datas INNER JOIN texts USING(id)",
             con,
@@ -83,11 +91,13 @@ class CardDB:
                 [],
                 [],
                 [],
-                card["tcgdate"],
-                card["ocgdate"],
+                make_datetime(card["tcgdate"]),
+                make_datetime(card["ocgdate"]),
                 card["ot"],
                 card["setcode"],
                 card["support"],
+                card["alias"],
+                not math.isnan(card["script"]),
             )
             CardDB.card_data[card["id"]] = card_data
 
@@ -220,7 +230,7 @@ class CardDB:
         CardDB._build_pickles()
 
     @staticmethod
-    def _update_db():
+    def _update_db(force_update: bool = False):
         def download(url: str, path: str):
             r = requests.get(url, allow_redirects=True)
             r.raise_for_status()
@@ -235,26 +245,34 @@ class CardDB:
         if not os.path.exists("db"):
             os.mkdir("db")
 
-        if os.path.exists("db/cards.db"):
+        if os.path.exists("db/cards.db") and not force_update:
             if os.path.exists("db/cards.hash"):
                 with open("db/cards.hash") as f:
                     old_hash = f.read()
             else:
                 old_hash = None
-            download(hash_url, hash_path)
+            try:
+                download(hash_url, hash_path)
+            except requests.ConnectionError:
+                print("Failed to get current Hash, skipping update.")
+                return
             with open("db/cards.hash") as f:
                 new_hash = f.read()
             if old_hash == new_hash:
                 return
             else:
-                print("downloading up-to-date db...")
-                download(db_url, db_path)
-                CardDB._build_objects()
-        else:
-            print("downloading up-to-date db...")
-            download(db_url, db_path)
-            download(hash_url, hash_path)
-            CardDB._build_objects()
+                print("A new version of the database is available.")
+                user_response = input(
+                    "Do you want to update the database? (y/n): "
+                ).lower()
+                if user_response != "y":
+                    print("Skipping database update.")
+                    return
+
+        print("Downloading up-to-date db...")
+        download(db_url, db_path)
+        download(hash_url, hash_path)
+        CardDB._build_objects()
 
     def get_card_by_id(self, id: int):
         return self.card_data[id]
