@@ -80,3 +80,24 @@ class Deck:
         ]
 
         return valids
+
+    def get_archetype_counts(self) -> list[tuple[str, int]]:
+        return list(
+            Counter(
+                arch
+                for card, card_count in self.all_cards()
+                for arch in card.archetypes * card_count
+            ).items()
+        )
+
+    def get_archetype_ratios(self) -> list[tuple[str, float]]:
+        return [
+            (arch, count / self.total_cards() * 100)
+            for arch, count in self.get_archetype_counts()
+        ]
+
+    def all_cards(self) -> list[tuple[Card, int]]:
+        return self.main + self.extra + self.side
+
+    def total_cards(self) -> int:
+        return sum(count for _, count in self.all_cards())

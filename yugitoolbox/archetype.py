@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 
+from .card import Card
+
 
 @dataclass()
 class Archetype:
     name: str
-    cards: list[str]
-    support: list[str]
-    related: list[str]
+    cards: list[Card]
+    support: list[Card]
+    related: list[Card]
 
     def __hash__(self):
         return hash(self.name)

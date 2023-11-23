@@ -7,7 +7,7 @@ from yugitoolbox import card_db
 
 
 def collect_lore_data(lore: dict[str, Any], set_names: list[str]):
-    cards = card_db.related_cards(lore["archetypes"], lore["cards"])
+    cards = card_db.get_related_cards(lore["archetypes"], lore["cards"])
     data = [
         {
             "id": card.id,

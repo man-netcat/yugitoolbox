@@ -117,8 +117,7 @@ class CardDB:
         ).to_dict(orient="records")
 
         CardDB.archetype_data = {
-            archetype["name"]: Archetype(archetype["name"], [], [], [])
-            for archetype in archetypes
+            arch["name"]: Archetype(arch["name"], [], [], []) for arch in archetypes
         }
 
         def split_chunks(n: int, nchunks: int):
@@ -126,30 +125,30 @@ class CardDB:
 
         for card in CardDB.card_data.values():
             card.archetypes = [
-                archetype["name"]
+                arch["name"]
                 for chunk in split_chunks(card.archcode, 4)
-                for archetype in archetypes
-                if archetype["archetype_code"] == chunk
+                for arch in archetypes
+                if arch["archetype_code"] == chunk
             ]
             card.support = [
-                archetype["name"]
+                arch["name"]
                 for chunk in split_chunks(card.supportcode, 2)
-                for archetype in archetypes
-                if archetype["archetype_code"] == chunk
+                for arch in archetypes
+                if arch["archetype_code"] == chunk
             ]
             card.related = [
-                archetype["name"]
+                arch["name"]
                 for chunk in split_chunks(card.supportcode >> 32, 2)
-                for archetype in archetypes
-                if archetype["archetype_code"] == chunk
+                for arch in archetypes
+                if arch["archetype_code"] == chunk
             ]
 
-            for archetype in card.archetypes:
-                CardDB.archetype_data[archetype].cards.append(card.name)
-            for archetype in card.support:
-                CardDB.archetype_data[archetype].support.append(card.name)
-            for archetype in card.related:
-                CardDB.archetype_data[archetype].related.append(card.name)
+            for arch in card.archetypes:
+                CardDB.archetype_data[arch].cards.append(card)
+            for arch in card.support:
+                CardDB.archetype_data[arch].support.append(card)
+            for arch in card.related:
+                CardDB.archetype_data[arch].related.append(card)
 
     @staticmethod
     def _build_set_db(con):
@@ -184,7 +183,7 @@ class CardDB:
             ]
 
             for set in card.sets:
-                CardDB.set_data[set].contents.append(card.name)
+                CardDB.set_data[set].contents.append(card)
 
     @staticmethod
     def _load_objects():
@@ -192,30 +191,30 @@ class CardDB:
             [
                 os.path.exists(file)
                 for file in [
-                    "pickles/cards.pkl",
-                    "pickles/sets.pkl",
-                    "pickles/archetypes.pkl",
+                    "db/cards.pkl",
+                    "db/sets.pkl",
+                    "db/archetypes.pkl",
                 ]
             ]
         ):
             CardDB._build_objects()
-        with open("pickles/cards.pkl", "rb") as file:
+        with open("db/cards.pkl", "rb") as file:
             CardDB.card_data = pickle.load(file)
-        with open("pickles/archetypes.pkl", "rb") as file:
+        with open("db/archetypes.pkl", "rb") as file:
             CardDB.archetype_data = pickle.load(file)
-        with open("pickles/sets.pkl", "rb") as file:
+        with open("db/sets.pkl", "rb") as file:
             CardDB.set_data = pickle.load(file)
 
     @staticmethod
     def _build_pickles():
         print("pickling pickles...")
-        if not os.path.exists("pickles"):
-            os.mkdir("pickles")
-        with open("pickles/cards.pkl", "wb") as file:
+        if not os.path.exists("db"):
+            os.mkdir("db")
+        with open("db/cards.pkl", "wb") as file:
             pickle.dump(CardDB.card_data, file)
-        with open("pickles/archetypes.pkl", "wb") as file:
+        with open("db/archetypes.pkl", "wb") as file:
             pickle.dump(CardDB.archetype_data, file)
-        with open("pickles/sets.pkl", "wb") as file:
+        with open("db/sets.pkl", "wb") as file:
             pickle.dump(CardDB.set_data, file)
 
     @staticmethod
@@ -274,6 +273,15 @@ class CardDB:
         download(hash_url, hash_path)
         CardDB._build_objects()
 
+    def get_cards(self):
+        return self.card_data.values()
+
+    def get_archetypes(self):
+        return self.archetype_data.values()
+
+    def get_sets(self):
+        return self.set_data.values()
+
     def get_card_by_id(self, id: int):
         return self.card_data[id]
 
@@ -283,7 +291,7 @@ class CardDB:
     def get_cards_by_value(self, by: str, value: str | int):
         if by not in Card.__dataclass_fields__.keys():
             raise RuntimeError(
-                f"'by' not in {', '.join(Card.__dataclass_fields__.keys())}"
+                f"'by' not in [{', '.join(Card.__dataclass_fields__.keys())}]"
             )
         return [
             card
@@ -305,15 +313,28 @@ class CardDB:
     def get_archetype_by_name(self, name: str):
         return CardDB.archetype_data[name]
 
-    def related_cards(self, given_archetypes: list[str], given_cards: list[str] = []):
+    def get_related_cards(
+        self, given_archetypes: list[str], given_cards: list[str] = []
+    ) -> list[Card]:
         return [
             card
             for card in self.card_data.values()
             if any(card_name in card.text for card_name in given_cards)
             or any(
-                archetype in set(card.related + card.support + card.archetypes)
-                for archetype in given_archetypes
+                arch in set(card.related + card.support + card.archetypes)
+                for arch in given_archetypes
             )
+        ]
+
+    def get_unscripted(self, include_skillcards: bool = False) -> list[Card]:
+        return [
+            card
+            for card in card_db.card_data.values()
+            if not card.id == 111004001
+            if not card.scripted
+            and any([type in card.type for type in ["Spell", "Trap", "Effect"]])
+            and not card.alias
+            and (not card.is_illegal() or (include_skillcards and card.is_skill_card()))
         ]
 
 
