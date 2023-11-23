@@ -23,7 +23,11 @@ class Set:
 
     def get_archetype_counts(self) -> list[tuple[str, int]]:
         return list(
-            Counter(arch for card in self.contents for arch in card.archetypes).items()
+            Counter(
+                arch
+                for card in self.contents
+                for arch in set(card.archetypes + card.support)
+            ).items()
         )
 
     def get_archetype_ratios(self) -> list[tuple[str, float]]:
