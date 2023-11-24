@@ -5,6 +5,7 @@ from .card import Card
 
 @dataclass()
 class Archetype:
+    id: str
     name: str
     cards: list[Card]
     support: list[Card]

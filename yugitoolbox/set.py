@@ -7,6 +7,7 @@ from .card import Card
 
 @dataclass()
 class Set:
+    id: str
     name: str
     abbr: str
     tcgdate: int

@@ -82,8 +82,8 @@ class YugiDB:
                 card_markers = []
 
             card_data = Card(
-                card["name"],
                 card["id"],
+                card["name"],
                 card_type,
                 card_race,
                 card_attribute,
@@ -125,7 +125,14 @@ class YugiDB:
         ).to_dict(orient="records")
 
         YugiDB.arch_data = {
-            arch["archcode"]: Archetype(arch["name"], [], [], []) for arch in archetypes
+            arch["archcode"]: Archetype(
+                arch["archcode"],
+                arch["name"],
+                [],
+                [],
+                [],
+            )
+            for arch in archetypes
         }
 
         def split_chunks(n: int, nchunks: int):
@@ -180,7 +187,14 @@ class YugiDB:
         ).to_dict(orient="records")
 
         YugiDB.set_data = {
-            set["id"]: Set(set["name"], set["abbr"], set["tcgdate"], set["ocgdate"], [])
+            set["id"]: Set(
+                set["id"],
+                set["name"],
+                set["abbr"],
+                set["tcgdate"],
+                set["ocgdate"],
+                [],
+            )
             for set in sets
         }
 

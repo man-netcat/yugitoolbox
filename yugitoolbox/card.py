@@ -6,8 +6,8 @@ from .enums import Attribute, Category, LinkMarker, Race, Type
 
 @dataclass()
 class Card:
-    name: str
     id: int
+    name: str
     type: list[Type]
     race: Race
     attribute: Attribute
