@@ -11,7 +11,7 @@ class Archetype:
     support: list[Card]
     related: list[Card]
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)
 
     def __repr__(self) -> str:

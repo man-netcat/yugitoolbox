@@ -128,7 +128,9 @@ class Card:
         return Type.Monster in self.type and not self.is_extra_deck_monster()
 
     @staticmethod
-    def compare_small_world(handcard: "Card", deckcard: "Card", addcard: "Card"):
+    def compare_small_world(
+        handcard: "Card", deckcard: "Card", addcard: "Card"
+    ) -> bool:
         return all(
             [
                 sum(

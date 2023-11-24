@@ -6,6 +6,8 @@ import pickle
 import sqlite3
 from datetime import datetime
 from typing import Callable
+from typing import Optional
+from typing import ValuesView
 
 import pandas as pd
 import requests
@@ -271,13 +273,16 @@ class YugiDB:
                     old_hash = f.read()
             else:
                 old_hash = None
+
             try:
                 download(hash_url, hash_path)
             except requests.ConnectionError:
                 print("Failed to get current Hash, skipping update.")
                 return
+
             with open("db/cards.hash") as f:
                 new_hash = f.read()
+
             if old_hash == new_hash:
                 return
             else:
@@ -294,80 +299,96 @@ class YugiDB:
         download(hash_url, hash_path)
         YugiDB._build_objects()
 
-    def get_cards(self):
+    def get_cards(self) -> ValuesView[Card]:
         return self.card_data.values()
 
-    def get_archetypes(self):
+    def get_archetypes(self) -> ValuesView[Archetype]:
         return self.arch_data.values()
 
-    def get_sets(self):
+    def get_sets(self) -> ValuesView[Set]:
         return self.set_data.values()
 
-    def get_card_by_id(self, id: int):
-        return self.card_data[id]
+    def get_card_by_id(self, id: int) -> Optional[Card]:
+        return self.card_data.get(id)
 
-    def get_cards_by_ids(self, ids: list[int]):
+    def get_cards_by_ids(self, ids: list[int]) -> list[Optional[Card]]:
         return [self.get_card_by_id(id) for id in ids]
 
-    def get_cards_by_value(self, by: str, value: str | int):
+    def get_cards_by_value(self, by: str, value: str | int) -> list[Card]:
         if by not in Card.__dataclass_fields__.keys():
             raise RuntimeError(
                 f"'by' not in [{', '.join(Card.__dataclass_fields__.keys())}]"
             )
         return [
             card
-            for card in self.card_data.values()
+            for card in self.get_cards()
             if isinstance(getattr(card, by), (list, str))
             and value in getattr(card, by)
             or getattr(card, by) == value
         ]
 
-    def get_cards_by_values(self, by: str, values: list[int] | list[str]):
+    def get_cards_by_values(
+        self, by: str, values: list[int] | list[str]
+    ) -> list[list[Card]]:
         return [self.get_cards_by_value(by, value) for value in values]
 
     def get_cards_by_query(self, query: Callable[[Card], bool]):
-        return [card for card in self.card_data.values() if query(card)]
+        return [card for card in self.get_cards() if query(card)]
 
-    def get_set_by_id(self, id: int):
-        return self.set_data[id]
+    def get_set_by_id(self, id: int) -> Optional[Set]:
+        return self.set_data.get(id)
 
-    def get_sets_by_ids(self, ids: list[int]):
+    def get_sets_by_ids(self, ids: list[int]) -> list[Optional[Set]]:
         return [self.get_set_by_id(id) for id in ids]
 
-    def get_sets_by_value(self, by: str, value: str | int):
+    def get_sets_by_value(self, by: str, value: str | int) -> list[Set]:
         if by not in Set.__dataclass_fields__.keys():
             raise RuntimeError(
                 f"'by' not in [{', '.join(Set.__dataclass_fields__.keys())}]"
             )
         return [
             set
-            for set in self.set_data.values()
+            for set in self.get_sets()
             if isinstance(getattr(set, by), (list, str))
             and value in getattr(set, by)
             or getattr(set, by) == value
         ]
 
-    def get_sets_by_values(self, by: str, values: list[int] | list[str]):
+    def get_sets_by_values(
+        self, by: str, values: list[int] | list[str]
+    ) -> list[list[Set]]:
         return [self.get_sets_by_value(by, value) for value in values]
 
-    def get_archetype_by_id(self, id: int):
-        return self.arch_data[id]
+    def get_archetype_by_id(self, id: int) -> Optional[Archetype]:
+        return self.arch_data.get(id)
 
-    def get_archetypes_by_ids(self, ids: list[int]):
+    def get_archetypes_by_ids(self, ids: list[int]) -> list[Optional[Archetype]]:
         return [self.get_archetype_by_id(id) for id in ids]
 
-    def get_archetype_by_name(self, name: str):
-        return [arch for arch in self.arch_data.values() if arch.name == name]
+    def get_archetypes_by_value(self, by: str, value: str | int) -> list[Archetype]:
+        if by not in Archetype.__dataclass_fields__.keys():
+            raise RuntimeError(
+                f"'by' not in [{', '.join(Archetype.__dataclass_fields__.keys())}]"
+            )
+        return [
+            arch
+            for arch in self.get_archetypes()
+            if isinstance(getattr(arch, by), (list, str))
+            and value in getattr(arch, by)
+            or getattr(arch, by) == value
+        ]
 
-    def get_archetype_by_names(self, names: list[str]):
-        return [self.get_archetype_by_name(name) for name in names]
+    def get_archetypes_by_values(
+        self, by: str, values: list[int] | list[str]
+    ) -> list[list[Archetype]]:
+        return [self.get_archetypes_by_value(by, value) for value in values]
 
     def get_related_cards(
         self, given_archetypes: list[str], given_cards: list[str] = []
     ) -> list[Card]:
         return [
             card
-            for card in self.card_data.values()
+            for card in self.get_cards()
             if any(card_name in card.text for card_name in given_cards)
             or any(
                 arch in set(card.related + card.support + card.archetypes)
@@ -378,7 +399,7 @@ class YugiDB:
     def get_unscripted(self, include_skillcards: bool = False) -> list[Card]:
         return [
             card
-            for card in yugidb.card_data.values()
+            for card in self.get_cards()
             if not card.id == 111004001
             if not card.scripted
             and any(

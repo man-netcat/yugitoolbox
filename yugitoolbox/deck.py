@@ -5,6 +5,7 @@ import zlib
 from collections import Counter
 from dataclasses import dataclass
 from itertools import permutations
+from typing import ItemsView, Optional
 
 from .archetype import Archetype
 from .card import Card
@@ -19,7 +20,9 @@ class Deck:
     isvalid: bool
 
     def __str__(self) -> str:
-        def format_deck_section(cards, section_name):
+        def format_deck_section(
+            cards: list[tuple[Card, int]], section_name: str
+        ) -> str:
             return f"{section_name}:\n" + "\n".join(
                 [f"  {card} x{count}" for card, count in cards]
             )
@@ -34,10 +37,10 @@ class Deck:
         return self.name if self.name else "Anonymous Deck"
 
     @staticmethod
-    def from_omegacode(code: str, name: str = ""):
+    def from_omegacode(code: str, name: str = "") -> Deck:
         from yugitoolbox import yugidb
 
-        def decode_card_tuples(start: int, end: int):
+        def decode_card_tuples(start: int, end: int) -> list[tuple[Card, int]]:
             return [
                 (yugidb.get_cards_by_value(by="id", value=card_id)[0], count)
                 for card_id, count in Counter(
@@ -83,18 +86,16 @@ class Deck:
 
         return valids
 
-    def get_archetype_counts(self) -> list[tuple[Archetype, int]]:
+    def get_archetype_counts(self) -> ItemsView[Optional[Archetype], int]:
         from yugitoolbox import yugidb
 
-        return list(
-            Counter(
-                yugidb.get_archetype_by_id(archid)
-                for card, card_count in self.all_cards()
-                for archid in card.archetypes * card_count
-            ).items()
-        )
+        return Counter(
+            yugidb.get_archetype_by_id(archid)
+            for card, card_count in self.all_cards()
+            for archid in card.archetypes * card_count
+        ).items()
 
-    def get_archetype_ratios(self) -> list[tuple[Archetype, float]]:
+    def get_archetype_ratios(self) -> list[tuple[Archetype | None, float]]:
         return [
             (arch, count / self.total_cards() * 100)
             for arch, count in self.get_archetype_counts()
