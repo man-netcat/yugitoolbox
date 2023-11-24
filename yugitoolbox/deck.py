@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from itertools import permutations
 
 from .card import Card
-from .carddb import card_db
+from .yugidb import yugidb
 
 
 @dataclass()
@@ -37,7 +37,7 @@ class Deck:
     def from_omegacode(code: str, name: str = ""):
         def decode_card_tuples(start: int, end: int):
             return [
-                (card_db.get_cards_by_value(by="id", value=card_id)[0], count)
+                (yugidb.get_cards_by_value(by="id", value=card_id)[0], count)
                 for card_id, count in Counter(
                     int.from_bytes(bytes_arr[i : i + 4], byteorder="little")
                     for i in range(start, end, 4)

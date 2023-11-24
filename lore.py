@@ -3,17 +3,17 @@ from typing import Any
 
 import pandas as pd
 
-from yugitoolbox import card_db
+from yugitoolbox import yugidb
 
 
 def collect_lore_data(lore: dict[str, Any], set_names: list[str]):
-    cards = card_db.get_related_cards(lore["archetypes"], lore["cards"])
+    cards = yugidb.get_related_cards(lore["archetypes"], lore["cards"])
     data = [
         {
             "id": card.id,
             "name": card.name,
             "set": min(
-                [card_db.get_set_by_name(set) for set in card.sets if set in set_names],
+                [yugidb.get_set_by_name(set) for set in card.sets if set in set_names],
                 key=lambda x: x.tcgdate,
             ),
         }

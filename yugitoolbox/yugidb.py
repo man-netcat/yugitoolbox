@@ -12,7 +12,7 @@ import requests
 
 from .archetype import Archetype
 from .card import Card
-from .masks import *
+from .enums import *
 from .set import Set
 
 OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
@@ -20,7 +20,7 @@ DB_DIR = "db"
 DATE_UNAVAILABLE = 253402214400
 
 
-class CardDB:
+class YugiDB:
     _instance = None
     archetype_data: dict[str, Archetype] = {}
     card_data: dict[int, Card] = {}
@@ -28,7 +28,7 @@ class CardDB:
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super(CardDB, cls).__new__(cls)
+            cls._instance = super(YugiDB, cls).__new__(cls)
             cls._instance._initialised = False
         return cls._instance
 
@@ -37,8 +37,8 @@ class CardDB:
             return
 
         self._initialised = True
-        CardDB._update_db()
-        CardDB._load_objects()
+        YugiDB._update_db()
+        YugiDB._load_objects()
 
     @staticmethod
     def _build_card_db(con):
@@ -49,26 +49,35 @@ class CardDB:
                 dt = None
             return dt
 
+        def apply_enum(value: int, enum_class):
+            return [enum_member for enum_member in enum_class if value & enum_member]
+
+        def parse_pendulum(value: int):
+            lscale = (value & 0xFF000000) >> 24
+            rscale = (value & 0x00FF0000) >> 16
+            level = value & 0x0000FFFF
+            return lscale, rscale, level
+
         cards: list[dict] = pd.read_sql_query(
             "SELECT * FROM datas INNER JOIN texts USING(id)",
             con,
         ).to_dict(orient="records")
-        CardDB.card_data: dict[int, Card] = {}
+        YugiDB.card_data: dict[int, Card] = {}
 
         for card in cards:
-            card_type = apply_mask(card["type"], type_mask)
-            card_race = race_mask.get(card["race"], "")
-            card_attribute = attribute_mask.get(card["attribute"], "")
-            card_category = apply_mask(card["category"], category_mask)
+            card_type = apply_enum(card["type"], Type)
+            card_race = Race(card["race"])
+            card_attribute = Attribute(card["attribute"])
+            card_category = apply_enum(card["category"], Category)
 
-            if card["type"] & 0x1000000:
+            if card["type"] & Type.Pendulum:
                 card_lscale, card_rscale, card_level = parse_pendulum(card["level"])
             else:
                 card_lscale, card_rscale, card_level = 0, 0, card["level"]
 
-            if card["type"] & 0x4000000:
+            if card["type"] & Type.Link:
                 card_def = 0
-                card_markers = apply_mask(card["def"], linkmarker_mask)
+                card_markers = apply_enum(card["def"], LinkMarker)
             else:
                 card_def = card["def"]
                 card_markers = []
@@ -99,7 +108,7 @@ class CardDB:
                 card["alias"],
                 not math.isnan(card["script"]),
             )
-            CardDB.card_data[card["id"]] = card_data
+            YugiDB.card_data[card["id"]] = card_data
 
     @staticmethod
     def _build_archetype_db(con):
@@ -116,14 +125,14 @@ class CardDB:
             con,
         ).to_dict(orient="records")
 
-        CardDB.archetype_data = {
+        YugiDB.archetype_data = {
             arch["name"]: Archetype(arch["name"], [], [], []) for arch in archetypes
         }
 
         def split_chunks(n: int, nchunks: int):
             return [(n >> (16 * i)) & 0xFFFF for i in range(nchunks)]
 
-        for card in CardDB.card_data.values():
+        for card in YugiDB.card_data.values():
             card.archetypes = [
                 arch["name"]
                 for chunk in split_chunks(card.archcode, 4)
@@ -144,11 +153,11 @@ class CardDB:
             ]
 
             for arch in card.archetypes:
-                CardDB.archetype_data[arch].cards.append(card)
+                YugiDB.archetype_data[arch].cards.append(card)
             for arch in card.support:
-                CardDB.archetype_data[arch].support.append(card)
+                YugiDB.archetype_data[arch].support.append(card)
             for arch in card.related:
-                CardDB.archetype_data[arch].related.append(card)
+                YugiDB.archetype_data[arch].related.append(card)
 
     @staticmethod
     def _build_set_db(con):
@@ -170,20 +179,20 @@ class CardDB:
             con,
         ).to_dict(orient="records")
 
-        CardDB.set_data = {
+        YugiDB.set_data = {
             set["name"]: Set(
                 set["name"], set["abbr"], set["tcgdate"], set["ocgdate"], []
             )
             for set in sets
         }
 
-        for card in CardDB.card_data.values():
+        for card in YugiDB.card_data.values():
             card.sets = [
                 set["name"] for set in sets if str(card.id) in set["cardids"].split(",")
             ]
 
             for set in card.sets:
-                CardDB.set_data[set].contents.append(card)
+                YugiDB.set_data[set].contents.append(card)
 
     @staticmethod
     def _load_objects():
@@ -197,13 +206,13 @@ class CardDB:
                 ]
             ]
         ):
-            CardDB._build_objects()
+            YugiDB._build_objects()
         with open("db/cards.pkl", "rb") as file:
-            CardDB.card_data = pickle.load(file)
+            YugiDB.card_data = pickle.load(file)
         with open("db/archetypes.pkl", "rb") as file:
-            CardDB.archetype_data = pickle.load(file)
+            YugiDB.archetype_data = pickle.load(file)
         with open("db/sets.pkl", "rb") as file:
-            CardDB.set_data = pickle.load(file)
+            YugiDB.set_data = pickle.load(file)
 
     @staticmethod
     def _build_pickles():
@@ -211,22 +220,22 @@ class CardDB:
         if not os.path.exists("db"):
             os.mkdir("db")
         with open("db/cards.pkl", "wb") as file:
-            pickle.dump(CardDB.card_data, file)
+            pickle.dump(YugiDB.card_data, file)
         with open("db/archetypes.pkl", "wb") as file:
-            pickle.dump(CardDB.archetype_data, file)
+            pickle.dump(YugiDB.archetype_data, file)
         with open("db/sets.pkl", "wb") as file:
-            pickle.dump(CardDB.set_data, file)
+            pickle.dump(YugiDB.set_data, file)
 
     @staticmethod
     def _build_objects():
         with sqlite3.connect("db/cards.db") as con:
             print("building card db...")
-            CardDB._build_card_db(con)
+            YugiDB._build_card_db(con)
             print("building archetype db...")
-            CardDB._build_archetype_db(con)
+            YugiDB._build_archetype_db(con)
             print("building set db...")
-            CardDB._build_set_db(con)
-        CardDB._build_pickles()
+            YugiDB._build_set_db(con)
+        YugiDB._build_pickles()
 
     @staticmethod
     def _update_db(force_update: bool = False):
@@ -271,7 +280,7 @@ class CardDB:
         print("Downloading up-to-date db...")
         download(db_url, db_path)
         download(hash_url, hash_path)
-        CardDB._build_objects()
+        YugiDB._build_objects()
 
     def get_cards(self):
         return self.card_data.values()
@@ -308,10 +317,10 @@ class CardDB:
         return [card for card in self.card_data.values() if query(card)]
 
     def get_set_by_name(self, name: str):
-        return CardDB.set_data[name]
+        return YugiDB.set_data[name]
 
     def get_archetype_by_name(self, name: str):
-        return CardDB.archetype_data[name]
+        return YugiDB.archetype_data[name]
 
     def get_related_cards(
         self, given_archetypes: list[str], given_cards: list[str] = []
@@ -329,7 +338,7 @@ class CardDB:
     def get_unscripted(self, include_skillcards: bool = False) -> list[Card]:
         return [
             card
-            for card in card_db.card_data.values()
+            for card in yugidb.card_data.values()
             if not card.id == 111004001
             if not card.scripted
             and any([type in card.type for type in ["Spell", "Trap", "Effect"]])
@@ -338,4 +347,4 @@ class CardDB:
         ]
 
 
-card_db = CardDB()
+yugidb = YugiDB()

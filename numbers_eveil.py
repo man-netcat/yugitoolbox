@@ -1,6 +1,6 @@
 from itertools import combinations
 
-from yugitoolbox import Card, card_db
+from yugitoolbox import Card, yugidb
 
 
 def numbers_eveil(card: Card):
@@ -14,7 +14,7 @@ def numbers_eveil(card: Card):
     number_xyz_cards = sorted(
         [
             card
-            for card in card_db.get_cards_by_value("type", "Xyz")
+            for card in yugidb.get_cards_by_value("type", "Xyz")
             if "Number" in card.name and not "XX" in card.name
         ],
         key=lambda x: x.name,
@@ -29,7 +29,7 @@ def numbers_eveil(card: Card):
 
 
 def main():
-    for combo in numbers_eveil(card_db.get_card_by_id(88177324)):
+    for combo in numbers_eveil(yugidb.get_card_by_id(88177324)):
         print([card.name for card in combo])
 
 
