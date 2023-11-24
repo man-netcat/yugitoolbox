@@ -17,14 +17,13 @@ from .set import Set
 
 OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 DB_DIR = "db"
-DATE_UNAVAILABLE = 253402214400
 
 
 class YugiDB:
     _instance = None
-    archetype_data: dict[str, Archetype] = {}
+    arch_data: dict[int, Archetype] = {}
     card_data: dict[int, Card] = {}
-    set_data: dict[str, Set] = {}
+    set_data: dict[int, Set] = {}
 
     def __new__(cls):
         if cls._instance is None:
@@ -118,15 +117,15 @@ class YugiDB:
                 CASE
                     WHEN officialcode > 0 THEN officialcode
                     ELSE betacode
-                END AS archetype_code
+                END AS archcode
             FROM setcodes
             WHERE (officialcode > 0 AND betacode = officialcode) OR (officialcode = 0 AND betacode > 0);
             """,
             con,
         ).to_dict(orient="records")
 
-        YugiDB.archetype_data = {
-            arch["name"]: Archetype(arch["name"], [], [], []) for arch in archetypes
+        YugiDB.arch_data = {
+            arch["archcode"]: Archetype(arch["name"], [], [], []) for arch in archetypes
         }
 
         def split_chunks(n: int, nchunks: int):
@@ -134,36 +133,37 @@ class YugiDB:
 
         for card in YugiDB.card_data.values():
             card.archetypes = [
-                arch["name"]
+                arch["archcode"]
                 for chunk in split_chunks(card.archcode, 4)
                 for arch in archetypes
-                if arch["archetype_code"] == chunk
+                if arch["archcode"] == chunk
             ]
             card.support = [
-                arch["name"]
+                arch["archcode"]
                 for chunk in split_chunks(card.supportcode, 2)
                 for arch in archetypes
-                if arch["archetype_code"] == chunk
+                if arch["archcode"] == chunk
             ]
             card.related = [
-                arch["name"]
+                arch["archcode"]
                 for chunk in split_chunks(card.supportcode >> 32, 2)
                 for arch in archetypes
-                if arch["archetype_code"] == chunk
+                if arch["archcode"] == chunk
             ]
 
             for arch in card.archetypes:
-                YugiDB.archetype_data[arch].cards.append(card)
+                YugiDB.arch_data[arch].cards.append(card)
             for arch in card.support:
-                YugiDB.archetype_data[arch].support.append(card)
+                YugiDB.arch_data[arch].support.append(card)
             for arch in card.related:
-                YugiDB.archetype_data[arch].related.append(card)
+                YugiDB.arch_data[arch].related.append(card)
 
     @staticmethod
     def _build_set_db(con):
         sets = pd.read_sql_query(
             """
                 SELECT
+                    packs.id,
                     packs.abbr,
                     packs.name,
                     packs.ocgdate,
@@ -180,15 +180,13 @@ class YugiDB:
         ).to_dict(orient="records")
 
         YugiDB.set_data = {
-            set["name"]: Set(
-                set["name"], set["abbr"], set["tcgdate"], set["ocgdate"], []
-            )
+            set["id"]: Set(set["name"], set["abbr"], set["tcgdate"], set["ocgdate"], [])
             for set in sets
         }
 
         for card in YugiDB.card_data.values():
             card.sets = [
-                set["name"] for set in sets if str(card.id) in set["cardids"].split(",")
+                set["id"] for set in sets if str(card.id) in set["cardids"].split(",")
             ]
 
             for set in card.sets:
@@ -210,7 +208,7 @@ class YugiDB:
         with open("db/cards.pkl", "rb") as file:
             YugiDB.card_data = pickle.load(file)
         with open("db/archetypes.pkl", "rb") as file:
-            YugiDB.archetype_data = pickle.load(file)
+            YugiDB.arch_data = pickle.load(file)
         with open("db/sets.pkl", "rb") as file:
             YugiDB.set_data = pickle.load(file)
 
@@ -222,7 +220,7 @@ class YugiDB:
         with open("db/cards.pkl", "wb") as file:
             pickle.dump(YugiDB.card_data, file)
         with open("db/archetypes.pkl", "wb") as file:
-            pickle.dump(YugiDB.archetype_data, file)
+            pickle.dump(YugiDB.arch_data, file)
         with open("db/sets.pkl", "wb") as file:
             pickle.dump(YugiDB.set_data, file)
 
@@ -286,7 +284,7 @@ class YugiDB:
         return self.card_data.values()
 
     def get_archetypes(self):
-        return self.archetype_data.values()
+        return self.arch_data.values()
 
     def get_sets(self):
         return self.set_data.values()
@@ -294,7 +292,7 @@ class YugiDB:
     def get_card_by_id(self, id: int):
         return self.card_data[id]
 
-    def get_cards_by_id(self, ids: list[int]):
+    def get_cards_by_ids(self, ids: list[int]):
         return [self.get_card_by_id(id) for id in ids]
 
     def get_cards_by_value(self, by: str, value: str | int):
@@ -316,11 +314,39 @@ class YugiDB:
     def get_cards_by_query(self, query: Callable[[Card], bool]):
         return [card for card in self.card_data.values() if query(card)]
 
-    def get_set_by_name(self, name: str):
-        return YugiDB.set_data[name]
+    def get_set_by_id(self, id: int):
+        return self.set_data[id]
+
+    def get_sets_by_ids(self, ids: list[int]):
+        return [self.get_set_by_id(id) for id in ids]
+
+    def get_sets_by_value(self, by: str, value: str | int):
+        if by not in Set.__dataclass_fields__.keys():
+            raise RuntimeError(
+                f"'by' not in [{', '.join(Set.__dataclass_fields__.keys())}]"
+            )
+        return [
+            set
+            for set in self.set_data.values()
+            if isinstance(getattr(set, by), (list, str))
+            and value in getattr(set, by)
+            or getattr(set, by) == value
+        ]
+
+    def get_sets_by_values(self, by: str, values: list[int] | list[str]):
+        return [self.get_sets_by_value(by, value) for value in values]
+
+    def get_archetype_by_id(self, id: int):
+        return self.arch_data[id]
+
+    def get_archetypes_by_ids(self, ids: list[int]):
+        return [self.get_archetype_by_id(id) for id in ids]
 
     def get_archetype_by_name(self, name: str):
-        return YugiDB.archetype_data[name]
+        return [arch for arch in self.arch_data.values() if arch.name == name]
+
+    def get_archetype_by_names(self, names: list[str]):
+        return [self.get_archetype_by_name(name) for name in names]
 
     def get_related_cards(
         self, given_archetypes: list[str], given_cards: list[str] = []
@@ -341,9 +367,21 @@ class YugiDB:
             for card in yugidb.card_data.values()
             if not card.id == 111004001
             if not card.scripted
-            and any([type in card.type for type in ["Spell", "Trap", "Effect"]])
+            and any(
+                [
+                    type in card.type
+                    for type in [
+                        Type.Spell,
+                        Type.Trap,
+                        Type.Effect,
+                    ]
+                ]
+            )
             and not card.alias
-            and (not card.is_illegal() or (include_skillcards and card.is_skill_card()))
+            and (
+                not card.ot == OT.Illegal
+                or (include_skillcards and card.is_skill_card())
+            )
         ]
 
 

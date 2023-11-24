@@ -1,6 +1,7 @@
 from collections import Counter
 from dataclasses import dataclass
 
+from .archetype import Archetype
 from .card import Card
 
 
@@ -21,19 +22,21 @@ class Set:
     def __repr__(self) -> str:
         return self.name
 
-    def get_archetype_counts(self) -> list[tuple[str, int]]:
+    def get_archetype_counts(self) -> list[tuple[Archetype, int]]:
+        from yugitoolbox import yugidb
+
         return list(
             Counter(
-                arch
+                yugidb.get_archetype_by_id(archid)
                 for card in self.contents
-                for arch in set(card.archetypes + card.support)
+                for archid in set(card.archetypes + card.support)
             ).items()
         )
 
-    def get_archetype_ratios(self) -> list[tuple[str, float]]:
+    def get_archetype_ratios(self) -> list[tuple[Archetype, float]]:
         return [
-            (arch, count / self.set_total() * 100)
-            for arch, count in self.get_archetype_counts()
+            (archid, count / self.set_total() * 100)
+            for archid, count in self.get_archetype_counts()
         ]
 
     def set_total(self) -> int:

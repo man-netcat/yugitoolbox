@@ -6,8 +6,8 @@ from collections import Counter
 from dataclasses import dataclass
 from itertools import permutations
 
+from .archetype import Archetype
 from .card import Card
-from .yugidb import yugidb
 
 
 @dataclass()
@@ -35,6 +35,8 @@ class Deck:
 
     @staticmethod
     def from_omegacode(code: str, name: str = ""):
+        from yugitoolbox import yugidb
+
         def decode_card_tuples(start: int, end: int):
             return [
                 (yugidb.get_cards_by_value(by="id", value=card_id)[0], count)
@@ -81,16 +83,18 @@ class Deck:
 
         return valids
 
-    def get_archetype_counts(self) -> list[tuple[str, int]]:
+    def get_archetype_counts(self) -> list[tuple[Archetype, int]]:
+        from yugitoolbox import yugidb
+
         return list(
             Counter(
-                arch
+                yugidb.get_archetype_by_id(archid)
                 for card, card_count in self.all_cards()
-                for arch in card.archetypes * card_count
+                for archid in card.archetypes * card_count
             ).items()
         )
 
-    def get_archetype_ratios(self) -> list[tuple[str, float]]:
+    def get_archetype_ratios(self) -> list[tuple[Archetype, float]]:
         return [
             (arch, count / self.total_cards() * 100)
             for arch, count in self.get_archetype_counts()

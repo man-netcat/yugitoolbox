@@ -1,4 +1,4 @@
-from enum import IntFlag
+from enum import IntEnum, IntFlag
 
 
 class Type(IntFlag):
@@ -115,3 +115,10 @@ class Category(IntFlag):
     RedGod = 0x100000
     RushMax = 0x200000
     SC = 0x400000
+
+
+class OT(IntEnum):
+    OCG = 1
+    TCG = 2
+    Legal = 3
+    Illegal = 4

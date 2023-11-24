@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+
 from .enums import Attribute, Category, LinkMarker, Race, Type
 
 
@@ -18,10 +19,10 @@ class Card:
     def_: int
     linkmarkers: list[LinkMarker]
     text: str
-    archetypes: list[str]
-    support: list[str]
-    related: list[str]
-    sets: list[str]
+    archetypes: list[int]
+    support: list[int]
+    related: list[int]
+    sets: list[int]
     tcgdate: datetime | None
     ocgdate: datetime | None
     ot: int
@@ -51,6 +52,21 @@ class Card:
             else "Level "
         ) + (str(self.level) if self.level >= 0 else "?")
 
+    def get_race(self) -> str:
+        return self.race.name
+
+    def get_attr(self) -> str:
+        return self.attribute.name
+
+    def get_types(self) -> list[str]:
+        return [type.name for type in self.type]
+
+    def get_categories(self) -> list[str]:
+        return [category.name for category in self.category]
+
+    def get_linkmarkers(self) -> list[str]:
+        return [marker.name for marker in self.linkmarkers]
+
     def has_atk_equ_def(self) -> bool:
         return Type.Monster in self.type and self.atk == self.def_
 
@@ -72,18 +88,6 @@ class Card:
             or self.is_rush_legendary()
             or self.is_rush_maximum()
         )
-
-    def is_ocg_only(self) -> bool:
-        return self.ot == 1
-
-    def is_tcg_only(self) -> bool:
-        return self.ot == 2
-
-    def is_legal(self) -> bool:
-        return self.ot == 3
-
-    def is_illegal(self) -> bool:
-        return self.ot == 4
 
     def is_beta(self) -> bool:
         return Category.BetaCard in self.category
