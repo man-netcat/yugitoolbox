@@ -5,9 +5,7 @@ import os
 import pickle
 import sqlite3
 from datetime import datetime
-from typing import Callable
-from typing import Optional
-from typing import ValuesView
+from typing import Callable, ValuesView
 
 import pandas as pd
 import requests
@@ -171,20 +169,20 @@ class YugiDB:
     def _build_set_db(con):
         sets = pd.read_sql_query(
             """
-                SELECT
-                    packs.id,
-                    packs.abbr,
-                    packs.name,
-                    packs.ocgdate,
-                    packs.tcgdate,
-                    GROUP_CONCAT(relations.cardid) AS cardids
-                FROM
-                    packs
-                JOIN
-                    relations ON packs.id = relations.packid
-                GROUP BY
-                    packs.name;
-                """,
+            SELECT
+                packs.id,
+                packs.abbr,
+                packs.name,
+                packs.ocgdate,
+                packs.tcgdate,
+                GROUP_CONCAT(relations.cardid) AS cardids
+            FROM
+                packs
+            JOIN
+                relations ON packs.id = relations.packid
+            GROUP BY
+                packs.name;
+            """,
             con,
         ).to_dict(orient="records")
 
@@ -195,18 +193,18 @@ class YugiDB:
                 set["abbr"],
                 set["tcgdate"],
                 set["ocgdate"],
-                [],
+                [
+                    YugiDB.card_data[int(id)]
+                    for id in set["cardids"].split(",")
+                    if int(id) in YugiDB.card_data
+                ],
             )
             for set in sets
         }
 
-        for card in YugiDB.card_data.values():
-            card.sets = [
-                set["id"] for set in sets if str(card.id) in set["cardids"].split(",")
-            ]
-
-            for set in card.sets:
-                YugiDB.set_data[set].contents.append(card)
+        for set in YugiDB.set_data.values():
+            for card in set.contents:
+                card.sets.append(set.id)
 
     @staticmethod
     def _load_objects():
@@ -230,7 +228,7 @@ class YugiDB:
 
     @staticmethod
     def _build_pickles():
-        print("pickling pickles...")
+        print("Pickling pickles...")
         if not os.path.exists("db"):
             os.mkdir("db")
         with open("db/cards.pkl", "wb") as file:
@@ -243,11 +241,11 @@ class YugiDB:
     @staticmethod
     def _build_objects():
         with sqlite3.connect("db/cards.db") as con:
-            print("building card db...")
+            print("Building card db...")
             YugiDB._build_card_db(con)
-            print("building archetype db...")
+            print("Building archetype db...")
             YugiDB._build_archetype_db(con)
-            print("building set db...")
+            print("Building set db...")
             YugiDB._build_set_db(con)
         YugiDB._build_pickles()
 
@@ -308,10 +306,10 @@ class YugiDB:
     def get_sets(self) -> ValuesView[Set]:
         return self.set_data.values()
 
-    def get_card_by_id(self, id: int) -> Optional[Card]:
-        return self.card_data.get(id)
+    def get_card_by_id(self, id: int) -> Card:
+        return self.card_data[id]
 
-    def get_cards_by_ids(self, ids: list[int]) -> list[Optional[Card]]:
+    def get_cards_by_ids(self, ids: list[int]) -> list[Card]:
         return [self.get_card_by_id(id) for id in ids]
 
     def get_cards_by_value(self, by: str, value: str | int) -> list[Card]:
@@ -335,10 +333,10 @@ class YugiDB:
     def get_cards_by_query(self, query: Callable[[Card], bool]):
         return [card for card in self.get_cards() if query(card)]
 
-    def get_set_by_id(self, id: int) -> Optional[Set]:
-        return self.set_data.get(id)
+    def get_set_by_id(self, id: int) -> Set:
+        return self.set_data[id]
 
-    def get_sets_by_ids(self, ids: list[int]) -> list[Optional[Set]]:
+    def get_sets_by_ids(self, ids: list[int]) -> list[Set]:
         return [self.get_set_by_id(id) for id in ids]
 
     def get_sets_by_value(self, by: str, value: str | int) -> list[Set]:
@@ -359,10 +357,10 @@ class YugiDB:
     ) -> list[list[Set]]:
         return [self.get_sets_by_value(by, value) for value in values]
 
-    def get_archetype_by_id(self, id: int) -> Optional[Archetype]:
-        return self.arch_data.get(id)
+    def get_archetype_by_id(self, id: int) -> Archetype:
+        return self.arch_data[id]
 
-    def get_archetypes_by_ids(self, ids: list[int]) -> list[Optional[Archetype]]:
+    def get_archetypes_by_ids(self, ids: list[int]) -> list[Archetype]:
         return [self.get_archetype_by_id(id) for id in ids]
 
     def get_archetypes_by_value(self, by: str, value: str | int) -> list[Archetype]:

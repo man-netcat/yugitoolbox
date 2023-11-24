@@ -5,7 +5,7 @@ import zlib
 from collections import Counter
 from dataclasses import dataclass
 from itertools import permutations
-from typing import ItemsView, Optional
+from typing import ItemsView
 
 from .archetype import Archetype
 from .card import Card
@@ -86,7 +86,7 @@ class Deck:
 
         return valids
 
-    def get_archetype_counts(self) -> ItemsView[Optional[Archetype], int]:
+    def get_archetype_counts(self) -> ItemsView[Archetype, int]:
         from yugitoolbox import yugidb
 
         return Counter(
@@ -95,7 +95,7 @@ class Deck:
             for archid in card.archetypes * card_count
         ).items()
 
-    def get_archetype_ratios(self) -> list[tuple[Archetype | None, float]]:
+    def get_archetype_ratios(self) -> list[tuple[Archetype, float]]:
         return [
             (arch, count / self.total_cards() * 100)
             for arch, count in self.get_archetype_counts()
