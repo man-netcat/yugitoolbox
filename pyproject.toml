@@ -1,0 +1,12 @@
+[project]
+name = "yugitoolbox"
+version = "0.0.1"
+authors = [{ name = "Rick Teuthof", email = "rmt22198@outlook.com" }]
+description = "Yu-Gi-Oh! Python Toolbox"
+readme = "README.md"
+requires-python = ">=3.11.6"
+classifiers = ["Database Wrapper"]
+
+[project.urls]
+Homepage = "https://github.com/man-netcat/yugitoolbox"
+Issues = "https://github.com/man-netcat/yugitoolbox/issues"

@@ -117,7 +117,7 @@ class YugiDB:
                 CASE
                     WHEN officialcode > 0 THEN officialcode
                     ELSE betacode
-                END AS archcode
+                END AS archcode 
             FROM setcodes
             WHERE (officialcode > 0 AND betacode = officialcode) OR (officialcode = 0 AND betacode > 0);
             """,
