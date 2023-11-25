@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import ItemsView
 
 from .archetype import Archetype
-from .card import Card
 
 
 @dataclass()
@@ -13,7 +12,7 @@ class Set:
     abbr: str
     tcgdate: int
     ocgdate: int
-    contents: list[Card]
+    contents: list[int]
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -29,7 +28,7 @@ class Set:
 
         return Counter(
             yugidb.get_archetype_by_id(archid)
-            for card in self.contents
+            for card in yugidb.get_cards_by_ids(self.contents)
             for archid in set(card.archetypes + card.support)
         ).items()
 

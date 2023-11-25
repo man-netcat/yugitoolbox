@@ -159,11 +159,11 @@ class YugiDB:
             ]
 
             for arch in card.archetypes:
-                YugiDB.arch_data[arch].cards.append(card)
+                YugiDB.arch_data[arch].cards.append(card.id)
             for arch in card.support:
-                YugiDB.arch_data[arch].support.append(card)
+                YugiDB.arch_data[arch].support.append(card.id)
             for arch in card.related:
-                YugiDB.arch_data[arch].related.append(card)
+                YugiDB.arch_data[arch].related.append(card.id)
 
     @staticmethod
     def _build_set_db(con):
@@ -194,7 +194,7 @@ class YugiDB:
                 set["tcgdate"],
                 set["ocgdate"],
                 [
-                    YugiDB.card_data[int(id)]
+                    int(id)
                     for id in set["cardids"].split(",")
                     if int(id) in YugiDB.card_data
                 ],
@@ -203,8 +203,8 @@ class YugiDB:
         }
 
         for set in YugiDB.set_data.values():
-            for card in set.contents:
-                card.sets.append(set.id)
+            for cardid in set.contents:
+                YugiDB.card_data[cardid].sets.append(set.id)
 
     @staticmethod
     def _load_objects():
