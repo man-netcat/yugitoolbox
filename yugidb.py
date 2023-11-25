@@ -389,8 +389,12 @@ class YugiDB:
             for card in self.get_cards()
             if any(card_name in card.text for card_name in given_cards)
             or any(
-                arch in set(card.related + card.support + card.archetypes)
-                for arch in given_archetypes
+                arch_name
+                in [
+                    arch.name
+                    for arch in yugidb.get_archetypes_by_ids(card.combined_archetypes())
+                ]
+                for arch_name in given_archetypes
             )
         ]
 

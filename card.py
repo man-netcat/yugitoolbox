@@ -36,7 +36,7 @@ class Card:
 
     def __str__(self) -> str:
         if Type.Monster in self.type:
-            return f"{self.name} ({self.id}): {self._levelstr()} {self.attribute} {self.race} {' '.join(reversed([type.name for type in self.type]))}"
+            return f"{self.name} ({self.id}): {self._levelstr()} {self.attribute.name} {self.race.name} {' '.join(reversed([type.name for type in self.type]))}"
         else:
             return f"{self.name} ({self.id}): {'Normal ' if len(self.type) == 1 else ''}{' '.join(reversed([type.name for type in self.type]))}"
 
@@ -146,3 +146,6 @@ class Card:
                 for card1, card2 in zip([handcard, deckcard], [deckcard, addcard])
             ]
         )
+
+    def combined_archetypes(self) -> list[int]:
+        return list(set(self.archetypes + self.support + self.related))

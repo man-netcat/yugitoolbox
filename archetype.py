@@ -19,3 +19,6 @@ class Archetype:
 
     def __str__(self) -> str:
         return self.name
+
+    def combined_cards(self) -> list[Card]:
+        return list(set(self.cards + self.support + self.related))
