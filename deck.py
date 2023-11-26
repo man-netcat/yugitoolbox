@@ -17,7 +17,6 @@ class Deck:
     main: list[tuple[Card, int]]
     extra: list[tuple[Card, int]]
     side: list[tuple[Card, int]]
-    isvalid: bool
 
     def __str__(self) -> str:
         def format_deck_section(
@@ -36,6 +35,16 @@ class Deck:
 
     def __repr__(self) -> str:
         return self.name if self.name else "Anonymous Deck"
+
+    def is_valid(self) -> bool:
+        return all(
+            [
+                sum([count for _, count in self.main]) >= 40,
+                sum([count for _, count in self.main]) <= 60,
+                sum([count for _, count in self.extra]) <= 15,
+                sum([count for _, count in self.side]) <= 15,
+            ]
+        ) and all([count <= 3 for _, count in self.main + self.extra + self.side])
 
     @staticmethod
     def from_omegacode(code: str, name: str = "") -> Deck:
@@ -63,16 +72,61 @@ class Deck:
             (card, count) for card, count in main_extra if card.is_extra_deck_monster()
         ]
         side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
-        isvalid = all(
-            [
-                sum([count for _, count in main]) >= 40,
-                sum([count for _, count in main]) <= 60,
-                sum([count for _, count in extra]) <= 15,
-                sum([count for _, count in side]) <= 15,
-            ]
-        ) and all([count <= 3 for _, count in main + extra + side])
+        return Deck(name, main, extra, side)
 
-        return Deck(name, main, extra, side, isvalid)
+    def to_omegacode(self) -> str:
+        def encode_card_tuples(cards: list[tuple[Card, int]]) -> bytes:
+            return b"".join(
+                card.id.to_bytes(4, byteorder="little") * count for card, count in cards
+            )
+
+        main_size = len(self.main)
+        side_size = len(self.side)
+
+        main_extra_bytes = encode_card_tuples(self.main + self.extra)
+        side_bytes = encode_card_tuples(self.side)
+
+        deck_bytes = (
+            main_size.to_bytes(2, byteorder="big")
+            + side_size.to_bytes(2, byteorder="big")
+            + main_extra_bytes
+            + side_bytes
+        )
+
+        return base64.b64encode(zlib.compress(deck_bytes, level=-1)).decode()
+
+    @staticmethod
+    def from_ydke(ydke: str, name: str = "") -> Deck:
+        from yugitoolbox import yugidb
+
+        def decode_component(component: str) -> list[tuple[Card, int]]:
+            passcodes_bytes = base64.b64decode(component)
+            passcodes = [
+                int.from_bytes(passcodes_bytes[i : i + 4], byteorder="little")
+                for i in range(0, len(passcodes_bytes), 4)
+            ]
+            card_counts = Counter(passcodes)
+            return [
+                (yugidb.get_cards_by_value(by="id", value=card_id)[0], count)
+                for card_id, count in card_counts.items()
+            ]
+
+        return Deck(name, *map(decode_component, ydke[len("ydke://") :].split("!")[:3]))
+
+    def to_ydke(self) -> str:
+        def encode_component(cards: list[tuple[Card, int]]) -> str:
+            return base64.b64encode(
+                b"".join(
+                    card.id.to_bytes(4, byteorder="little") * count
+                    for card, count in cards
+                )
+            ).decode()
+
+        return (
+            "ydke://"
+            + "!".join(map(encode_component, [self.main, self.extra, self.side]))
+            + "!"
+        )
 
     def small_world_triples(self) -> list[tuple[Card, ...]]:
         md_cards = [
