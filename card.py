@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
 from .enums import Attribute, Category, LinkMarker, Race, Type
 
@@ -36,7 +37,7 @@ class Card:
 
     def __str__(self) -> str:
         if Type.Monster in self.type:
-            return f"{self.name} ({self.id}): {self._levelstr()} {self.attribute.name} {self.race.name} {' '.join(reversed([type.name for type in self.type]))}"
+            return f"{self.name} ({self.id}): {self._levelstr()} {self.get_attr()} {self.get_race()} {' '.join(reversed([type.name for type in self.type]))}"
         else:
             return f"{self.name} ({self.id}): {'Normal ' if len(self.type) == 1 else ''}{' '.join(reversed([type.name for type in self.type]))}"
 
@@ -149,3 +150,33 @@ class Card:
 
     def combined_archetypes(self) -> list[int]:
         return list(set(self.archetypes + self.support + self.related))
+
+    def get_script(self) -> Optional[str]:
+        import requests
+
+        base_url = "https://raw.githubusercontent.com/Fluorohydride/ygopro-scripts/master/c%s.lua"
+        r = requests.get(base_url % self.id)
+        return r.text if r.ok else None
+
+    def get_trivia(self) -> Optional[str]:
+        from urllib.parse import quote
+
+        import requests
+        from bs4 import BeautifulSoup
+        from fake_useragent import UserAgent
+
+        ua = UserAgent()
+        base_url = "https://yugipedia.com/wiki/Card_Trivia:%s"
+        card_url = base_url % quote(self.name)
+        r = requests.get(card_url, headers={"User-Agent": ua.random})
+        if not r.ok:
+            return None
+        soup = BeautifulSoup(r.content, "html.parser")
+        result = soup.select_one("#mw-content-text > div")
+        if not result:
+            return None
+        div_elements = result.find_all("div")
+        for div_element in div_elements:
+            div_element.extract()
+
+        return result.text if result else None
