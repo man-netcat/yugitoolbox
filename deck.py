@@ -23,8 +23,9 @@ class Deck:
         def format_deck_section(
             cards: list[tuple[Card, int]], section_name: str
         ) -> str:
-            return f"{section_name}:\n" + "\n".join(
-                [f"  {card} x{count}" for card, count in cards]
+            return (
+                f"{section_name} ({sum([count for _, count in cards])} cards):\n"
+                + "\n".join([f"  {card} x{count}" for card, count in cards])
             )
 
         main_str = format_deck_section(self.main, "Main Deck")
@@ -100,6 +101,15 @@ class Deck:
             (arch, count / self.total_cards() * 100)
             for arch, count in self.get_archetype_counts()
         ]
+
+    def total_main(self) -> int:
+        return sum(count for _, count in self.main)
+
+    def total_extra(self) -> int:
+        return sum(count for _, count in self.extra)
+
+    def total_side(self) -> int:
+        return sum(count for _, count in self.side)
 
     def all_cards(self) -> list[tuple[Card, int]]:
         return self.main + self.extra + self.side
