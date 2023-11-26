@@ -58,7 +58,14 @@ class YugiDB:
             return lscale, rscale, level
 
         cards: list[dict] = pd.read_sql_query(
-            "SELECT * FROM datas INNER JOIN texts USING(id)",
+            """
+            SELECT *
+            FROM datas
+            INNER JOIN texts
+            USING(id)
+            LEFT JOIN koids
+            USING(id)
+            """,
             con,
         ).to_dict(orient="records")
         YugiDB.card_data: dict[int, Card] = {}
@@ -106,6 +113,7 @@ class YugiDB:
                 card["support"],
                 card["alias"],
                 not math.isnan(card["script"]),
+                card["koid"],
             )
             YugiDB.card_data[card["id"]] = card_data
 
