@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-from .enums import Attribute, Category, LinkMarker, Race, Type
+from .enums import Attribute, Category, LinkMarker, Race, Type, OT
 
 
 @dataclass()
@@ -181,3 +181,22 @@ class Card:
             div_element.extract()
 
         return result.text if result else None
+
+    def get_rulings(self) -> Optional[tuple[str, str]]:
+        konami_rush_db_base_url = "https://www.db.yugioh-card.com/rushdb/card_search.action?ope=2&cid=%s&request_locale=ja"
+        konami_rush_faq_base_url = "https://www.db.yugioh-card.com/rushdb/faq_search.action?ope=4&cid=%s&request_locale=ja"
+        konami_db_base_url = "https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=%s&request_locale=%s"
+        ygorganisation_base_url = "https://db.ygorganization.com/card#%s:%s"
+
+        if self.koid:
+            if self.is_rush():
+                database_url = konami_rush_db_base_url % self.koid
+                faq_url = konami_rush_faq_base_url % self.koid
+            else:
+                if self.ot == OT.OCG:
+                    db_locale = "ja"
+                else:
+                    db_locale = "en"
+                database_url = konami_db_base_url % (self.koid, db_locale)
+                faq_url = ygorganisation_base_url % (self.koid, "en")
+            return database_url, faq_url
