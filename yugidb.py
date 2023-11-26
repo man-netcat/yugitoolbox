@@ -113,7 +113,7 @@ class YugiDB:
                 card["support"],
                 card["alias"],
                 not math.isnan(card["script"]),
-                card["koid"],
+                int(card["koid"]) if not math.isnan(card["koid"]) else 0,
             )
             YugiDB.card_data[card["id"]] = card_data
 
