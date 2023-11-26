@@ -333,6 +333,18 @@ class YugiDB:
     def get_cards_by_query(self, query: Callable[[Card], bool]):
         return [card for card in self.get_cards() if query(card)]
 
+    def get_cards_fuzzy(self, fuzzy_string: str) -> list[tuple[Card, float]]:
+        from jaro import jaro_winkler_metric
+
+        return sorted(
+            [
+                (card, jaro_winkler_metric(card.name, fuzzy_string))
+                for card in self.get_cards()
+            ],
+            key=lambda x: x[1],
+            reverse=True,
+        )[:20]
+
     def get_set_by_id(self, id: int) -> Set:
         return self.set_data[id]
 
