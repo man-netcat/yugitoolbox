@@ -5,10 +5,11 @@ import zlib
 from collections import Counter
 from dataclasses import dataclass
 from itertools import permutations
-from typing import ItemsView
+from typing import TYPE_CHECKING, ItemsView
 
-from .archetype import Archetype
-from .card import Card
+if TYPE_CHECKING:
+    from .archetype import Archetype
+    from .card import Card
 
 
 @dataclass()

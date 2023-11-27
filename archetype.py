@@ -1,4 +1,10 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .card import Card
 
 
 @dataclass()
@@ -20,3 +26,18 @@ class Archetype:
 
     def combined_cards(self) -> list[int]:
         return list(set(self.cards + self.support + self.related))
+
+    def get_cards(self) -> list[Card]:
+        from .yugidb import yugidb
+
+        return [yugidb.get_card_by_id(id) for id in self.cards]
+
+    def get_support(self) -> list[Card]:
+        from .yugidb import yugidb
+
+        return [yugidb.get_card_by_id(id) for id in self.support]
+
+    def get_related(self) -> list[Card]:
+        from .yugidb import yugidb
+
+        return [yugidb.get_card_by_id(id) for id in self.related]

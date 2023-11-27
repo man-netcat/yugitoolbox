@@ -1,8 +1,14 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from .enums import Attribute, Category, LinkMarker, Race, Type, OT
+from .enums import OT, Attribute, Category, LinkMarker, Race, Type
+
+if TYPE_CHECKING:
+    from .archetype import Archetype
+    from .set import Set
 
 
 @dataclass()
@@ -65,6 +71,26 @@ class Card:
 
     def get_categories(self) -> list[str]:
         return [category.name for category in self.category]
+
+    def get_archetypes(self) -> list[Archetype]:
+        from .yugidb import yugidb
+
+        return [yugidb.get_archetype_by_id(id) for id in self.archetypes]
+
+    def get_support(self) -> list[Archetype]:
+        from .yugidb import yugidb
+
+        return [yugidb.get_archetype_by_id(id) for id in self.support]
+
+    def get_related(self) -> list[Archetype]:
+        from .yugidb import yugidb
+
+        return [yugidb.get_archetype_by_id(id) for id in self.related]
+
+    def get_sets(self) -> list["Set"]:
+        from .yugidb import yugidb
+
+        return [yugidb.get_set_by_id(id) for id in self.sets]
 
     def get_linkmarkers(self) -> list[str]:
         return [marker.name for marker in self.linkmarkers]
@@ -130,9 +156,7 @@ class Card:
         return Type.Monster in self.type and not self.is_extra_deck_monster()
 
     @staticmethod
-    def compare_small_world(
-        handcard: "Card", deckcard: "Card", addcard: "Card"
-    ) -> bool:
+    def compare_small_world(handcard: Card, deckcard: Card, addcard: Card) -> bool:
         return all(
             [
                 sum(

@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from collections import Counter
 from dataclasses import dataclass
-from typing import ItemsView
+from typing import TYPE_CHECKING, ItemsView
 
-from .archetype import Archetype
+if TYPE_CHECKING:
+    from .archetype import Archetype
+    from .card import Card
 
 
 @dataclass()
@@ -22,6 +26,11 @@ class Set:
 
     def __repr__(self) -> str:
         return self.name
+
+    def get_cards(self) -> list[Card]:
+        from .yugidb import yugidb
+
+        return [yugidb.get_card_by_id(id) for id in self.contents]
 
     def get_archetype_counts(self) -> ItemsView[Archetype, int]:
         from yugitoolbox import yugidb
