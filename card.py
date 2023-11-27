@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from .enums import OT, Attribute, Category, LinkMarker, Race, Type
+from .enums import OT, Attribute, Category, Genre, LinkMarker, Race, Type
 
 if TYPE_CHECKING:
     from .archetype import Archetype
@@ -19,6 +19,7 @@ class Card:
     race: Race
     attribute: Attribute
     category: list[Category]
+    genre: list[Genre]
     level: int
     lscale: int
     rscale: int

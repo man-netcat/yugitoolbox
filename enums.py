@@ -117,6 +117,45 @@ class Category(IntFlag):
     SC = 0x400000
 
 
+class Genre(IntFlag):
+    STDestroy = 0x1
+    DestroyMonster = 0x2
+    Banish = 0x4
+    Graveyard = 0x8
+    BacktoHand = 0x10
+    BacktoDeck = 0x20
+    DestroyHand = 0x40
+    DestroyDeck = 0x80
+    Draw = 0x100
+    Search = 0x200
+    Recovery = 0x400
+    Position = 0x800
+    Control = 0x1000
+    ChangeATKDEF = 0x2000
+    Piercing = 0x4000
+    RepeatAttack = 0x8000
+    LimitAttack = 0x10000
+    DirectAttack = 0x20000
+    SpecialSummon = 0x40000
+    Token = 0x80000
+    TypeRelated = 0x100000
+    AttributeRelated = 0x200000
+    DamageLP = 0x400000
+    RecoverLP = 0x800000
+    Destroy = 0x1000000
+    Select = 0x2000000
+    Counter = 0x4000000
+    Gamble = 0x8000000
+    FusionRelated = 0x10000000
+    TunerRelated = 0x20000000
+    XyzRelated = 0x40000000
+    NegateEffect = 0x80000000
+    RitualRelated = 0x100000000
+    PendulumRelated = 0x200000000
+    LinkRelated = 0x400000000
+    HandTrap = 0x800000000
+
+
 class OT(IntEnum):
     OCG = 1
     TCG = 2

@@ -75,6 +75,7 @@ class YugiDB:
             card_race = Race(card["race"])
             card_attribute = Attribute(card["attribute"])
             card_category = apply_enum(card["category"], Category)
+            card_genre = apply_enum(card["genre"], Genre)
 
             if card["type"] & Type.Pendulum:
                 card_lscale, card_rscale, card_level = parse_pendulum(card["level"])
@@ -95,6 +96,7 @@ class YugiDB:
                 card_race,
                 card_attribute,
                 card_category,
+                card_genre,
                 card_level,
                 card_lscale,
                 card_rscale,
