@@ -1,311 +1,24 @@
 from __future__ import annotations
 
-import math
 import os
 import pickle
 import sqlite3
-from datetime import datetime
-from typing import Callable, ValuesView
-
-import pandas as pd
-import requests
+from abc import abstractmethod
+from collections import Counter
+from typing import Callable, ItemsView, ValuesView
 
 from .archetype import Archetype
 from .card import Card
-from .enums import *
+from .enums import OT, Type
 from .set import Set
-
-OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
-DB_DIR = "db"
 
 
 class YugiDB:
-    _instance = None
-    arch_data: dict[int, Archetype] = {}
-    card_data: dict[int, Card] = {}
-    set_data: dict[int, Set] = {}
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(YugiDB, cls).__new__(cls)
-            cls._instance._initialised = False
-        return cls._instance
-
-    def __init__(self):
-        if self._initialised:
-            return
-
-        self._initialised = True
-        YugiDB._update_db()
-        YugiDB._load_objects()
-
-    @staticmethod
-    def _build_card_db(con):
-        def make_datetime(timestamp: int):
-            try:
-                dt = datetime.fromtimestamp(timestamp)
-            except:
-                dt = None
-            return dt
-
-        def apply_enum(value: int, enum_class):
-            return [enum_member for enum_member in enum_class if value & enum_member]
-
-        def parse_pendulum(value: int):
-            lscale = (value & 0xFF000000) >> 24
-            rscale = (value & 0x00FF0000) >> 16
-            level = value & 0x0000FFFF
-            return lscale, rscale, level
-
-        cards: list[dict] = pd.read_sql_query(
-            """
-            SELECT *
-            FROM datas
-            INNER JOIN texts
-            USING(id)
-            LEFT JOIN koids
-            USING(id)
-            """,
-            con,
-        ).to_dict(orient="records")
-        YugiDB.card_data: dict[int, Card] = {}
-
-        for card in cards:
-            card_type = apply_enum(card["type"], Type)
-            card_race = Race(card["race"])
-            card_attribute = Attribute(card["attribute"])
-            card_category = apply_enum(card["category"], Category)
-            card_genre = apply_enum(card["genre"], Genre)
-
-            if card["type"] & Type.Pendulum:
-                card_lscale, card_rscale, card_level = parse_pendulum(card["level"])
-            else:
-                card_lscale, card_rscale, card_level = 0, 0, card["level"]
-
-            if card["type"] & Type.Link:
-                card_def = 0
-                card_markers = apply_enum(card["def"], LinkMarker)
-            else:
-                card_def = card["def"]
-                card_markers = []
-
-            card_data = Card(
-                card["id"],
-                card["name"],
-                card_type,
-                card_race,
-                card_attribute,
-                card_category,
-                card_genre,
-                card_level,
-                card_lscale,
-                card_rscale,
-                card["atk"],
-                card_def,
-                card_markers,
-                card["desc"],
-                [],
-                [],
-                [],
-                [],
-                make_datetime(card["tcgdate"]),
-                make_datetime(card["ocgdate"]),
-                card["ot"],
-                card["setcode"],
-                card["support"],
-                card["alias"],
-                not math.isnan(card["script"]),
-                int(card["koid"]) if not math.isnan(card["koid"]) else 0,
-            )
-            YugiDB.card_data[card["id"]] = card_data
-
-    @staticmethod
-    def _build_archetype_db(con):
-        archetypes = pd.read_sql_query(
-            """
-            SELECT name,
-                CASE
-                    WHEN officialcode > 0 THEN officialcode
-                    ELSE betacode
-                END AS archcode 
-            FROM setcodes
-            WHERE (officialcode > 0 AND betacode = officialcode) OR (officialcode = 0 AND betacode > 0);
-            """,
-            con,
-        ).to_dict(orient="records")
-
-        YugiDB.arch_data = {
-            arch["archcode"]: Archetype(
-                arch["archcode"],
-                arch["name"],
-                [],
-                [],
-                [],
-            )
-            for arch in archetypes
-        }
-
-        def split_chunks(n: int, nchunks: int):
-            return [(n >> (16 * i)) & 0xFFFF for i in range(nchunks)]
-
-        for card in YugiDB.card_data.values():
-            card.archetypes = [
-                arch["archcode"]
-                for chunk in split_chunks(card.archcode, 4)
-                for arch in archetypes
-                if arch["archcode"] == chunk
-            ]
-            card.support = [
-                arch["archcode"]
-                for chunk in split_chunks(card.supportcode, 2)
-                for arch in archetypes
-                if arch["archcode"] == chunk
-            ]
-            card.related = [
-                arch["archcode"]
-                for chunk in split_chunks(card.supportcode >> 32, 2)
-                for arch in archetypes
-                if arch["archcode"] == chunk
-            ]
-
-            for arch in card.archetypes:
-                YugiDB.arch_data[arch].cards.append(card.id)
-            for arch in card.support:
-                YugiDB.arch_data[arch].support.append(card.id)
-            for arch in card.related:
-                YugiDB.arch_data[arch].related.append(card.id)
-
-    @staticmethod
-    def _build_set_db(con):
-        sets = pd.read_sql_query(
-            """
-            SELECT
-                packs.id,
-                packs.abbr,
-                packs.name,
-                packs.ocgdate,
-                packs.tcgdate,
-                GROUP_CONCAT(relations.cardid) AS cardids
-            FROM
-                packs
-            JOIN
-                relations ON packs.id = relations.packid
-            GROUP BY
-                packs.name;
-            """,
-            con,
-        ).to_dict(orient="records")
-
-        YugiDB.set_data = {
-            set["id"]: Set(
-                set["id"],
-                set["name"],
-                set["abbr"],
-                set["tcgdate"],
-                set["ocgdate"],
-                [
-                    int(id)
-                    for id in set["cardids"].split(",")
-                    if int(id) in YugiDB.card_data
-                ],
-            )
-            for set in sets
-        }
-
-        for set in YugiDB.set_data.values():
-            for cardid in set.contents:
-                YugiDB.card_data[cardid].sets.append(set.id)
-
-    @staticmethod
-    def _load_objects():
-        if not all(
-            [
-                os.path.exists(file)
-                for file in [
-                    "db/cards.pkl",
-                    "db/sets.pkl",
-                    "db/archetypes.pkl",
-                ]
-            ]
-        ):
-            YugiDB._build_objects()
-        with open("db/cards.pkl", "rb") as file:
-            YugiDB.card_data = pickle.load(file)
-        with open("db/archetypes.pkl", "rb") as file:
-            YugiDB.arch_data = pickle.load(file)
-        with open("db/sets.pkl", "rb") as file:
-            YugiDB.set_data = pickle.load(file)
-
-    @staticmethod
-    def _build_pickles():
-        print("Pickling pickles...")
-        if not os.path.exists("db"):
-            os.mkdir("db")
-        with open("db/cards.pkl", "wb") as file:
-            pickle.dump(YugiDB.card_data, file)
-        with open("db/archetypes.pkl", "wb") as file:
-            pickle.dump(YugiDB.arch_data, file)
-        with open("db/sets.pkl", "wb") as file:
-            pickle.dump(YugiDB.set_data, file)
-
-    @staticmethod
-    def _build_objects():
-        with sqlite3.connect("db/cards.db") as con:
-            print("Building card db...")
-            YugiDB._build_card_db(con)
-            print("Building archetype db...")
-            YugiDB._build_archetype_db(con)
-            print("Building set db...")
-            YugiDB._build_set_db(con)
-        YugiDB._build_pickles()
-
-    @staticmethod
-    def _update_db(force_update: bool = False):
-        def download(url: str, path: str):
-            r = requests.get(url, allow_redirects=True)
-            r.raise_for_status()
-            with open(path, "wb") as f:
-                f.write(r.content)
-
-        db_url = os.path.join(OMEGA_BASE_URL, "OmegaDB.cdb")
-        db_path = os.path.join(DB_DIR, "cards.db")
-        hash_url = os.path.join(OMEGA_BASE_URL, "Database.hash")
-        hash_path = os.path.join(DB_DIR, "cards.hash")
-
-        if not os.path.exists("db"):
-            os.mkdir("db")
-
-        if os.path.exists("db/cards.db") and not force_update:
-            if os.path.exists("db/cards.hash"):
-                with open("db/cards.hash") as f:
-                    old_hash = f.read()
-            else:
-                old_hash = None
-
-            try:
-                download(hash_url, hash_path)
-            except requests.ConnectionError:
-                print("Failed to get current Hash, skipping update.")
-                return
-
-            with open("db/cards.hash") as f:
-                new_hash = f.read()
-
-            if old_hash == new_hash:
-                return
-            else:
-                print("A new version of the database is available.")
-                user_response = input(
-                    "Do you want to update the database? (y/n): "
-                ).lower()
-                if user_response != "y":
-                    print("Skipping database update.")
-                    return
-
-        print("Downloading up-to-date db...")
-        download(db_url, db_path)
-        download(hash_url, hash_path)
-        YugiDB._build_objects()
+    card_data: dict[int, Card]
+    arch_data: dict[int, Archetype]
+    set_data: dict[int, Set]
+    name: str
+    dbpath: str
 
     def get_cards(self) -> ValuesView[Card]:
         return self.card_data.values()
@@ -414,7 +127,7 @@ class YugiDB:
                 arch_name
                 in [
                     arch.name
-                    for arch in yugidb.get_archetypes_by_ids(card.combined_archetypes())
+                    for arch in self.get_archetypes_by_ids(card.combined_archetypes())
                 ]
                 for arch_name in given_archetypes
             )
@@ -443,5 +156,104 @@ class YugiDB:
             )
         ]
 
+    def get_card_archetypes(self, card: Card) -> list[Archetype]:
+        return [self.get_archetype_by_id(id) for id in card.archetypes]
 
-yugidb = YugiDB()
+    def get_card_support(self, card: Card) -> list[Archetype]:
+        return [self.get_archetype_by_id(id) for id in card.support]
+
+    def get_card_related(self, card: Card) -> list[Archetype]:
+        return [self.get_archetype_by_id(id) for id in card.related]
+
+    def get_card_sets(self, card: Card) -> list[Set]:
+        return [self.get_set_by_id(id) for id in card.sets]
+
+    def get_archetype_cards(self, arch: Archetype) -> list[Card]:
+        return [self.get_card_by_id(id) for id in arch.cards]
+
+    def get_archetype_support(self, arch: Archetype) -> list[Card]:
+        return [self.get_card_by_id(id) for id in arch.support]
+
+    def get_archetype_related(self, arch: Archetype) -> list[Card]:
+        return [self.get_card_by_id(id) for id in arch.related]
+
+    def get_set_cards(self, set: Set) -> list[Card]:
+        return [self.get_card_by_id(id) for id in set.contents]
+
+    def get_set_archetype_counts(self, set_: Set) -> ItemsView[Archetype, int]:
+        return Counter(
+            self.get_archetype_by_id(archid)
+            for card in self.get_cards_by_ids(set_.contents)
+            for archid in set(card.archetypes + card.support)
+        ).items()
+
+    def get_set_archetype_ratios(self, set_: Set) -> list[tuple[Archetype, float]]:
+        return [
+            (archid, count / set_.set_total() * 100)
+            for archid, count in self.get_set_archetype_counts(set_)
+        ]
+
+    def _set_paths(self):
+        self.dbdir = os.path.dirname(self.dbpath)
+        self.cardpkl = os.path.join(self.dbdir, "cards.pkl")
+        self.setspkl = os.path.join(self.dbdir, "sets.pkl")
+        self.archpkl = os.path.join(self.dbdir, "archetypes.pkl")
+
+    def _load_objects(self):
+        if not all(
+            [
+                os.path.exists(file)
+                for file in [
+                    self.cardpkl,
+                    self.setspkl,
+                    self.archpkl,
+                ]
+            ]
+        ):
+            self._build_objects()
+        with open(self.cardpkl, "rb") as file:
+            self.card_data = pickle.load(file)
+        with open(self.archpkl, "rb") as file:
+            self.arch_data = pickle.load(file)
+        with open(self.setspkl, "rb") as file:
+            self.set_data = pickle.load(file)
+
+    def save_pickles(self):
+        print(f"Pickling pickles for {self.name}...")
+        if not os.path.exists("db"):
+            os.mkdir("db")
+        with open(self.cardpkl, "wb") as file:
+            pickle.dump(self.card_data, file)
+        with open(self.archpkl, "wb") as file:
+            pickle.dump(self.arch_data, file)
+        with open(self.setspkl, "wb") as file:
+            pickle.dump(self.set_data, file)
+
+    def _build_objects(self):
+        with sqlite3.connect(self.dbpath) as con:
+            print(f"Building card db for {self.name}...")
+            self._build_card_db(con)
+            print(f"Building archetype db for {self.name}...")
+            self._build_archetype_db(con)
+            print(f"Building set db for {self.name}...")
+            self._build_set_db(con)
+        self.save_pickles()
+
+    def clean(self):
+        for file_name in os.listdir(self.dbdir):
+            file_path = os.path.join(self.dbdir, file_name)
+            file_path = file_path.replace("\\", "/")
+            if file_path != self.dbpath:
+                os.remove(file_path)
+
+    @abstractmethod
+    def _build_card_db(self, con):
+        pass
+
+    @abstractmethod
+    def _build_archetype_db(self, con):
+        pass
+
+    @abstractmethod
+    def _build_set_db(self, con):
+        pass

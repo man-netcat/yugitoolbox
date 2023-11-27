@@ -9,6 +9,7 @@ from .enums import OT, Attribute, Category, Genre, LinkMarker, Race, Type
 if TYPE_CHECKING:
     from .archetype import Archetype
     from .set import Set
+    from .yugidb import YugiDB
 
 
 @dataclass()
@@ -38,7 +39,9 @@ class Card:
     supportcode: int
     alias: int
     scripted: bool
+    script: str
     koid: int
+    db: YugiDB
 
     def __hash__(self):
         return hash(self.name)
@@ -74,24 +77,16 @@ class Card:
         return [category.name for category in self.category]
 
     def get_archetypes(self) -> list[Archetype]:
-        from .yugidb import yugidb
-
-        return [yugidb.get_archetype_by_id(id) for id in self.archetypes]
+        return [self.db.get_archetype_by_id(id) for id in self.archetypes]
 
     def get_support(self) -> list[Archetype]:
-        from .yugidb import yugidb
-
-        return [yugidb.get_archetype_by_id(id) for id in self.support]
+        return [self.db.get_archetype_by_id(id) for id in self.support]
 
     def get_related(self) -> list[Archetype]:
-        from .yugidb import yugidb
-
-        return [yugidb.get_archetype_by_id(id) for id in self.related]
+        return [self.db.get_archetype_by_id(id) for id in self.related]
 
     def get_sets(self) -> list["Set"]:
-        from .yugidb import yugidb
-
-        return [yugidb.get_set_by_id(id) for id in self.sets]
+        return [self.db.get_set_by_id(id) for id in self.sets]
 
     def get_linkmarkers(self) -> list[str]:
         return [marker.name for marker in self.linkmarkers]

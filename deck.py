@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, ItemsView
 if TYPE_CHECKING:
     from .archetype import Archetype
     from .card import Card
+    from .yugidb import YugiDB
 
 
 @dataclass()
@@ -18,6 +19,7 @@ class Deck:
     main: list[tuple[Card, int]]
     extra: list[tuple[Card, int]]
     side: list[tuple[Card, int]]
+    db: YugiDB
 
     def __str__(self) -> str:
         def format_deck_section(
@@ -48,12 +50,10 @@ class Deck:
         ) and all([count <= 3 for _, count in self.main + self.extra + self.side])
 
     @staticmethod
-    def from_omegacode(code: str, name: str = "") -> Deck:
-        from yugitoolbox import yugidb
-
+    def from_omegacode(db: YugiDB, code: str, name: str = "") -> Deck:
         def decode_card_tuples(start: int, end: int) -> list[tuple[Card, int]]:
             return [
-                (yugidb.get_cards_by_value(by="id", value=card_id)[0], count)
+                (db.get_cards_by_value(by="id", value=card_id)[0], count)
                 for card_id, count in Counter(
                     int.from_bytes(bytes_arr[i : i + 4], byteorder="little")
                     for i in range(start, end, 4)
@@ -73,7 +73,7 @@ class Deck:
             (card, count) for card, count in main_extra if card.is_extra_deck_monster()
         ]
         side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
-        return Deck(name, main, extra, side)
+        return Deck(name, main, extra, side, db)
 
     def to_omegacode(self):
         return base64.b64encode(
@@ -88,9 +88,7 @@ class Deck:
         ).decode()
 
     @staticmethod
-    def from_ydke(ydke: str, name: str = "") -> Deck:
-        from yugitoolbox import yugidb
-
+    def from_ydke(db: YugiDB, ydke: str, name: str = "") -> Deck:
         def decode_component(component: str) -> list[tuple[Card, int]]:
             passcodes_bytes = base64.b64decode(component)
             passcodes = [
@@ -99,11 +97,13 @@ class Deck:
             ]
             card_counts = Counter(passcodes)
             return [
-                (yugidb.get_cards_by_value(by="id", value=card_id)[0], count)
+                (db.get_cards_by_value(by="id", value=card_id)[0], count)
                 for card_id, count in card_counts.items()
             ]
 
-        return Deck(name, *map(decode_component, ydke[len("ydke://") :].split("!")[:3]))
+        main, extra, side = map(decode_component, ydke[len("ydke://") :].split("!")[:3])
+
+        return Deck(name, main, extra, side, db)
 
     def to_ydke(self) -> str:
         def encode_component(cards: list[tuple[Card, int]]) -> str:
@@ -134,10 +134,8 @@ class Deck:
         return valids
 
     def get_archetype_counts(self) -> ItemsView[Archetype, int]:
-        from yugitoolbox import yugidb
-
         return Counter(
-            yugidb.get_archetype_by_id(archid)
+            self.db.get_archetype_by_id(archid)
             for card, card_count in self.all_cards()
             for archid in card.archetypes * card_count
         ).items()

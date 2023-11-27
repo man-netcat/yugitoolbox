@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, ItemsView
 if TYPE_CHECKING:
     from .archetype import Archetype
     from .card import Card
+    from .yugidb import YugiDB
 
 
 @dataclass()
@@ -17,6 +18,7 @@ class Set:
     tcgdate: int
     ocgdate: int
     contents: list[int]
+    db: YugiDB
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -28,16 +30,12 @@ class Set:
         return self.name
 
     def get_cards(self) -> list[Card]:
-        from .yugidb import yugidb
-
-        return [yugidb.get_card_by_id(id) for id in self.contents]
+        return [self.db.get_card_by_id(id) for id in self.contents]
 
     def get_archetype_counts(self) -> ItemsView[Archetype, int]:
-        from yugitoolbox import yugidb
-
         return Counter(
-            yugidb.get_archetype_by_id(archid)
-            for card in yugidb.get_cards_by_ids(self.contents)
+            self.db.get_archetype_by_id(archid)
+            for card in self.db.get_cards_by_ids(self.contents)
             for archid in set(card.archetypes + card.support)
         ).items()
 
