@@ -74,26 +74,17 @@ class Deck:
         side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
         return Deck(name, main, extra, side)
 
-    def to_omegacode(self) -> str:
-        def encode_card_tuples(cards: list[tuple[Card, int]]) -> bytes:
-            return b"".join(
-                card.id.to_bytes(4, byteorder="little") * count for card, count in cards
+    def to_omegacode(self):
+        return base64.b64encode(
+            zlib.compress(
+                bytearray([self.total_main() + self.total_extra(), self.total_side()])
+                + b"".join(
+                    card.id.to_bytes(4, byteorder="big") * count
+                    for card, count in self.main + self.extra + self.side
+                ),
+                wbits=-15,
             )
-
-        main_size = len(self.main)
-        side_size = len(self.side)
-
-        main_extra_bytes = encode_card_tuples(self.main + self.extra)
-        side_bytes = encode_card_tuples(self.side)
-
-        deck_bytes = (
-            main_size.to_bytes(2, byteorder="big")
-            + side_size.to_bytes(2, byteorder="big")
-            + main_extra_bytes
-            + side_bytes
-        )
-
-        return base64.b64encode(zlib.compress(deck_bytes, level=-1)).decode()
+        ).decode()
 
     @staticmethod
     def from_ydke(ydke: str, name: str = "") -> Deck:
