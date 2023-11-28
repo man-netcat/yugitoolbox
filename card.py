@@ -41,7 +41,6 @@ class Card:
     scripted: bool
     script: str
     koid: int
-    db: YugiDB
 
     def __hash__(self):
         return hash(self.name)
@@ -76,17 +75,17 @@ class Card:
     def get_categories(self) -> list[str]:
         return [category.name for category in self.category]
 
-    def get_archetypes(self) -> list[Archetype]:
-        return [self.db.get_archetype_by_id(id) for id in self.archetypes]
+    def get_archetypes(self, db: YugiDB) -> list[Archetype]:
+        return [db.get_archetype_by_id(id) for id in self.archetypes]
 
-    def get_support(self) -> list[Archetype]:
-        return [self.db.get_archetype_by_id(id) for id in self.support]
+    def get_support(self, db: YugiDB) -> list[Archetype]:
+        return [db.get_archetype_by_id(id) for id in self.support]
 
-    def get_related(self) -> list[Archetype]:
-        return [self.db.get_archetype_by_id(id) for id in self.related]
+    def get_related(self, db: YugiDB) -> list[Archetype]:
+        return [db.get_archetype_by_id(id) for id in self.related]
 
-    def get_sets(self) -> list["Set"]:
-        return [self.db.get_set_by_id(id) for id in self.sets]
+    def get_sets(self, db: YugiDB) -> list["Set"]:
+        return [db.get_set_by_id(id) for id in self.sets]
 
     def get_linkmarkers(self) -> list[str]:
         return [marker.name for marker in self.linkmarkers]

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .card import Card
-    from .yugidb import YugiDB
+
 
 @dataclass()
 class Archetype:
@@ -14,7 +14,6 @@ class Archetype:
     cards: list[int]
     support: list[int]
     related: list[int]
-    db: YugiDB
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -28,11 +27,11 @@ class Archetype:
     def combined_cards(self) -> list[int]:
         return list(set(self.cards + self.support + self.related))
 
-    def get_cards(self) -> list[Card]:
-        return [self.db.get_card_by_id(id) for id in self.cards]
+    def get_cards(self, db) -> list[Card]:
+        return [db.get_card_by_id(id) for id in self.cards]
 
-    def get_support(self) -> list[Card]:
-        return [self.db.get_card_by_id(id) for id in self.support]
+    def get_support(self, db) -> list[Card]:
+        return [db.get_card_by_id(id) for id in self.support]
 
-    def get_related(self) -> list[Card]:
-        return [self.db.get_card_by_id(id) for id in self.related]
+    def get_related(self, db) -> list[Card]:
+        return [db.get_card_by_id(id) for id in self.related]

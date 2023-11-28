@@ -14,8 +14,7 @@ class CustomDB(YugiDB):
     def __init__(self, name, dbpath):
         self.name = name
         self.dbpath = dbpath
-        self._set_paths()
-        self._load_objects()
+        super().__init__()
 
     def _build_card_db(self, con):
         def make_datetime(timestamp: int):
@@ -92,7 +91,6 @@ class CustomDB(YugiDB):
                 card["script"] is not None,
                 card["script"],
                 0,
-                self,
             )
             self.card_data[card["id"]] = card_data
 
@@ -117,7 +115,6 @@ class CustomDB(YugiDB):
                 [],
                 [],
                 [],
-                self,
             )
             for arch in archetypes
         }

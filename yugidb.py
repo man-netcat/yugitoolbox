@@ -20,6 +20,57 @@ class YugiDB:
     name: str
     dbpath: str
 
+    def __init__(self):
+        if type(self) == YugiDB:
+            return
+
+        self.dbdir = os.path.dirname(self.dbpath)
+        self.cardpkl = os.path.join(self.dbdir, "cards.pkl")
+        self.setspkl = os.path.join(self.dbdir, "sets.pkl")
+        self.archpkl = os.path.join(self.dbdir, "archetypes.pkl")
+
+        if not os.path.exists(self.dbdir):
+            os.makedirs(self.dbdir)
+
+        if not all(
+            os.path.exists(file)
+            for file in [
+                self.cardpkl,
+                self.setspkl,
+                self.archpkl,
+            ]
+        ):
+            self._build_objects()
+        else:
+            self._load_objects()
+
+    def _build_objects(self):
+        with sqlite3.connect(self.dbpath) as con:
+            print(f"Building card db for {self.name}...")
+            self._build_card_db(con)
+            print(f"Building archetype db for {self.name}...")
+            self._build_archetype_db(con)
+            print(f"Building set db for {self.name}...")
+            self._build_set_db(con)
+        self.save_pickles()
+
+    def _load_objects(self):
+        with open(self.cardpkl, "rb") as file:
+            self.card_data = pickle.load(file)
+        with open(self.archpkl, "rb") as file:
+            self.arch_data = pickle.load(file)
+        with open(self.setspkl, "rb") as file:
+            self.set_data = pickle.load(file)
+
+    def save_pickles(self):
+        print(f"Pickling pickles for {self.name}...")
+        with open(self.cardpkl, "wb") as file:
+            pickle.dump(self.card_data, file)
+        with open(self.archpkl, "wb") as file:
+            pickle.dump(self.arch_data, file)
+        with open(self.setspkl, "wb") as file:
+            pickle.dump(self.set_data, file)
+
     def get_cards(self) -> ValuesView[Card]:
         return self.card_data.values()
 
@@ -193,58 +244,22 @@ class YugiDB:
             for archid, count in self.get_set_archetype_counts(set_)
         ]
 
-    def _set_paths(self):
-        self.dbdir = os.path.dirname(self.dbpath)
-        self.cardpkl = os.path.join(self.dbdir, "cards.pkl")
-        self.setspkl = os.path.join(self.dbdir, "sets.pkl")
-        self.archpkl = os.path.join(self.dbdir, "archetypes.pkl")
-
-    def _load_objects(self):
-        if not all(
-            [
-                os.path.exists(file)
-                for file in [
-                    self.cardpkl,
-                    self.setspkl,
-                    self.archpkl,
-                ]
-            ]
-        ):
-            self._build_objects()
-        with open(self.cardpkl, "rb") as file:
-            self.card_data = pickle.load(file)
-        with open(self.archpkl, "rb") as file:
-            self.arch_data = pickle.load(file)
-        with open(self.setspkl, "rb") as file:
-            self.set_data = pickle.load(file)
-
-    def save_pickles(self):
-        print(f"Pickling pickles for {self.name}...")
-        if not os.path.exists("db"):
-            os.mkdir("db")
-        with open(self.cardpkl, "wb") as file:
-            pickle.dump(self.card_data, file)
-        with open(self.archpkl, "wb") as file:
-            pickle.dump(self.arch_data, file)
-        with open(self.setspkl, "wb") as file:
-            pickle.dump(self.set_data, file)
-
-    def _build_objects(self):
-        with sqlite3.connect(self.dbpath) as con:
-            print(f"Building card db for {self.name}...")
-            self._build_card_db(con)
-            print(f"Building archetype db for {self.name}...")
-            self._build_archetype_db(con)
-            print(f"Building set db for {self.name}...")
-            self._build_set_db(con)
-        self.save_pickles()
-
     def clean(self):
         for file_name in os.listdir(self.dbdir):
             file_path = os.path.join(self.dbdir, file_name)
             file_path = file_path.replace("\\", "/")
             if file_path != self.dbpath:
                 os.remove(file_path)
+
+    @staticmethod
+    def merge(db1: YugiDB, db2: YugiDB, new_name: str, db_path: str):
+        new = YugiDB()
+        new.name = new_name
+        new.dbpath = db_path
+        new.card_data = db1.card_data | db2.card_data
+        new.arch_data = db1.arch_data | db2.arch_data
+        new.set_data = db1.set_data | db2.set_data
+        return new
 
     @abstractmethod
     def _build_card_db(self, con):

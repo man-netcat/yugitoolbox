@@ -22,11 +22,56 @@ class OmegaDB(YugiDB):
     def __init__(self):
         self.name = "OmegaDB"
         self.dbpath = "db/omega/omega.db"
-        self._set_paths()
         if not OmegaDB.initialised:
             self._download_omegadb()
             OmegaDB.initialised = True
-        self._load_objects()
+        super().__init__()
+
+    def _download_omegadb(self, force_update: bool = False):
+        def download(url: str, path: str):
+            r = requests.get(url, allow_redirects=True)
+            r.raise_for_status()
+            with open(path, "wb") as f:
+                f.write(r.content)
+
+        db_url = os.path.join(OMEGA_BASE_URL, "OmegaDB.cdb")
+        hash_url = os.path.join(OMEGA_BASE_URL, "Database.hash")
+        dbdir = os.path.dirname(self.dbpath)
+        hashpath = os.path.join(dbdir, "omega.hash")
+
+        if not os.path.exists(dbdir):
+            os.makedirs(dbdir)
+
+        if os.path.exists(self.dbpath) and not force_update:
+            if os.path.exists(hashpath):
+                with open(hashpath) as f:
+                    old_hash = f.read()
+            else:
+                old_hash = None
+
+            try:
+                download(hash_url, hashpath)
+            except requests.ConnectionError:
+                print("Failed to get current Hash, skipping update.")
+                return
+
+            with open(hashpath) as f:
+                new_hash = f.read()
+
+            if old_hash == new_hash:
+                return
+            else:
+                print("A new version of the Omega database is available.")
+                user_response = input(
+                    "Do you want to update the database? (y/n): "
+                ).lower()
+                if user_response != "y":
+                    print("Skipping database update.")
+                    return
+
+        print("Downloading up-to-date db...")
+        download(db_url, self.dbpath)
+        download(hash_url, hashpath)
 
     def _build_card_db(self, con):
         def make_datetime(timestamp: int):
@@ -105,7 +150,6 @@ class OmegaDB(YugiDB):
                 not math.isnan(card["script"]),
                 card["script"],
                 int(card["koid"]) if not math.isnan(card["koid"]) else 0,
-                self,
             )
             self.card_data[card["id"]] = card_data
 
@@ -130,7 +174,6 @@ class OmegaDB(YugiDB):
                 [],
                 [],
                 [],
-                self,
             )
             for arch in archetypes
         }
@@ -197,7 +240,6 @@ class OmegaDB(YugiDB):
                     for id in set["cardids"].split(",")
                     if int(id) in self.card_data
                 ],
-                self,
             )
             for set in sets
         }
@@ -205,49 +247,3 @@ class OmegaDB(YugiDB):
         for set in self.set_data.values():
             for cardid in set.contents:
                 self.card_data[cardid].sets.append(set.id)
-
-    def _download_omegadb(self, force_update: bool = False):
-        def download(url: str, path: str):
-            r = requests.get(url, allow_redirects=True)
-            r.raise_for_status()
-            with open(path, "wb") as f:
-                f.write(r.content)
-
-        db_url = os.path.join(OMEGA_BASE_URL, "OmegaDB.cdb")
-        hash_url = os.path.join(OMEGA_BASE_URL, "Database.hash")
-        hashpath = os.path.join(self.dbdir, "omega.hash")
-
-        if not os.path.exists("db"):
-            os.mkdir("db")
-
-        if os.path.exists(self.dbpath) and not force_update:
-            if os.path.exists(hashpath):
-                with open(hashpath) as f:
-                    old_hash = f.read()
-            else:
-                old_hash = None
-
-            try:
-                download(hash_url, hashpath)
-            except requests.ConnectionError:
-                print("Failed to get current Hash, skipping update.")
-                return
-
-            with open(hashpath) as f:
-                new_hash = f.read()
-
-            if old_hash == new_hash:
-                return
-            else:
-                print("A new version of the Omega database is available.")
-                user_response = input(
-                    "Do you want to update the database? (y/n): "
-                ).lower()
-                if user_response != "y":
-                    print("Skipping database update.")
-                    return
-
-        print("Downloading up-to-date db...")
-        download(db_url, self.dbpath)
-        download(hash_url, hashpath)
-        self._build_objects()
