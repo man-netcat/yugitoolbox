@@ -41,10 +41,10 @@ War Rock Meteoragon
 ... 
 Ancient Warriors - Heroic Zhao Long (210000229): Level 4 WIND BeastWarrior Effect Monster
 Ancient Warriors - Fabulous Zhang Jun (210708231): Level 6 FIRE BeastWarrior Effect Monster
-
-## Roadmap
-- Writing back to sqlite database
 Ancient Warriors - Headstrong Xiahou Rang (211306220): Level 7 FIRE BeastWarrior Effect Monster
 Ancient Warriors - Majestic Yuan Ben (212806202): Level 8 LIGHT BeastWarrior Effect Monster
 Ancient Warriors - Talented Cao Zi (212906226): Level 4 FIRE BeastWarrior Effect Monster
 ```
+
+## Roadmap
+- Writing back to sqlite database
