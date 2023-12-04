@@ -219,3 +219,8 @@ class Card:
                 database_url = konami_db_base_url % (self.koid, db_locale)
                 faq_url = ygorganisation_base_url % (self.koid, "en")
             return database_url, faq_url
+
+    def render(self, dir="out"):
+        from .cardrenderer import render_card
+
+        render_card(self, dir)
