@@ -46,3 +46,5 @@ Ancient Warriors - Talented Cao Zi (212906226): Level 4 FIRE BeastWarrior Effect
 
 ## Roadmap
 - Writing back to sqlite database
+- Rendering card images
+
