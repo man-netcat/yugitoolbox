@@ -15,8 +15,6 @@ Database wrapper and tools for Yu-Gi-Oh! databases.
 ```py
 >>> from yugitoolbox import OmegaDB
 >>> db = OmegaDB()
->>> db.get_card_by_id(10497636)   
-War Rock Meteoragon
 >>> card = db.get_card_by_id(10497636)
 >>> print(card)
 War Rock Meteoragon (10497636): Level 7 EARTH Warrior Effect Monster
