@@ -19,11 +19,11 @@ OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 class OmegaDB(YugiDB):
     initialised = False
 
-    def __init__(self):
+    def __init__(self, force_update: bool = False):
         self.name = "OmegaDB"
         self.dbpath = "db/omega/omega.db"
         if not OmegaDB.initialised:
-            self._download_omegadb()
+            self._download_omegadb(force_update)
             OmegaDB.initialised = True
         super().__init__()
 
@@ -123,33 +123,29 @@ class OmegaDB(YugiDB):
                 card_markers = []
 
             card_data = Card(
-                card["id"],
-                card["name"],
-                card_type,
-                card_race,
-                card_attribute,
-                card_category,
-                card_genre,
-                card_level,
-                card_lscale,
-                card_rscale,
-                card["atk"],
-                card_def,
-                card_markers,
-                card["desc"],
-                [],
-                [],
-                [],
-                [],
-                make_datetime(card["tcgdate"]),
-                make_datetime(card["ocgdate"]),
-                card["ot"],
-                card["setcode"],
-                card["support"],
-                card["alias"],
-                not math.isnan(card["script"]),
-                card["script"],
-                int(card["koid"]) if not math.isnan(card["koid"]) else 0,
+                id=card["id"],
+                name=card["name"],
+                type=card_type,
+                race=card_race,
+                attribute=card_attribute,
+                category=card_category,
+                genre=card_genre,
+                level=card_level,
+                lscale=card_lscale,
+                rscale=card_rscale,
+                atk=card["atk"],
+                def_=card_def,
+                linkmarkers=card_markers,
+                text=card["desc"],
+                tcgdate=make_datetime(card["tcgdate"]),
+                ocgdate=make_datetime(card["ocgdate"]),
+                ot=card["ot"],
+                archcode=card["setcode"],
+                supportcode=card["support"],
+                alias=card["alias"],
+                scripted=not math.isnan(card["script"]),
+                script=card["script"],
+                koid=int(card["koid"]) if not math.isnan(card["koid"]) else 0,
             )
             self.card_data[card["id"]] = card_data
 
@@ -169,11 +165,8 @@ class OmegaDB(YugiDB):
 
         self.arch_data: dict[int, Archetype] = {
             arch["archcode"]: Archetype(
-                arch["archcode"],
-                arch["name"],
-                [],
-                [],
-                [],
+                id=arch["archcode"],
+                name=arch["name"],
             )
             for arch in archetypes
         }
@@ -230,12 +223,12 @@ class OmegaDB(YugiDB):
 
         self.set_data: dict[int, Set] = {
             set["id"]: Set(
-                set["id"],
-                set["name"],
-                set["abbr"],
-                set["tcgdate"],
-                set["ocgdate"],
-                [
+                id=set["id"],
+                name=set["name"],
+                abbr=set["abbr"],
+                tcgdate=set["tcgdate"],
+                ocgdate=set["ocgdate"],
+                contents=[
                     int(id)
                     for id in set["cardids"].split(",")
                     if int(id) in self.card_data

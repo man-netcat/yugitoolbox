@@ -74,8 +74,8 @@ class Race(IntFlag):
     Illusion = 0x2000000
     Cyborg = 0x4000000
     MagicalKnight = 0x8000000
-    Hydragon = 0x10000000
-    OmegaPsycho = 0x20000000
+    Highdragon = 0x10000000
+    OmegaPsychic = 0x20000000
     CelestialKnight = 0x40000000
     Galaxy = -0x80000000
 

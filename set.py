@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ItemsView
 
 if TYPE_CHECKING:
@@ -15,9 +15,9 @@ class Set:
     id: int
     name: str
     abbr: str
-    tcgdate: int
-    ocgdate: int
-    contents: list[int]
+    tcgdate: int = 0
+    ocgdate: int = 0
+    contents: list[int] = field(default_factory=list)
 
     def __hash__(self) -> int:
         return hash(self.name)

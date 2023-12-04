@@ -64,33 +64,28 @@ class CustomDB(YugiDB):
                 card_markers = []
 
             card_data = Card(
-                card["id"],
-                card["name"],
-                card_type,
-                card_race,
-                card_attribute,
-                card_category,
-                card_genre,
-                card_level,
-                card_lscale,
-                card_rscale,
-                card["atk"],
-                card_def,
-                card_markers,
-                card["desc"],
-                [],
-                [],
-                [],
-                [],
-                make_datetime(card["tcgdate"]),
-                make_datetime(card["ocgdate"]),
-                card["ot"],
-                card["setcode"],
-                card["support"],
-                card["alias"],
-                card["script"] is not None,
-                card["script"],
-                0,
+                id=card["id"],
+                name=card["name"],
+                type=card_type,
+                race=card_race,
+                attribute=card_attribute,
+                category=card_category,
+                genre=card_genre,
+                level=card_level,
+                lscale=card_lscale,
+                rscale=card_rscale,
+                atk=card["atk"],
+                def_=card_def,
+                linkmarkers=card_markers,
+                text=card["desc"],
+                tcgdate=make_datetime(card["tcgdate"]),
+                ocgdate=make_datetime(card["ocgdate"]),
+                ot=card["ot"],
+                archcode=card["setcode"],
+                supportcode=card["support"],
+                alias=card["alias"],
+                scripted=card["script"] is not None,
+                script=card["script"],
             )
             self.card_data[card["id"]] = card_data
 
@@ -110,11 +105,8 @@ class CustomDB(YugiDB):
 
         self.arch_data: dict[int, Archetype] = {
             arch["archcode"]: Archetype(
-                arch["archcode"],
-                arch["name"],
-                [],
-                [],
-                [],
+                id=arch["archcode"],
+                name=arch["name"],
             )
             for arch in archetypes
         }

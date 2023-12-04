@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
@@ -16,31 +16,31 @@ if TYPE_CHECKING:
 class Card:
     id: int
     name: str
-    type: list[Type]
-    race: Race
-    attribute: Attribute
-    category: list[Category]
-    genre: list[Genre]
-    level: int
-    lscale: int
-    rscale: int
-    atk: int
-    def_: int
-    linkmarkers: list[LinkMarker]
-    text: str
-    archetypes: list[int]
-    support: list[int]
-    related: list[int]
-    sets: list[int]
-    tcgdate: datetime | None
-    ocgdate: datetime | None
-    ot: int
-    archcode: int
-    supportcode: int
-    alias: int
-    scripted: bool
-    script: str
-    koid: int
+    type: list[Type] = field(default_factory=list)
+    race: Race = Race.Unknown
+    attribute: Attribute = Attribute.Unknown
+    category: list[Category] = field(default_factory=list)
+    genre: list[Genre] = field(default_factory=list)
+    level: int = 0
+    lscale: int = 0
+    rscale: int = 0
+    atk: int = 0
+    def_: int = 0
+    linkmarkers: list[LinkMarker] = field(default_factory=list)
+    text: str = ""
+    archetypes: list[int] = field(default_factory=list)
+    support: list[int] = field(default_factory=list)
+    related: list[int] = field(default_factory=list)
+    sets: list[int] = field(default_factory=list)
+    tcgdate: datetime | None = None
+    ocgdate: datetime | None = None
+    ot: int = 0
+    archcode: int = 0
+    supportcode: int = 0
+    alias: int = 0
+    scripted: bool = False
+    script: str = ""
+    koid: int = 0
 
     def __hash__(self):
         return hash(self.name)
