@@ -92,8 +92,10 @@ def build_monster(layers: dict[str, Any], card: Card):
         set_visible(layers, ["Negative Level", f"Negative Level {card.level}"])
     elif Type.Xyz in card.type:
         set_visible(layers, ["Rank", f"Rank {card.level}"])
-    elif Type.Link:
-        pass
+    elif Type.Link in card.type:
+        set_visible(layers, ["Text", "Link Rating"])
+        set_visible(layers, ["Text", "LINK-"])
+        set_visible(layers, ["Text", "Link Official"])
     else:
         set_visible(layers, ["Level", f"Level {card.level}"])
 
@@ -188,6 +190,7 @@ def build_image(layers: dict[str, Any], card: Card):
         set_visible(layers, ["Structure", "Effects", "Name Box"])
         set_visible(layers, ["Structure", "Effects", "Card Frame Bevel"])
         set_visible(layers, ["Structure", "Common", "Artwork Box"])
+    set_visible(layers, ["Text", "Status Bar"])
 
 
 def render_card(card: Card, dir: str):
