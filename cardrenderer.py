@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PIL.Image import Image
 from psd_tools import PSDImage
@@ -24,7 +24,7 @@ def init_layers(psd: PSDImage | Group):
         group_dict = {}
         for obj in group:
             if isinstance(obj, Group):
-                group_dict[obj.name] = make_dict(obj)
+                group_dict[obj.name] = (make_dict(obj), obj)
             elif isinstance(obj, (TypeLayer, PixelLayer)):
                 group_dict[obj.name] = obj
             else:
@@ -38,20 +38,67 @@ def init_layers(psd: PSDImage | Group):
 
 def print_dict_tree(dictionary, indent=0):
     for key, value in dictionary.items():
-        if isinstance(value, dict):
+        if isinstance(value, tuple):
             print("  " * indent + f"{key}:")
-            print_dict_tree(value, indent + 1)
+            print_dict_tree(value[0], indent + 1)
         else:
             print("  " * indent + f"{key}: {value}")
 
 
-def build_image(layers: dict[str, dict | PixelLayer | TypeLayer], card: Card):
+def build_image(layers: dict[str, Any], card: Card):
     if Type.Monster in card.type:
-        pass
+        if card.is_dark_synchro():
+            frame = "Dark Synchro"
+        elif Category.YellowGod in card.category:
+            frame = "Ra"
+        elif Category.RedGod in card.category:
+            frame = "Slifer"
+        elif Category.BlueGod in card.category:
+            frame = "Obelisk"
+        elif Type.Token in card.type:
+            frame = "Token"
+        elif Type.Link in card.type:
+            frame = "Link"
+        elif Type.Xyz in card.type:
+            frame = "XYZ"
+        elif Type.Synchro in card.type:
+            frame = "Synchro"
+        elif Type.Fusion in card.type:
+            frame = "Fusion"
+        elif Type.Ritual in card.type:
+            frame = "Ritual"
+        elif Type.Effect in card.type:
+            frame = "Effect"
+        elif Type.Normal in card.type:
+            frame = "Normal"
+        else:
+            frame = "Unsupported"
+        layers["Frames"][0][frame].visible = True
+        layers["Frames"][1].visible = True
+
+        layers["Attributes"][0][card.attribute.name].visible = True
+        layers["Attributes"][1].visible = True
+
+        layers["Level"][0][f"Level {card.level}"].visible = True
+        layers["Level"][1].visible = True
+
     elif Type.Trap in card.type:
         pass
     elif Type.Spell in card.type:
-        pass
+        if Category.SkillCard in card.category:
+            layers["Frames"][0]["Skill"].visible = True
+            layers["Frames"][1].visible = True
+        else:
+            pass
+
+    elif Type.Token in card.type:
+        # Legendary Dragon
+        if card.id in [10000050, 10000060, 10000070]:
+            frame = "Legendary Dragon"
+        else:
+            frame = "Unsupported"
+        layers["Frames"][0][frame].visible = True
+        layers["Frames"][1].visible = True
 
 
 def render_card(card: Card, dir: str):
