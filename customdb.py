@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 
 import pandas as pd
 
@@ -99,3 +100,65 @@ class CustomDB(YugiDB):
 
     def _build_set_db(self, _):
         self.set_data = {}
+
+    @classmethod
+    def from_data(
+        cls,
+        name: str,
+        dbpath: str,
+        card_data: list[Card],
+        arch_data: list[Archetype] = [],
+    ):
+        custom_db = cls.__new__(cls)
+        custom_db.name = name
+        custom_db.dbpath = dbpath
+
+        cards_dict = {card.id: card for card in card_data}
+        custom_db.card_data = cards_dict
+
+        custom_db.arch_data = {arch.id: arch for arch in arch_data}
+
+        def split_chunks(n: int, nchunks: int):
+            return [(n >> (16 * i)) & 0xFFFF for i in range(nchunks)]
+
+        for card in custom_db.card_data.values():
+            card.archetypes = [
+                arch.id
+                for chunk in split_chunks(card._archcode, 4)
+                for arch in arch_data
+                if arch.id == chunk
+            ]
+            card.support = [
+                arch.id
+                for chunk in split_chunks(card._supportcode, 2)
+                for arch in arch_data
+                if arch.id == chunk
+            ]
+            card.related = [
+                arch.id
+                for chunk in split_chunks(card._supportcode >> 32, 2)
+                for arch in arch_data
+                if arch.id == chunk
+            ]
+
+            for arch in card.archetypes:
+                custom_db.arch_data[arch].members.append(card.id)
+            for arch in card.support:
+                custom_db.arch_data[arch].support.append(card.id)
+            for arch in card.related:
+                custom_db.arch_data[arch].related.append(card.id)
+
+        custom_db.set_data = {}
+
+        custom_db._finalize_initialization()
+
+        return custom_db
+
+    def _finalize_initialization(self):
+        self.dbdir = os.path.dirname(self.dbpath)
+        self.cardpkl = os.path.join(self.dbdir, "cards.pkl")
+        self.setspkl = os.path.join(self.dbdir, "sets.pkl")
+        self.archpkl = os.path.join(self.dbdir, "archetypes.pkl")
+        if not os.path.exists(self.dbdir):
+            os.makedirs(self.dbdir)
+        self.save_pickles()

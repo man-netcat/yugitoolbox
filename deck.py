@@ -46,9 +46,9 @@ class Deck:
             ]
         ) and all([count <= 3 for _, count in self.main + self.extra + self.side])
 
-    @staticmethod
-    def from_omegacode(db: YugiDB, code: str, name: str = "") -> Deck:
-        def decode_card_tuples(start: int, end: int) -> list[tuple[int, int]]:
+    @classmethod
+    def from_omegacode(cls, db: YugiDB, code: str, name: str = ""):
+        def decode_card_tuples(start, end):
             return [
                 (card_id, count)
                 for card_id, count in Counter(
@@ -72,7 +72,7 @@ class Deck:
             if db.get_card_by_id(card_id).is_extra_deck_monster
         ]
         side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
-        return Deck(name, main, extra, side)
+        return cls(name, main, extra, side)
 
     def to_omegacode(self):
         return base64.b64encode(
@@ -86,9 +86,9 @@ class Deck:
             )
         ).decode()
 
-    @staticmethod
-    def from_ydke(db: YugiDB, ydke: str, name: str = "") -> Deck:
-        def decode_component(component: str) -> list[tuple[int, int]]:
+    @classmethod
+    def from_ydke(cls, db: YugiDB, ydke: str, name: str = ""):
+        def decode_component(component):
             passcodes_bytes = base64.b64decode(component)
             passcodes = [
                 int.from_bytes(passcodes_bytes[i : i + 4], byteorder="little")
@@ -99,7 +99,7 @@ class Deck:
 
         main, extra, side = map(decode_component, ydke[len("ydke://") :].split("!")[:3])
 
-        return Deck(name, main, extra, side)
+        return cls(name, main, extra, side)
 
     def to_ydke(self) -> str:
         def encode_component(cards: list[tuple[int, int]]) -> str:
