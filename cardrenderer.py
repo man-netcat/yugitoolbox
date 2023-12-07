@@ -27,7 +27,7 @@ class Renderer:
             frame = "Frames/Ra.png"
         elif card.is_dark_synchro:
             frame = "Frames/Dark_Synchro.png"
-        elif any(card.id == x for x in [10000050, 10000060, 10000070]):
+        elif card.is_legendary_dragon:
             frame = "Frames/Legendary_Dragon.png"
         elif card.has_type(Type.Fusion):
             frame = "Frames/Fusion.png"

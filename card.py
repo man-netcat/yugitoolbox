@@ -40,6 +40,42 @@ class Card:
     script: str = ""
     koid: int = 0
 
+    def __hash__(self):
+        return hash(self.name)
+
+    def __str__(self) -> str:
+        if self.has_type(Type.Pendulum):
+            return f"{self.name} ({self.id}): {self.attribute.name} {self.levelstr} {self.typestr}"
+        if self.has_type(Type.Monster):
+            return f"{self.name} ({self.id}): {self.attribute.name} {self.levelstr} {self.typestr}"
+        else:
+            return f"{self.name} ({self.id}): {self.typestr}"
+
+    def __repr__(self) -> str:
+        return self.name
+
+    @property
+    def levelstr(self) -> str:
+        return (
+            "Rank "
+            if self.has_type(Type.Xyz)
+            else "Link "
+            if self.has_type(Type.Link)
+            else "Level "
+        ) + (str(self.level) if self.level >= 0 else "?")
+
+    @property
+    def typestr(self) -> str:
+        if self.is_skill:
+            return "[Skill]"
+
+        type_names = reversed([type.name for type in self.type if type != Type.Monster])
+
+        if self.has_type(Type.Monster):
+            return f"[{self.race.name} / {' / '.join(type_names)}]"
+
+        return "[" + " ".join(type_names) + "]"
+
     @property
     def type(self) -> list[Type]:
         return self._enum_values(self._type, Type)
@@ -172,29 +208,6 @@ class Card:
             return bool(self._def & linkmarker)
         return False
 
-    def __hash__(self):
-        return hash(self.name)
-
-    def __str__(self) -> str:
-        if self.has_type(Type.Monster):
-            return f"{self.name} ({self.id}): {self._levelstr()} {self.attribute.name} {self.race.name}"
-        else:
-            return (
-                f"{self.name} ({self.id}): {'Normal ' if len(self.type) == 1 else ''}"
-            )
-
-    def __repr__(self) -> str:
-        return self.name
-
-    def _levelstr(self) -> str:
-        return (
-            "Rank "
-            if self.has_type(Type.Xyz)
-            else "Link "
-            if self.has_type(Type.Link)
-            else "Level "
-        ) + (str(self.level) if self.level >= 0 else "?")
-
     def get_archetypes(self, db: YugiDB) -> list[Archetype]:
         return [db.get_archetype_by_id(id) for id in self.archetypes]
 
@@ -220,15 +233,17 @@ class Card:
         return self.has_category(Category.DarkCard) and self.has_type(Type.Synchro)
 
     @property
+    def is_legendary_dragon(self) -> bool:
+        return any(self.id == x for x in [10000050, 10000060, 10000070])
+
+    @property
     def is_rush(self) -> bool:
         return any(
-            [
-                self.has_category(x)
-                for x in [
-                    Category.RushCard,
-                    Category.RushMax,
-                    Category.RushLegendary,
-                ]
+            self.has_category(x)
+            for x in [
+                Category.RushCard,
+                Category.RushMax,
+                Category.RushLegendary,
             ]
         )
 
@@ -243,13 +258,11 @@ class Card:
     @property
     def is_god(self) -> bool:
         return any(
-            [
-                self.has_category(x)
-                for x in [
-                    Category.RedGod,
-                    Category.BlueGod,
-                    Category.YellowGod,
-                ]
+            self.has_category(x)
+            for x in [
+                Category.RedGod,
+                Category.BlueGod,
+                Category.YellowGod,
             ]
         )
 
@@ -260,15 +273,13 @@ class Card:
     @property
     def is_extra_deck_monster(self) -> bool:
         return any(
-            [
-                self.has_type(x)
-                for x in [
-                    Type.Synchro,
-                    Type.Token,
-                    Type.Xyz,
-                    Type.Link,
-                    Type.Fusion,
-                ]
+            self.has_type(x)
+            for x in [
+                Type.Synchro,
+                Type.Token,
+                Type.Xyz,
+                Type.Link,
+                Type.Fusion,
             ]
         )
 
@@ -279,19 +290,17 @@ class Card:
     @staticmethod
     def compare_small_world(handcard: Card, deckcard: Card, addcard: Card) -> bool:
         return all(
-            [
-                sum(
-                    [
-                        card1._attribute == card2._attribute,
-                        card1._race == card2._race,
-                        card1.atk == card2.atk,
-                        card1._def == card2._def,
-                        card1.level == card2.level,
-                    ]
-                )
-                == 1
-                for card1, card2 in zip([handcard, deckcard], [deckcard, addcard])
-            ]
+            sum(
+                [
+                    card1._attribute == card2._attribute,
+                    card1._race == card2._race,
+                    card1.atk == card2.atk,
+                    card1._def == card2._def,
+                    card1.level == card2.level,
+                ]
+            )
+            == 1
+            for card1, card2 in [[handcard, deckcard], [deckcard, addcard]]
         )
 
     def combined_archetypes(self) -> list[int]:
@@ -329,6 +338,7 @@ class Card:
         return result.text if result else None
 
     def get_rulings(self) -> Optional[tuple[str, str]]:
+        # TODO: finish this
         konami_rush_db_base_url = "https://www.db.yugioh-card.com/rushdb/card_search.action?ope=2&cid=%s&request_locale=ja"
         konami_rush_faq_base_url = "https://www.db.yugioh-card.com/rushdb/faq_search.action?ope=4&cid=%s&request_locale=ja"
         konami_db_base_url = "https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=%s&request_locale=%s"
