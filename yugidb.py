@@ -217,7 +217,7 @@ class YugiDB:
         return [self.get_set_by_id(id) for id in card.sets]
 
     def get_archetype_cards(self, arch: Archetype) -> list[Card]:
-        return [self.get_card_by_id(id) for id in arch.cards]
+        return [self.get_card_by_id(id) for id in arch.members]
 
     def get_archetype_support(self, arch: Archetype) -> list[Card]:
         return [self.get_card_by_id(id) for id in arch.support]

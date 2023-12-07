@@ -91,7 +91,7 @@ class CustomDB(YugiDB):
             ]
 
             for arch in card.archetypes:
-                self.arch_data[arch].cards.append(card.id)
+                self.arch_data[arch].members.append(card.id)
             for arch in card.support:
                 self.arch_data[arch].support.append(card.id)
             for arch in card.related:

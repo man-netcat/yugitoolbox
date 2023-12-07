@@ -21,7 +21,7 @@ class TestDB(TestCase):
         self.assertEqual(testcard.atk, 2600)
         self.assertEqual(testcard._def, 2600)
         self.assertEqual(testcard.level, 7)
-        self.assertTrue(testcard.id in testarch.cards)
+        self.assertTrue(testcard.id in testarch.members)
         self.assertTrue(testcard.id in testset.contents)
         self.assertTrue(testarch.id in testcard.archetypes)
         self.assertTrue(testset.id in testcard.sets)

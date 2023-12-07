@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 class Archetype:
     id: int
     name: str
-    cards: list[int] = field(default_factory=list)
+    members: list[int] = field(default_factory=list)
     support: list[int] = field(default_factory=list)
     related: list[int] = field(default_factory=list)
 
@@ -26,10 +26,10 @@ class Archetype:
         return self.name
 
     def combined_cards(self) -> list[int]:
-        return list(set(self.cards + self.support + self.related))
+        return list(set(self.members + self.support + self.related))
 
     def get_cards(self, db: YugiDB) -> list[Card]:
-        return [db.get_card_by_id(id) for id in self.cards]
+        return [db.get_card_by_id(id) for id in self.members]
 
     def get_support(self, db: YugiDB) -> list[Card]:
         return [db.get_card_by_id(id) for id in self.support]
