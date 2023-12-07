@@ -20,7 +20,7 @@ class YugiDB:
     name: str
     dbpath: str
 
-    def __init__(self):
+    def __init__(self, rebuild_pkl=False):
         if type(self) == YugiDB:
             return
 
@@ -32,7 +32,7 @@ class YugiDB:
         if not os.path.exists(self.dbdir):
             os.makedirs(self.dbdir)
 
-        if not all(
+        if rebuild_pkl or not all(
             os.path.exists(file)
             for file in [
                 self.cardpkl,
@@ -189,10 +189,10 @@ class YugiDB:
             card
             for card in self.get_cards()
             if not card.id == 111004001
-            if not card.scripted
+            if card.script != ""
             and any(
                 [
-                    type in card.type
+                    card.has_type(type)
                     for type in [
                         Type.Spell,
                         Type.Trap,
@@ -202,8 +202,7 @@ class YugiDB:
             )
             and not card.alias
             and (
-                not card.ot == OT.Illegal
-                or (include_skillcards and card.is_skill_card())
+                not card.ot == OT.Illegal or (include_skillcards and card.is_skill)
             )
         ]
 

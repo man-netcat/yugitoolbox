@@ -64,12 +64,12 @@ class Deck:
         main = [
             (card_id, count)
             for card_id, count in main_extra
-            if not db.get_card_by_id(card_id).is_extra_deck_monster()
+            if not db.get_card_by_id(card_id).is_extra_deck_monster
         ]
         extra = [
             (card_id, count)
             for card_id, count in main_extra
-            if db.get_card_by_id(card_id).is_extra_deck_monster()
+            if db.get_card_by_id(card_id).is_extra_deck_monster
         ]
         side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
         return Deck(name, main, extra, side)
@@ -120,7 +120,7 @@ class Deck:
         md_cards = [
             card_id
             for card_id, _ in self.main + self.side
-            if db.get_card_by_id(card_id).is_main_deck_monster()
+            if db.get_card_by_id(card_id).is_main_deck_monster
         ]
 
         valids = [

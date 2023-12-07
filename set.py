@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, ItemsView
+from datetime import datetime
+from typing import TYPE_CHECKING, ItemsView, Optional
 
 if TYPE_CHECKING:
     from .archetype import Archetype
@@ -15,8 +16,8 @@ class Set:
     id: int
     name: str
     abbr: str
-    tcgdate: int = 0
-    ocgdate: int = 0
+    _tcgdate: int = 0
+    _ocgdate: int = 0
     contents: list[int] = field(default_factory=list)
 
     def __hash__(self) -> int:
@@ -27,6 +28,36 @@ class Set:
 
     def __repr__(self) -> str:
         return self.name
+
+    @property
+    def ocgdate(self) -> Optional[datetime]:
+        try:
+            return datetime.fromtimestamp(self._ocgdate)
+        except:
+            return datetime.max
+
+    @ocgdate.setter
+    def ocgdate(self, value: int | datetime) -> None:
+        self._ocgdate = self._convert_to_timestamp(value)
+
+    @property
+    def tcgdate(self) -> Optional[datetime]:
+        try:
+            return datetime.fromtimestamp(self._tcgdate)
+        except:
+            return datetime.max
+
+    @tcgdate.setter
+    def tcgdate(self, value: int | datetime) -> None:
+        self._tcgdate = self._convert_to_timestamp(value)
+
+    def _convert_to_timestamp(self, value: int | datetime) -> int:
+        if isinstance(value, int):
+            return value
+        elif isinstance(value, datetime):
+            return int(value.timestamp())
+        else:
+            raise ValueError("Invalid input. Use int or datetime objects.")
 
     def get_cards(self, db: YugiDB) -> list[Card]:
         return [db.get_card_by_id(id) for id in self.contents]

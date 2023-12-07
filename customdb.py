@@ -1,102 +1,62 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 import pandas as pd
 
 from .archetype import Archetype
 from .card import Card
-from .enums import *
 from .yugidb import YugiDB
 
 
 class CustomDB(YugiDB):
-    def __init__(self, name, dbpath):
+    def __init__(self, name, dbpath, rebuild_pkl=False):
         self.name = name
         self.dbpath = dbpath
-        super().__init__()
+        super().__init__(rebuild_pkl=rebuild_pkl)
 
     def _build_card_db(self, con):
-        def make_datetime(timestamp: int):
-            try:
-                dt = datetime.fromtimestamp(timestamp)
-            except:
-                dt = None
-            return dt
-
-        def apply_enum(value: int, enum_class):
-            return [enum_member for enum_member in enum_class if value & enum_member]
-
-        def parse_pendulum(value: int):
-            lscale = (value & 0xFF000000) >> 24
-            rscale = (value & 0x00FF0000) >> 16
-            level = value & 0x0000FFFF
-            return lscale, rscale, level
+        values = ",".join(
+            [
+                "datas.id",
+                "datas.ot",
+                "datas.alias",
+                "datas.setcode as _archcode",
+                "datas.type as _type",
+                "datas.atk",
+                "datas.def as _def",
+                "datas.level as _level",
+                "datas.race as _race",
+                "datas.attribute as _attribute",
+                "datas.category as _category",
+                "datas.genre as _genre",
+                "datas.script",
+                "datas.support as _supportcode",
+                "datas.ocgdate as _ocgdate",
+                "datas.tcgdate as _tcgdate",
+                "texts.name",
+                "texts.desc as text",
+            ]
+        )
 
         cards: list[dict] = pd.read_sql_query(
-            """
-            SELECT *
+            f"""
+            SELECT {values}
             FROM datas
             INNER JOIN texts
             USING(id)
             """,
             con,
         ).to_dict(orient="records")
-        self.card_data: dict[int, Card] = {}
 
-        for card in cards:
-            card_type = apply_enum(card["type"], Type)
-            card_race = Race(card["race"])
-            card_attribute = Attribute(card["attribute"])
-            card_category = apply_enum(card["category"], Category)
-            card_genre = apply_enum(card["genre"], Genre)
-
-            if card["type"] & Type.Pendulum:
-                card_lscale, card_rscale, card_level = parse_pendulum(card["level"])
-            else:
-                card_lscale, card_rscale, card_level = 0, 0, card["level"]
-
-            if card["type"] & Type.Link:
-                card_def = 0
-                card_markers = apply_enum(card["def"], LinkMarker)
-            else:
-                card_def = card["def"]
-                card_markers = []
-
-            card_data = Card(
-                id=card["id"],
-                name=card["name"],
-                type=card_type,
-                race=card_race,
-                attribute=card_attribute,
-                category=card_category,
-                genre=card_genre,
-                level=card_level,
-                lscale=card_lscale,
-                rscale=card_rscale,
-                atk=card["atk"],
-                def_=card_def,
-                linkmarkers=card_markers,
-                text=card["desc"],
-                tcgdate=make_datetime(card["tcgdate"]),
-                ocgdate=make_datetime(card["ocgdate"]),
-                ot=card["ot"],
-                archcode=card["setcode"],
-                supportcode=card["support"],
-                alias=card["alias"],
-                scripted=card["script"] is not None,
-                script=card["script"],
-            )
-            self.card_data[card["id"]] = card_data
+        self.card_data = {card["id"]: Card(**card) for card in cards}
 
     def _build_archetype_db(self, con):
-        archetypes = pd.read_sql_query(
+        archetypes: list[dict] = pd.read_sql_query(
             """
             SELECT name,
                 CASE
                     WHEN officialcode > 0 THEN officialcode
                     ELSE betacode
-                END AS archcode 
+                END AS id 
             FROM setcodes
             WHERE (officialcode > 0 AND betacode = officialcode) OR (officialcode = 0 AND betacode > 0);
             """,
@@ -104,11 +64,7 @@ class CustomDB(YugiDB):
         ).to_dict(orient="records")
 
         self.arch_data: dict[int, Archetype] = {
-            arch["archcode"]: Archetype(
-                id=arch["archcode"],
-                name=arch["name"],
-            )
-            for arch in archetypes
+            arch["id"]: Archetype(**arch) for arch in archetypes
         }
 
         def split_chunks(n: int, nchunks: int):
@@ -116,22 +72,22 @@ class CustomDB(YugiDB):
 
         for card in self.card_data.values():
             card.archetypes = [
-                arch["archcode"]
-                for chunk in split_chunks(card.archcode, 4)
+                arch["id"]
+                for chunk in split_chunks(card._archcode, 4)
                 for arch in archetypes
-                if arch["archcode"] == chunk
+                if arch["id"] == chunk
             ]
             card.support = [
-                arch["archcode"]
-                for chunk in split_chunks(card.supportcode, 2)
+                arch["id"]
+                for chunk in split_chunks(card._supportcode, 2)
                 for arch in archetypes
-                if arch["archcode"] == chunk
+                if arch["id"] == chunk
             ]
             card.related = [
-                arch["archcode"]
-                for chunk in split_chunks(card.supportcode >> 32, 2)
+                arch["id"]
+                for chunk in split_chunks(card._supportcode >> 32, 2)
                 for arch in archetypes
-                if arch["archcode"] == chunk
+                if arch["id"] == chunk
             ]
 
             for arch in card.archetypes:

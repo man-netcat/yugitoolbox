@@ -17,68 +17,68 @@ class Renderer:
     @staticmethod
     def get_frame(card: Card):
         frame = ""
-        if Category.SkillCard in card.category:
+        if card.has_category(Category.SkillCard):
             frame = "Frames/Skill.png"
-        elif Category.RedGod in card.category:
+        elif card.has_category(Category.RedGod):
             frame = "Frames/Slifer.png"
-        elif Category.BlueGod in card.category:
+        elif card.has_category(Category.BlueGod):
             frame = "Frames/Obelisk.png"
-        elif Category.YellowGod in card.category:
+        elif card.has_category(Category.YellowGod):
             frame = "Frames/Ra.png"
-        elif card.is_dark_synchro():
+        elif card.is_dark_synchro:
             frame = "Frames/Dark_Synchro.png"
         elif any(card.id == x for x in [10000050, 10000060, 10000070]):
             frame = "Frames/Legendary_Dragon.png"
-        elif Type.Fusion in card.type:
+        elif card.has_type(Type.Fusion):
             frame = "Frames/Fusion.png"
-        elif Type.Ritual in card.type:
+        elif card.has_type(Type.Ritual):
             frame = "Frames/Ritual.png"
-        elif Type.Synchro in card.type:
+        elif card.has_type(Type.Synchro):
             frame = "Frames/Synchro.png"
-        elif Type.Xyz in card.type:
+        elif card.has_type(Type.Xyz):
             frame = "Frames/Xyz.png"
-        elif Type.Trap in card.type:
+        elif card.has_type(Type.Trap):
             frame = "Frames/Trap.png"
-        elif Type.Spell in card.type:
+        elif card.has_type(Type.Spell):
             frame = "Frames/Spell.png"
-        elif Type.Link in card.type:
+        elif card.has_type(Type.Link):
             frame = "Frames/Link.png"
-        elif Type.Token in card.type:
+        elif card.has_type(Type.Token):
             frame = "Frames/Token.png"
-        elif Type.Normal in card.type:
+        elif card.has_type(Type.Normal):
             frame = "Frames/Normal.png"
-        elif Type.Effect in card.type:
+        elif card.has_type(Type.Effect):
             frame = "Frames/Effect.png"
         Renderer.layers.append(frame)
-        if Type.Pendulum in card.type:
+        if card.has_type(Type.Pendulum):
             Renderer.layers.append("Frames/Pendulum.png")
 
     @staticmethod
     def get_common(card: Card):
-        if Type.Xyz in card.type:
+        if card.has_type(Type.Xyz):
             Renderer.layers.append("Common/Artwork_Box_Xyz.png")
-        elif Category.SkillCard in card.category:
+        elif card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Artwork_Box_Skill.png")
-        elif Type.Link in card.type:
+        elif card.has_type(Type.Link):
             Renderer.layers.append("Common/Artwork_Box_LNKD.png")
         else:
             Renderer.layers.append("Common/Artwork_Box.png")
 
-        if Type.Xyz in card.type:
+        if card.has_type(Type.Xyz):
             Renderer.layers.append("Common/Card_Frame_Bevel_Xyz.png")
-        elif Category.SkillCard in card.category:
+        elif card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Card_Frame_Bevel_Skill.png")
         else:
             Renderer.layers.append("Common/Card_Frame_Bevel.png")
 
-        if Type.Xyz in card.type:
+        if card.has_type(Type.Xyz):
             Renderer.layers.append("Common/Name_Box_Xyz.png")
-        elif Category.SkillCard in card.category:
+        elif card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Name_Box_Skill.png")
         else:
             Renderer.layers.append("Common/Name_Box.png")
 
-        if Category.SkillCard in card.category:
+        if card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Effect_Box_Skill.png")
         else:
             Renderer.layers.append("Common/Effect_Box.png")
@@ -92,9 +92,9 @@ class Renderer:
     @staticmethod
     def get_attribute(card: Card):
         attr = ""
-        if Type.Spell in card.type and Category.SkillCard not in card.category:
+        if card.has_type(Type.Spell) and card.has_category(Category.SkillCard):
             attr = "Attributes/SPELL.png"
-        elif Type.Trap in card.type:
+        elif card.has_type(Type.Trap):
             attr = "Attributes/TRAP.png"
         elif card.attribute != Attribute.Unknown:
             attr = f"Attributes/{card.attribute.name}.png"
@@ -118,7 +118,7 @@ class Renderer:
         inactive = [
             linkmarker.name
             for linkmarker in LinkMarker
-            if linkmarker not in card.linkmarkers
+            if not card.has_linkmarker(linkmarker)
         ]
         for marker in active:
             Renderer.layers.append(f"Link_Arrows/{marker}Active.png")
@@ -136,42 +136,42 @@ class Renderer:
     @staticmethod
     def get_st_icon(card: Card):
         icon = None
-        if Type.Continuous in card.type:
+        if card.has_type(Type.Continuous):
             icon = "ST_Icons/Continuous.png"
-        elif Type.Counter in card.type:
+        elif card.has_type(Type.Counter):
             icon = "ST_Icons/Counter.png"
-        elif Type.QuickPlay in card.type:
+        elif card.has_type(Type.QuickPlay):
             icon = "ST_Icons/QuickPlay.png"
-        elif Type.Field in card.type:
+        elif card.has_type(Type.Field):
             icon = "ST_Icons/Field.png"
-        elif Type.QuickPlay in card.type:
+        elif card.has_type(Type.QuickPlay):
             icon = "ST_Icons/QuickPlay.png"
-        elif Type.Ritual in card.type:
+        elif card.has_type(Type.Ritual):
             icon = "ST_Icons/Ritual.png"
 
-        if Category.SkillCard in card.category:
+        if card.has_category(Category.SkillCard):
             return
 
         text = None
         if icon:
             Renderer.layers.append(icon)
-            if Type.Spell in card.type:
+            if card.has_type(Type.Spell):
                 text = "Text/Spell_Card_w_Icon.png"
-            elif Type.Trap in card.type:
+            elif card.has_type(Type.Trap):
                 text = "Text/Trap_Card_w_Icon.png"
         else:
-            if Type.Spell in card.type:
+            if card.has_type(Type.Spell):
                 text = "Text/Spell_Card.png"
-            elif Type.Trap in card.type:
+            elif card.has_type(Type.Trap):
                 text = "Text/Trap_Card.png"
         Renderer.layers.append(text)
 
     @staticmethod
     def get_atk_def_link(card: Card):
-        if Type.Monster not in card.type:
+        if not card.has_type(Type.Monster):
             return
 
-        if Type.Link in card.type:
+        if card.has_type(Type.Link):
             Renderer.layers.append("Text/Link-.png")
         else:
             Renderer.layers.append("Text/Def__Bar.png")
@@ -186,13 +186,13 @@ class Renderer:
         Renderer.get_common(card)
         Renderer.get_attribute(card)
 
-        if any(x in card.type for x in [Type.Spell, Type.Trap]):
+        if any(card.has_type(x) for x in [Type.Spell, Type.Trap]):
             Renderer.get_st_icon(card)
-        elif card.is_dark_synchro():
+        elif card.is_dark_synchro:
             Renderer.get_neg_level(card)
-        elif Type.Xyz in card.type:
+        elif card.has_type(Type.Xyz):
             Renderer.get_rank(card)
-        elif Type.Link in card.type:
+        elif card.has_type(Type.Link):
             Renderer.get_linkmarkers(card)
         else:
             Renderer.get_level(card)
