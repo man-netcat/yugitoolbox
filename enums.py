@@ -37,7 +37,7 @@ class LinkMarker(IntFlag):
     Bottom = 0x02
     BottomRight = 0x04
     Left = 0x08
-    Center = 0x10
+    # Center = 0x10
     Right = 0x20
     TopLeft = 0x40
     Top = 0x80

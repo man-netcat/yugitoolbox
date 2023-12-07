@@ -221,6 +221,6 @@ class Card:
             return database_url, faq_url
 
     def render(self, dir="out"):
-        from .cardrenderer import render_card
+        from .cardrenderer import Renderer
 
-        render_card(self, dir)
+        Renderer.render_card(self, dir)
