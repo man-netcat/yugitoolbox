@@ -189,7 +189,7 @@ class YugiDB:
             card
             for card in self.get_cards()
             if not card.id == 111004001
-            if card.script != ""
+            and (card.script != 1.0 or card.script == None)
             and any(
                 [
                     card.has_type(type)
@@ -201,9 +201,7 @@ class YugiDB:
                 ]
             )
             and not card.alias
-            and (
-                not card.ot == OT.Illegal or (include_skillcards and card.is_skill)
-            )
+            and (not card.ot == OT.Illegal or (include_skillcards and card.is_skill))
         ]
 
     def get_card_archetypes(self, card: Card) -> list[Archetype]:
