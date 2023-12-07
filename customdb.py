@@ -112,3 +112,60 @@ class CustomDB(YugiDB):
         if not os.path.exists(self.dbdir):
             os.makedirs(self.dbdir)
         self.save_pickles()
+
+    def write_to_database(self):
+        con = sqlite3.connect(self.dbpath)
+        cur = con.cursor()
+
+        cur.executescript("DROP TABLE IF EXISTS datas;")
+        cur.executescript("DROP TABLE IF EXISTS texts;")
+        cur.executescript("DROP TABLE IF EXISTS setcodes;")
+
+        with open("yugitoolbox/sql/customdb.sql", "r") as file:
+            sql_script = file.read()
+            cur.executescript(sql_script)
+
+        cur.executemany(
+            """
+        INSERT INTO datas (
+            id, ot, alias, setcode, type, atk, def, level, race, attribute, 
+            category, genre, script, support, ocgdate, tcgdate
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+            [
+                (
+                    card.id,
+                    card.ot,
+                    card.alias,
+                    card._archcode,
+                    card._type,
+                    card.atk,
+                    card._def,
+                    card._level,
+                    card._race,
+                    card._attribute,
+                    card._category,
+                    card._genre,
+                    card.script,
+                    card._supportcode,
+                    card._ocgdate,
+                    card._tcgdate,
+                )
+                for card in self.card_data.values()
+            ],
+        )
+        cur.executemany(
+            """
+        INSERT INTO texts (id, name, desc) VALUES (?, ?, ?)
+        """,
+            [(card.id, card.name, card.text) for card in self.card_data.values()],
+        )
+        cur.executemany(
+            """
+        INSERT INTO setcodes (name, officialcode) VALUES (?, ?)
+        """,
+            [(arch.name, arch.id) for arch in self.arch_data.values()],
+        )
+
+        con.commit()
+        con.close()
