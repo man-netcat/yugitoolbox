@@ -19,10 +19,11 @@ class OmegaDB(YugiDB):
     def __init__(self, force_update: bool = False, rebuild_pkl: bool = False):
         self.name = "OmegaDB"
         self.dbpath = "db/omega/omega.db"
+        downloaded = False
         if not OmegaDB.initialised:
-            rebuild_pkl = self._download_omegadb(force_update)
+            downloaded = self._download_omegadb(force_update)
             OmegaDB.initialised = True
-        super().__init__(rebuild_pkl=rebuild_pkl)
+        super().__init__(rebuild_pkl=rebuild_pkl or downloaded)
 
     def _download_omegadb(self, force_update: bool = False):
         def download(url: str, path: str):
