@@ -129,35 +129,19 @@ class OmegaDB(YugiDB):
             arch["id"]: Archetype(**arch) for arch in archetypes
         }
 
-        def split_chunks(n: int, nchunks: int):
-            return [(n >> (16 * i)) & 0xFFFF for i in range(nchunks)]
-
         for card in self.card_data.values():
-            card.archetypes = [
-                arch["id"]
-                for chunk in split_chunks(card._archcode, 4)
-                for arch in archetypes
-                if arch["id"] == chunk
-            ]
-            card.support = [
-                arch["id"]
-                for chunk in split_chunks(card._supportcode, 2)
-                for arch in archetypes
-                if arch["id"] == chunk
-            ]
-            card.related = [
-                arch["id"]
-                for chunk in split_chunks(card._supportcode >> 32, 2)
-                for arch in archetypes
-                if arch["id"] == chunk
-            ]
-
-            for arch in card.archetypes:
-                self.arch_data[arch].members.append(card.id)
-            for arch in card.support:
-                self.arch_data[arch].support.append(card.id)
-            for arch in card.related:
-                self.arch_data[arch].related.append(card.id)
+            for archid in card.archetypes:
+                if archid == 0 or archid not in self.arch_data:
+                    continue
+                self.arch_data[archid].members.append(card.id)
+            for archid in card.support:
+                if archid == 0 or archid not in self.arch_data:
+                    continue
+                self.arch_data[archid].support.append(card.id)
+            for archid in card.related:
+                if archid == 0 or archid not in self.arch_data:
+                    continue
+                self.arch_data[archid].related.append(card.id)
 
     def _build_set_db(self, con):
         sets: list[dict] = pd.read_sql_query(

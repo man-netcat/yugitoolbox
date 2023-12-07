@@ -178,7 +178,7 @@ class YugiDB:
                 arch_name
                 in [
                     arch.name
-                    for arch in self.get_archetypes_by_ids(card.combined_archetypes())
+                    for arch in self.get_archetypes_by_ids(card.combined_archetypes)
                 ]
                 for arch_name in given_archetypes
             )

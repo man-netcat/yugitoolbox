@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from .yugidb import YugiDB
 
 
-@dataclass()
+@dataclass
 class Card:
     id: int
     name: str
@@ -27,9 +27,6 @@ class Card:
     atk: int = 0
     _def: int = 0
     text: str = ""
-    archetypes: list[int] = field(default_factory=list)
-    support: list[int] = field(default_factory=list)
-    related: list[int] = field(default_factory=list)
     sets: list[int] = field(default_factory=list)
     _tcgdate: int = 0
     _ocgdate: int = 0
@@ -208,14 +205,59 @@ class Card:
             return bool(self._def & linkmarker)
         return False
 
+    @staticmethod
+    def _split_chunks(n: int, nchunks: int):
+        return [v for v in [(n >> (16 * i)) & 0xFFFF for i in range(nchunks)] if v != 0]
+
+    @property
+    def archetypes(self) -> list[int]:
+        return Card._split_chunks(self._archcode, 4)
+
+    @archetypes.setter
+    def archetypes(self, values: list[int]):
+        if len(values) < 4:
+            while len(values) != 4:
+                values.append(0)
+        else:
+            raise ValueError("Card can not have more than 4 member archetypes.")
+        self._archcode = sum((value << (16 * i)) for i, value in enumerate(values))
+
+    @property
+    def support(self) -> list[int]:
+        return Card._split_chunks(self._supportcode, 2)
+
+    @support.setter
+    def support(self, values: list[int]):
+        if len(values) < 2:
+            while len(values) != 2:
+                values.append(0)
+        else:
+            raise ValueError("Card can not have more than 2 support archetypes.")
+        self._supportcode = sum((value << (16 * i)) for i, value in enumerate(values))
+
+    @property
+    def related(self) -> list[int]:
+        return Card._split_chunks(self._supportcode >> 32, 2)
+
+    @related.setter
+    def related(self, values: list[int]):
+        if len(values) < 2:
+            while len(values) != 2:
+                values.append(0)
+        else:
+            raise ValueError("Card can not have more than 2 related archetypes.")
+        self._supportcode = (self._supportcode & 0xFFFFFFFF) | (
+            sum((value << (16 * i)) for i, value in enumerate(values)) << 32
+        )
+
     def get_archetypes(self, db: YugiDB) -> list[Archetype]:
-        return [db.get_archetype_by_id(id) for id in self.archetypes]
+        return [db.get_archetype_by_id(id) for id in self.archetypes if id != 0]
 
     def get_support(self, db: YugiDB) -> list[Archetype]:
-        return [db.get_archetype_by_id(id) for id in self.support]
+        return [db.get_archetype_by_id(id) for id in self.support if id != 0]
 
     def get_related(self, db: YugiDB) -> list[Archetype]:
-        return [db.get_archetype_by_id(id) for id in self.related]
+        return [db.get_archetype_by_id(id) for id in self.related if id != 0]
 
     def get_sets(self, db: YugiDB) -> list["Set"]:
         return [db.get_set_by_id(id) for id in self.sets]
@@ -303,6 +345,7 @@ class Card:
             for card1, card2 in [[handcard, deckcard], [deckcard, addcard]]
         )
 
+    @property
     def combined_archetypes(self) -> list[int]:
         return list(set(self.archetypes + self.support + self.related))
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 import os
+import sqlite3
 
 import pandas as pd
 
@@ -68,35 +70,19 @@ class CustomDB(YugiDB):
             arch["id"]: Archetype(**arch) for arch in archetypes
         }
 
-        def split_chunks(n: int, nchunks: int):
-            return [(n >> (16 * i)) & 0xFFFF for i in range(nchunks)]
-
         for card in self.card_data.values():
-            card.archetypes = [
-                arch["id"]
-                for chunk in split_chunks(card._archcode, 4)
-                for arch in archetypes
-                if arch["id"] == chunk
-            ]
-            card.support = [
-                arch["id"]
-                for chunk in split_chunks(card._supportcode, 2)
-                for arch in archetypes
-                if arch["id"] == chunk
-            ]
-            card.related = [
-                arch["id"]
-                for chunk in split_chunks(card._supportcode >> 32, 2)
-                for arch in archetypes
-                if arch["id"] == chunk
-            ]
-
-            for arch in card.archetypes:
-                self.arch_data[arch].members.append(card.id)
-            for arch in card.support:
-                self.arch_data[arch].support.append(card.id)
-            for arch in card.related:
-                self.arch_data[arch].related.append(card.id)
+            for archid in card.archetypes:
+                if archid == 0 or archid not in self.arch_data:
+                    continue
+                self.arch_data[archid].members.append(card.id)
+            for archid in card.support:
+                if archid == 0 or archid not in self.arch_data:
+                    continue
+                self.arch_data[archid].support.append(card.id)
+            for archid in card.related:
+                if archid == 0 or archid not in self.arch_data:
+                    continue
+                self.arch_data[archid].related.append(card.id)
 
     def _build_set_db(self, _):
         self.set_data = {}
@@ -113,44 +99,8 @@ class CustomDB(YugiDB):
         custom_db.name = name
         custom_db.dbpath = dbpath
 
-        cards_dict = {card.id: card for card in card_data}
-        custom_db.card_data = cards_dict
-
+        custom_db.card_data = {card.id: card for card in card_data}
         custom_db.arch_data = {arch.id: arch for arch in arch_data}
-
-        def split_chunks(n: int, nchunks: int):
-            return [(n >> (16 * i)) & 0xFFFF for i in range(nchunks)]
-
-        for card in custom_db.card_data.values():
-            card.archetypes = [
-                arch.id
-                for chunk in split_chunks(card._archcode, 4)
-                for arch in arch_data
-                if arch.id == chunk
-            ]
-            card.support = [
-                arch.id
-                for chunk in split_chunks(card._supportcode, 2)
-                for arch in arch_data
-                if arch.id == chunk
-            ]
-            card.related = [
-                arch.id
-                for chunk in split_chunks(card._supportcode >> 32, 2)
-                for arch in arch_data
-                if arch.id == chunk
-            ]
-
-            for arch in card.archetypes:
-                custom_db.arch_data[arch].members.append(card.id)
-            for arch in card.support:
-                custom_db.arch_data[arch].support.append(card.id)
-            for arch in card.related:
-                custom_db.arch_data[arch].related.append(card.id)
-
-        custom_db.set_data = {}
-
-        custom_db._finalize_initialization()
 
         return custom_db
 
