@@ -138,7 +138,7 @@ class Card:
         return []
 
     @linkmarkers.setter
-    def linkmarkers(self, new: list[Type]):
+    def linkmarkers(self, new: list[LinkMarker]):
         if self.has_type(Type.Link):
             self._def = reduce(or_, new)
 
