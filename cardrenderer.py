@@ -17,6 +17,7 @@ IMG_BASE_URL = "https://images.ygoprodeck.com/images/cards_cropped/%s.jpg"
 
 class Renderer:
     layers = []
+    image: Image.Image
 
     @staticmethod
     def get_frame(card: Card):
@@ -253,13 +254,10 @@ class Renderer:
         return base_image
 
     @staticmethod
-    def draw_text(text, font_path, font_size, image: Image.Image, bbox, colour: str):
-        draw = ImageDraw.Draw(image)
-        font = ImageFont.truetype(font=font_path, size=font_size)
-        draw.text(xy=bbox, text=text, fill=colour, font=font)
-
-    @staticmethod
-    def render_text(card: Card, image: Image.Image):
+    def draw_card_name(card: Card):
+        font_path = "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf"
+        font_size = 93
+        bbox = (64, 52)
         if (
             any(
                 x in card.type
@@ -275,14 +273,25 @@ class Renderer:
             colour = "#FFF"
         else:
             colour = "#000"
-        Renderer.draw_text(
-            card.name,
-            "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
-            70,
-            image,
-            (64, 62),
-            colour,
+        max_width = 600
+        temp_image = Image.new("RGBA", (813, 1185), (0, 0, 0, 0))
+        temp_layer = ImageDraw.Draw(temp_image)
+        font = ImageFont.truetype(font=font_path, size=font_size)
+        textbbox = temp_layer.textbbox(bbox, card.name, font=font)
+        text_width = textbbox[2] - textbbox[0]
+        width_scale = max(1, text_width / max_width)
+        layer_width = int(813 * width_scale)
+        layer = Image.new("RGBA", (layer_width, 1185), (0, 0, 0, 0))
+        draw_layer = ImageDraw.Draw(layer)
+        draw_layer.text(
+            xy=(bbox[0] * width_scale, bbox[1]), text=card.name, fill=colour, font=font
         )
+        stretched_layer = layer.resize((813, 1185), Image.LANCZOS)
+        Renderer.image = Image.alpha_composite(Renderer.image, stretched_layer)
+
+    @staticmethod
+    def render_text(card: Card):
+        Renderer.draw_card_name(card)
         # Renderer.draw_text(
         #     typestr,
         #     "yugitoolbox/assets/Fonts/Yu-Gi-Oh! ITC Stone Serif Small Caps Bold.ttf",
@@ -302,14 +311,11 @@ class Renderer:
     def render_card(card: Card, dir: str = "out"):
         Renderer.process_layers(card)
 
-        for layer in Renderer.layers:
-            print(layer)
-
         if not os.path.isdir(dir):
             os.makedirs(dir)
 
-        image = Renderer.build_template()
-        Renderer.render_text(card, image)
+        Renderer.image = Renderer.build_template()
+        Renderer.render_text(card)
 
         out_path = os.path.join(dir, f"{card.id}.png")
-        image.save(out_path, "PNG")
+        Renderer.image.save(out_path, "PNG")
