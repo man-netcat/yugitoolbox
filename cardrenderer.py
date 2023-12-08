@@ -253,14 +253,36 @@ class Renderer:
         return base_image
 
     @staticmethod
-    def draw_text(text, font_path, font_size, image, bbox):
+    def draw_text(text, font_path, font_size, image: Image.Image, bbox, colour: str):
         draw = ImageDraw.Draw(image)
-        font = ImageFont.truetype(font_path, font_size)
-        draw.multiline_text((bbox[0], bbox[1]), text, "#000", font)
+        font = ImageFont.truetype(font=font_path, size=font_size)
+        draw.text(xy=bbox, text=text, fill=colour, font=font)
 
     @staticmethod
     def render_text(card: Card, image: Image.Image):
-        pass
+        if (
+            any(
+                x in card.type
+                for x in [
+                    Type.Link,
+                    Type.Xyz,
+                    Type.Trap,
+                    Type.Spell,
+                ]
+            )
+            or card.is_dark_synchro
+        ):
+            colour = "#FFF"
+        else:
+            colour = "#000"
+        Renderer.draw_text(
+            card.name,
+            "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+            70,
+            image,
+            (64, 62),
+            colour,
+        )
         # Renderer.draw_text(
         #     typestr,
         #     "yugitoolbox/assets/Fonts/Yu-Gi-Oh! ITC Stone Serif Small Caps Bold.ttf",
