@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import os
+from io import BytesIO
 from typing import TYPE_CHECKING
 
+import requests
 from PIL import Image, ImageDraw, ImageFont
 
 from .enums import *
 
 if TYPE_CHECKING:
     from .card import Card
+
+IMG_BASE_URL = "https://images.ygoprodeck.com/images/cards_cropped/%s.jpg"
 
 
 class Renderer:
@@ -91,6 +95,8 @@ class Renderer:
 
     @staticmethod
     def get_attribute(card: Card):
+        if card.is_skill:
+            return
         attr = ""
         if card.has_type(Type.Spell) and card.has_category(Category.SkillCard):
             attr = "Attributes/SPELL.png"
@@ -179,12 +185,30 @@ class Renderer:
         Renderer.layers.append("Text/Status_Bar.png")
 
     @staticmethod
+    def get_art(card):
+        art_url = IMG_BASE_URL % card.id
+        art_path = os.path.join("yugitoolbox/assets/Art", f"{card.id}.png")
+        if not os.path.exists(art_path):
+            response = requests.get(art_url, stream=True)
+            if not response.ok:
+                return
+            art_img = Image.open(BytesIO(response.content))
+            art_img = art_img.convert("RGBA")
+            card_size = (813, 1185)
+            bbox = [98, 217, 715, 834]
+            new_image = Image.new("RGBA", card_size, (255, 255, 255, 0))
+            new_image.paste(art_img, (bbox[0], bbox[1]))
+            new_image.save(art_path, format="PNG")
+        Renderer.layers.append(f"Art/{card.id}.png")
+
+    @staticmethod
     def process_layers(card: Card):
         Renderer.layers = []
 
         Renderer.get_frame(card)
         Renderer.get_common(card)
         Renderer.get_attribute(card)
+        Renderer.get_art(card)
 
         if any(card.has_type(x) for x in [Type.Spell, Type.Trap]):
             Renderer.get_st_icon(card)
