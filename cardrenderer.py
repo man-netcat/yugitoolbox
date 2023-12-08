@@ -5,7 +5,7 @@ from io import BytesIO
 from typing import TYPE_CHECKING
 
 import requests
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 from .enums import *
 
@@ -59,7 +59,10 @@ class Renderer:
 
     @staticmethod
     def get_common(card: Card):
-        if card.has_type(Type.Xyz):
+        if card.has_type(Type.Pendulum):
+            Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Effect_Bar.png")
+            Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Box_Medium.png")
+        elif card.has_type(Type.Xyz):
             Renderer.layers.append("Common/Artwork_Box_Xyz.png")
         elif card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Artwork_Box_Skill.png")
@@ -84,7 +87,7 @@ class Renderer:
 
         if card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Effect_Box_Skill.png")
-        else:
+        elif not card.has_type(Type.Pendulum):
             Renderer.layers.append("Common/Effect_Box.png")
 
         Renderer.layers.append("Common/Border.png")
@@ -107,6 +110,40 @@ class Renderer:
         else:
             return
         Renderer.layers.append(attr)
+
+    @staticmethod
+    def get_art(card: Card):
+        art_url = IMG_BASE_URL % card.id
+        alias_url = IMG_BASE_URL % card.alias
+        art_path = os.path.join("yugitoolbox/assets/Art", f"{card.id}.png")
+        if not os.path.exists(art_path):
+            response = requests.get(art_url, stream=True)
+            if not response.ok:
+                response = requests.get(alias_url, stream=True)
+                if not response.ok:
+                    return
+            art_img = Image.open(BytesIO(response.content))
+            art_img = art_img.convert("RGBA")
+            card_size = (813, 1185)
+            if card.has_type(Type.Pendulum):
+                bbox = (55, 212, 759, 739)
+                new_width = 704
+                aspect_ratio = art_img.width / art_img.height
+                new_height = int(new_width / aspect_ratio)
+                art_img = art_img.resize((new_width, new_height), Image.LANCZOS)
+                art_img = ImageOps.fit(
+                    art_img,
+                    (bbox[2] - bbox[0], bbox[3] - bbox[1]),
+                    centering=(0.0, 0.0),
+                )
+            else:
+                bbox = (98, 217, 716, 835)
+                new_size = (618, 618)
+                art_img = art_img.resize(new_size, Image.LANCZOS)
+            background = Image.new("RGBA", card_size, (255, 255, 255, 0))
+            background.paste(art_img, (bbox[0], bbox[1]))
+            background.save(art_path, format="PNG")
+        Renderer.layers.append(f"Art/{card.id}.png")
 
     @staticmethod
     def get_neg_level(card: Card):
@@ -185,30 +222,13 @@ class Renderer:
         Renderer.layers.append("Text/Status_Bar.png")
 
     @staticmethod
-    def get_art(card):
-        art_url = IMG_BASE_URL % card.id
-        art_path = os.path.join("yugitoolbox/assets/Art", f"{card.id}.png")
-        if not os.path.exists(art_path):
-            response = requests.get(art_url, stream=True)
-            if not response.ok:
-                return
-            art_img = Image.open(BytesIO(response.content))
-            art_img = art_img.convert("RGBA")
-            card_size = (813, 1185)
-            bbox = [98, 217, 715, 834]
-            new_image = Image.new("RGBA", card_size, (255, 255, 255, 0))
-            new_image.paste(art_img, (bbox[0], bbox[1]))
-            new_image.save(art_path, format="PNG")
-        Renderer.layers.append(f"Art/{card.id}.png")
-
-    @staticmethod
     def process_layers(card: Card):
         Renderer.layers = []
 
         Renderer.get_frame(card)
+        Renderer.get_art(card)
         Renderer.get_common(card)
         Renderer.get_attribute(card)
-        Renderer.get_art(card)
 
         if any(card.has_type(x) for x in [Type.Spell, Type.Trap]):
             Renderer.get_st_icon(card)
