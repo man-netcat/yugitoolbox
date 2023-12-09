@@ -17,10 +17,10 @@ Database wrapper and tools for Yu-Gi-Oh! databases.
 >>> db = OmegaDB()
 >>> card = db.get_card_by_id(10497636)
 >>> print(card)
-War Rock Meteoragon (10497636): Level 7 EARTH Warrior Effect Monster
+War Rock Meteoragon (10497636): EARTH Level 7 [Warrior/Effect]
 >>> card.get_archetypes(db)
 [War Rock]
->>> card.get_race()
+>>> card.race.name
 'Warrior'
 >>> arch = db.get_archetypes_by_value("name", "War Rock")[0]
 >>> arch.name
@@ -37,14 +37,21 @@ War Rock Meteoragon (10497636): Level 7 EARTH Warrior Effect Monster
 >>> for card in customdb.get_cards():
 ...     print(card)
 ... 
-Ancient Warriors - Heroic Zhao Long (210000229): Level 4 WIND BeastWarrior Effect Monster
-Ancient Warriors - Fabulous Zhang Jun (210708231): Level 6 FIRE BeastWarrior Effect Monster
-Ancient Warriors - Headstrong Xiahou Rang (211306220): Level 7 FIRE BeastWarrior Effect Monster
-Ancient Warriors - Majestic Yuan Ben (212806202): Level 8 LIGHT BeastWarrior Effect Monster
-Ancient Warriors - Talented Cao Zi (212906226): Level 4 FIRE BeastWarrior Effect Monster
+Ancient Warriors - Heroic Zhao Long (210000229): WIND Level 4 [BeastWarrior/Effect]
+Ancient Warriors - Fabulous Zhang Jun (210708231): FIRE Level 6 [BeastWarrior/Effect]
+Ancient Warriors - Headstrong Xiahou Rang (211306220): FIRE Level 7 [BeastWarrior/Effect]
+Ancient Warriors - Majestic Yuan Ben (212806202): LIGHT Level 8 [BeastWarrior/Effect]
+Ancient Warriors - Talented Cao Zi (212906226): FIRE Level 4 [BeastWarrior/Effect]
+```
+### Writing CustomDB object to Sqlite DB
+```py
+>>> customdb.write_to_database()
 ```
 
 ## Roadmap
-- Writing back to sqlite database
-- Rendering card images
+###
+```
+>>> for card in customdb.get_cards():
+...     card.render()
+```
 
