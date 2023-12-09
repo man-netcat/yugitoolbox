@@ -26,7 +26,7 @@ class Card:
     _level: int = 0
     atk: int = 0
     _def: int = 0
-    text: str = ""
+    _text: str = ""
     sets: list[int] = field(default_factory=list)
     _tcgdate: int = 0
     _ocgdate: int = 0
@@ -52,6 +52,14 @@ class Card:
         return self.name
 
     @property
+    def text(self) -> str:
+        return self._text.replace("'''", "")
+
+    @text.setter
+    def text(self, new):
+        self._text = new
+
+    @property
     def levelstr(self) -> str:
         return (
             "Rank "
@@ -66,12 +74,22 @@ class Card:
         if self.is_skill:
             return "[Skill]"
 
-        type_names = reversed([type.name for type in self.type if type != Type.Monster])
+        type_names = reversed(
+            [
+                type.name
+                for type in self.type
+                if not any(x in type for x in [Type.Monster, Type.Token])
+            ]
+        )
 
         if self.has_type(Type.Monster):
-            return f"[{self.race.name} / {' / '.join(type_names)}]"
+            typestr = f"[{self.race.name}/{'/'.join(type_names)}]"
+        else:
+            typestr = "[" + " ".join(type_names) + "]"
 
-        return "[" + " ".join(type_names) + "]"
+        if self.is_dark_synchro:
+            typestr = typestr.replace("Synchro", "Dark Synchro")
+        return typestr
 
     @property
     def type(self) -> list[Type]:

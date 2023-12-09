@@ -36,7 +36,7 @@ class CustomDB(YugiDB):
                 "datas.ocgdate as _ocgdate",
                 "datas.tcgdate as _tcgdate",
                 "texts.name",
-                "texts.desc as text",
+                "texts.desc as _text",
             ]
         )
 
@@ -158,7 +158,7 @@ class CustomDB(YugiDB):
             """
         INSERT INTO texts (id, name, desc) VALUES (?, ?, ?)
         """,
-            [(card.id, card.name, card.text) for card in self.card_data.values()],
+            [(card.id, card.name, card._text) for card in self.card_data.values()],
         )
         cur.executemany(
             """

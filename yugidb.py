@@ -173,7 +173,7 @@ class YugiDB:
         return [
             card
             for card in self.get_cards()
-            if any(card_name in card.text for card_name in given_cards)
+            if any(card_name in card._text for card_name in given_cards)
             or any(
                 arch_name
                 in [
@@ -191,13 +191,11 @@ class YugiDB:
             if not card.id == 111004001
             and (card.script != 1.0 or card.script == None)
             and any(
-                [
-                    card.has_type(type)
-                    for type in [
-                        Type.Spell,
-                        Type.Trap,
-                        Type.Effect,
-                    ]
+                card.has_type(type)
+                for type in [
+                    Type.Spell,
+                    Type.Trap,
+                    Type.Effect,
                 ]
             )
             and not card.alias
