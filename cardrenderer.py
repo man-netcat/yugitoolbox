@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import textwrap
 from io import BytesIO
 from typing import TYPE_CHECKING
 
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
     from .card import Card
 
 IMG_BASE_URL = "https://images.ygoprodeck.com/images/cards_cropped/%s.jpg"
+CARD_SIZE = (813, 1185)
 
 
 class Renderer:
@@ -95,7 +97,12 @@ class Renderer:
         import random
 
         Renderer.layers.append(f"Stickers/Holo_Sticker_{random.randint(1, 4)}.png")
-        Renderer.layers.append("Text/Limitation/Black/Creator.png")
+        if (card.has_type(Type.Xyz) or card.is_dark_synchro) and not card.has_type(
+            Type.Pendulum
+        ):
+            Renderer.layers.append("Text/Limitation/White/Creator.png")
+        else:
+            Renderer.layers.append("Text/Limitation/Black/Creator.png")
 
     @staticmethod
     def get_attribute(card: Card):
@@ -117,33 +124,38 @@ class Renderer:
         art_url = IMG_BASE_URL % card.id
         alias_url = IMG_BASE_URL % card.alias
         art_path = os.path.join("yugitoolbox/assets/Art", f"{card.id}.png")
-        if not os.path.exists(art_path):
+        custom_art_path = os.path.join("yugitoolbox/assets/CustomArt", f"{card.id}.png")
+        if os.path.exists(art_path):
+            Renderer.layers.append(f"Art/{card.id}.png")
+            return
+        if os.path.exists(custom_art_path):
+            art_img = Image.open(custom_art_path).convert("RGBA")
+        else:
             response = requests.get(art_url, stream=True)
             if not response.ok:
                 response = requests.get(alias_url, stream=True)
                 if not response.ok:
                     return
-            art_img = Image.open(BytesIO(response.content))
-            art_img = art_img.convert("RGBA")
-            card_size = (813, 1185)
-            if card.has_type(Type.Pendulum):
-                bbox = (55, 212, 759, 739)
-                new_width = 704
-                aspect_ratio = art_img.width / art_img.height
-                new_height = int(new_width / aspect_ratio)
-                art_img = art_img.resize((new_width, new_height), Image.LANCZOS)
-                art_img = ImageOps.fit(
-                    art_img,
-                    (bbox[2] - bbox[0], bbox[3] - bbox[1]),
-                    centering=(0.0, 0.0),
-                )
-            else:
-                bbox = (98, 217, 716, 835)
-                new_size = (618, 618)
-                art_img = art_img.resize(new_size, Image.LANCZOS)
-            background = Image.new("RGBA", card_size, (255, 255, 255, 0))
-            background.paste(art_img, (bbox[0], bbox[1]))
-            background.save(art_path, format="PNG")
+            art_img = Image.open(BytesIO(response.content)).convert("RGBA")
+        card_size = CARD_SIZE
+        if card.has_type(Type.Pendulum):
+            bbox = (55, 212, 759, 739)
+            new_width = 704
+            aspect_ratio = art_img.width / art_img.height
+            new_height = int(new_width / aspect_ratio)
+            art_img = art_img.resize((new_width, new_height), Image.LANCZOS)
+            art_img = ImageOps.fit(
+                art_img,
+                (bbox[2] - bbox[0], bbox[3] - bbox[1]),
+                centering=(0.0, 0.0),
+            )
+        else:
+            bbox = (98, 217, 716, 835)
+            new_size = (618, 618)
+            art_img = art_img.resize(new_size, Image.LANCZOS)
+        background = Image.new("RGBA", card_size, (255, 255, 255, 0))
+        background.paste(art_img, (bbox[0], bbox[1]))
+        background.save(art_path, format="PNG")
         Renderer.layers.append(f"Art/{card.id}.png")
 
     @staticmethod
@@ -241,6 +253,8 @@ class Renderer:
             Renderer.get_linkmarkers(card)
         else:
             Renderer.get_level(card)
+        if card.has_type(Type.Pendulum):
+            Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Scales.png")
         Renderer.get_atk_def_link(card)
 
     @staticmethod
@@ -257,55 +271,113 @@ class Renderer:
     def draw_card_name(card: Card):
         font_path = "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf"
         font_size = 93
-        bbox = (64, 52)
+        text_position = (64, 52)
+
         if (
-            any(
-                x in card.type
-                for x in [
-                    Type.Link,
-                    Type.Xyz,
-                    Type.Trap,
-                    Type.Spell,
-                ]
-            )
+            any(x in card.type for x in [Type.Link, Type.Xyz, Type.Trap, Type.Spell])
             or card.is_dark_synchro
         ):
-            colour = "#FFF"
+            text_color = "#FFF"
         else:
-            colour = "#000"
+            text_color = "#000"
+
         max_width = 600
-        temp_image = Image.new("RGBA", (813, 1185), (0, 0, 0, 0))
+        temp_image = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
+        temp_draw = ImageDraw.Draw(temp_image)
+
+        card_font = ImageFont.truetype(font=font_path, size=font_size)
+        text_bbox = temp_draw.textbbox(text_position, card.name, font=card_font)
+
+        text_width = text_bbox[2] - text_bbox[0]
+        width_scale = max(1, text_width / max_width)
+
+        text_layer_width = int(813 * width_scale)
+        text_layer = Image.new("RGBA", (text_layer_width, 1185), (0, 0, 0, 0))
+        text_draw = ImageDraw.Draw(text_layer)
+
+        text_draw.text(
+            xy=(text_position[0] * width_scale, text_position[1]),
+            text=card.name,
+            fill=text_color,
+            font=card_font,
+        )
+
+        stretched_text_layer = text_layer.resize(CARD_SIZE, Image.LANCZOS)
+        Renderer.image = Image.alpha_composite(Renderer.image, stretched_text_layer)
+
+    @staticmethod
+    def draw_race_type(card: Card):
+        if not card.has_type(Type.Monster) and not card.is_skill:
+            return
+        text = card.typestr
+
+        font_path = (
+            "yugitoolbox/assets/Fonts/Yu-Gi-Oh! ITC Stone Serif Small Caps Bold.ttf"
+        )
+        font_size = 31
+        bbox = (65, 888)
+        colour = "#000"
+        font = ImageFont.truetype(font=font_path, size=font_size)
+        layer = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
+        draw_layer = ImageDraw.Draw(layer)
+        draw_layer.text(xy=(bbox[0], bbox[1]), text=text, fill=colour, font=font)
+        Renderer.image = Image.alpha_composite(Renderer.image, layer)
+
+    @staticmethod
+    def draw_card_text(card: Card):
+        if card.is_skill:
+            return
+        sections = card.text.split("\n")
+        mats = None
+        pendtext = None
+        text = ""
+        match len(sections):
+            case 1:
+                text = sections[0]
+            case 2:
+                mats, text = sections
+            case 4:
+                _, pendtext, _, text = sections
+            case 5:
+                _, pendtext, _, mats, text = sections
+
+        if card.has_type(Type.Normal) and not card.has_type(Type.Token):
+            font_path = (
+                "yugitoolbox/assets/Fonts/Yu-Gi-Oh! ITC Stone Serif LT Italic.ttf"
+            )
+        else:
+            font_path = "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Book.ttf"
+        font_size = 19
+        if card.has_type(Type.Monster):
+            bbox = (65, 925)
+        else:
+            bbox = (65, 895)
+        colour = "#000"
+        max_width = 78
+        wrapped = "\n".join(
+            textwrap.wrap(
+                text, max_width, break_long_words=False, break_on_hyphens=False
+            )
+        )
+        if mats:
+            wrapped = f"{mats}\n{wrapped}"
+        # print(wrapped)
+        temp_image = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
         temp_layer = ImageDraw.Draw(temp_image)
         font = ImageFont.truetype(font=font_path, size=font_size)
-        textbbox = temp_layer.textbbox(bbox, card.name, font=font)
+        textbbox = temp_layer.textbbox(bbox, wrapped, font=font)
         text_width = textbbox[2] - textbbox[0]
-        width_scale = max(1, text_width / max_width)
-        layer_width = int(813 * width_scale)
-        layer = Image.new("RGBA", (layer_width, 1185), (0, 0, 0, 0))
+        layer = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
         draw_layer = ImageDraw.Draw(layer)
-        draw_layer.text(
-            xy=(bbox[0] * width_scale, bbox[1]), text=card.name, fill=colour, font=font
-        )
-        stretched_layer = layer.resize((813, 1185), Image.LANCZOS)
+        draw_layer.text(xy=(bbox[0], bbox[1]), text=wrapped, fill=colour, font=font)
+        stretched_layer = layer.resize(CARD_SIZE, Image.LANCZOS)
         Renderer.image = Image.alpha_composite(Renderer.image, stretched_layer)
 
     @staticmethod
     def render_text(card: Card):
         Renderer.draw_card_name(card)
-        # Renderer.draw_text(
-        #     typestr,
-        #     "yugitoolbox/assets/Fonts/Yu-Gi-Oh! ITC Stone Serif Small Caps Bold.ttf",
-        #     22,
-        #     image,
-        #     [70, 900, 740, 1100],
-        # )
-        # Renderer.draw_text(
-        #     card.text,
-        #     "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Book.ttf",
-        #     20,
-        #     image,
-        #     [70, 900, 740, 1100],
-        # )
+        Renderer.draw_race_type(card)
+        Renderer.draw_card_text(card)
 
     @staticmethod
     def render_card(card: Card, dir: str = "out"):
