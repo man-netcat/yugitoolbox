@@ -54,8 +54,17 @@ Ancient Warriors - Talented Cao Zi (212906226): FIRE Level 4 [BeastWarrior/Effec
 ```
 
 ### Rendering card images
+Note: this is a work in progress.
 ```
 >>> for card in customdb.get_cards():
 ...     card.render()
 ```
+Examples:
+
+![Stardust Dragon](https://raw.githubusercontent.com/man-netcat/yugitoolbox/main/example_renders/44508094.png)
+![Hundred Eyes Dragon](https://raw.githubusercontent.com/man-netcat/yugitoolbox/main/example_renders/100000150.png)
+
+Custom card render example:
+
+![Ancient Warriors - Majestic Yuan Ben](https://raw.githubusercontent.com/man-netcat/yugitoolbox/main/example_renders/212806202.png)
 
