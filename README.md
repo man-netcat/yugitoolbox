@@ -50,8 +50,7 @@ Ancient Warriors - Talented Cao Zi (212906226): FIRE Level 4 [BeastWarrior/Effec
 >>> customdb.write_to_database()
 ```
 
-## Roadmap
-###
+### Rendering card images
 ```
 >>> for card in customdb.get_cards():
 ...     card.render()
