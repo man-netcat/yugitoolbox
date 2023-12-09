@@ -306,22 +306,84 @@ class Renderer:
         Renderer.image = Image.alpha_composite(Renderer.image, stretched_text_layer)
 
     @staticmethod
-    def draw_race_type(card: Card):
-        if not card.has_type(Type.Monster) and not card.is_skill:
-            return
-        text = card.typestr
-
-        font_path = (
-            "yugitoolbox/assets/Fonts/Yu-Gi-Oh! ITC Stone Serif Small Caps Bold.ttf"
-        )
-        font_size = 31
-        bbox = (65, 888)
-        colour = "#000"
+    def draw_text_segment(text, font_path, font_size, bbox, colour):
         font = ImageFont.truetype(font=font_path, size=font_size)
         layer = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
         draw_layer = ImageDraw.Draw(layer)
         draw_layer.text(xy=(bbox[0], bbox[1]), text=text, fill=colour, font=font)
         Renderer.image = Image.alpha_composite(Renderer.image, layer)
+
+    @staticmethod
+    def draw_segments(card: Card):
+        if not card.has_type(Type.Monster) and not card.is_skill:
+            return
+        # Race/Type
+        Renderer.draw_text_segment(
+            card.typestr,
+            "yugitoolbox/assets/Fonts/Yu-Gi-Oh! ITC Stone Serif Small Caps Bold.ttf",
+            31,
+            (65, 888),
+            "#000",
+        )
+        if card.is_skill:
+            return
+        # ATK
+        Renderer.draw_text_segment(
+            str(card.atk) if card.atk >= 0 else "?",
+            "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+            41,
+            (511, 1077),
+            "#000",
+        )
+        if card.has_type(Type.Link):
+            Renderer.draw_text_segment(
+                str(card.level),
+                "yugitoolbox/assets/Fonts/RoGSanSrfStd-Bd.otf",
+                24,
+                (722, 1083),
+                "#000",
+            )
+            pass
+        else:
+            # DEF
+            Renderer.draw_text_segment(
+                str(card.def_) if card.def_ >= 0 else "?",
+                "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+                41,
+                (676, 1077),
+                "#000",
+            )
+
+        if card.has_type(Type.Pendulum):
+            for x in [72, 718]:
+                Renderer.draw_text_segment(
+                    str(card.scale),
+                    "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+                    60,
+                    (x, 812),
+                    "#000",
+                )
+
+    @staticmethod
+    def draw_effect(text, max_width, mats, font_path, font_size, bbox):
+        wrapped = "\n".join(
+            textwrap.wrap(
+                text, max_width, break_long_words=False, break_on_hyphens=False
+            )
+        )
+        if mats:
+            wrapped = f"{mats}\n{wrapped}"
+        # print(wrapped)
+        temp_image = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
+        temp_layer = ImageDraw.Draw(temp_image)
+        font = ImageFont.truetype(font=font_path, size=font_size)
+        textbbox = temp_layer.textbbox(bbox, wrapped, font=font)
+        text_width = textbbox[2] - textbbox[0]
+        layer = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
+        draw_layer = ImageDraw.Draw(layer)
+        draw_layer.text(xy=(bbox[0], bbox[1]), text=wrapped, fill="#000", font=font)
+        stretched_layer = layer.resize(CARD_SIZE, Image.LANCZOS)
+        Renderer.image = Image.alpha_composite(Renderer.image, stretched_layer)
 
     @staticmethod
     def draw_card_text(card: Card):
@@ -347,36 +409,18 @@ class Renderer:
             )
         else:
             font_path = "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Book.ttf"
-        font_size = 19
         if card.has_type(Type.Monster):
             bbox = (65, 925)
         else:
             bbox = (65, 895)
-        colour = "#000"
-        max_width = 78
-        wrapped = "\n".join(
-            textwrap.wrap(
-                text, max_width, break_long_words=False, break_on_hyphens=False
-            )
-        )
-        if mats:
-            wrapped = f"{mats}\n{wrapped}"
-        # print(wrapped)
-        temp_image = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
-        temp_layer = ImageDraw.Draw(temp_image)
-        font = ImageFont.truetype(font=font_path, size=font_size)
-        textbbox = temp_layer.textbbox(bbox, wrapped, font=font)
-        text_width = textbbox[2] - textbbox[0]
-        layer = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
-        draw_layer = ImageDraw.Draw(layer)
-        draw_layer.text(xy=(bbox[0], bbox[1]), text=wrapped, fill=colour, font=font)
-        stretched_layer = layer.resize(CARD_SIZE, Image.LANCZOS)
-        Renderer.image = Image.alpha_composite(Renderer.image, stretched_layer)
+        Renderer.draw_effect(text, 78, mats, font_path, 19, bbox)
+        if card.has_type(Type.Pendulum):
+            Renderer.draw_effect(pendtext, 62, None, font_path, 19, (128, 751))
 
     @staticmethod
     def render_text(card: Card):
         Renderer.draw_card_name(card)
-        Renderer.draw_race_type(card)
+        Renderer.draw_segments(card)
         Renderer.draw_card_text(card)
 
     @staticmethod
