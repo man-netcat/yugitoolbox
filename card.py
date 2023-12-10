@@ -42,7 +42,7 @@ class Card:
 
     def __str__(self) -> str:
         if self.has_type(Type.Pendulum):
-            return f"{self.name} ({self.id}): {self.attribute.name} {self.levelstr} {self.typestr}"
+            return f"{self.name} ({self.id}): {self.attribute.name} {self.levelstr}, Scale {self.scale} {self.typestr}"
         if self.has_type(Type.Monster):
             return f"{self.name} ({self.id}): {self.attribute.name} {self.levelstr} {self.typestr}"
         else:
@@ -74,13 +74,11 @@ class Card:
         if self.is_skill:
             return "[Skill]"
 
-        type_names = reversed(
-            [
-                type.name
-                for type in self.type
-                if not any(x in type for x in [Type.Monster, Type.Token])
-            ]
-        )
+        type_names = [
+            type.name
+            for type in self.type
+            if not any(x in type for x in [Type.Monster, Type.Token])
+        ]
 
         if self.has_type(Type.Monster):
             typestr = f"[{self.race.name}/{'/'.join(type_names)}]"
@@ -96,24 +94,39 @@ class Card:
         return self._enum_values(self._type, Type)
 
     @type.setter
-    def type(self, new: list[Type]):
-        self._type = reduce(or_, new)
+    def type(self, new: Type | list[Type]) -> None:
+        if isinstance(new, Type):
+            self._type = new
+        elif isinstance(new, list):
+            self._type = reduce(or_, new)
+        else:
+            raise ValueError("Invalid type assignment")
 
     @property
     def category(self) -> list[Category]:
         return self._enum_values(self._category, Category)
 
     @category.setter
-    def category(self, new: list[Category]):
-        self._category = reduce(or_, new)
+    def category(self, new: Category | list[Category]) -> None:
+        if isinstance(new, Category):
+            self._category = new
+        elif isinstance(new, list):
+            self._category = reduce(or_, new)
+        else:
+            raise ValueError("Invalid type assignment")
 
     @property
-    def genre(self) -> list[Category]:
+    def genre(self) -> list[Genre]:
         return self._enum_values(self._genre, Genre)
 
     @genre.setter
-    def genre(self, new: list[Genre]):
-        self._genre = reduce(or_, new)
+    def genre(self, new: Genre | list[Genre]) -> None:
+        if isinstance(new, Genre):
+            self._genre = new
+        elif isinstance(new, list):
+            self._genre = reduce(or_, new)
+        else:
+            raise ValueError("Invalid type assignment")
 
     @property
     def level(self) -> int:
@@ -156,9 +169,15 @@ class Card:
         return []
 
     @linkmarkers.setter
-    def linkmarkers(self, new: list[LinkMarker]):
-        if self.has_type(Type.Link):
+    def linkmarkers(self, new: LinkMarker | list[LinkMarker]) -> None:
+        if not self.has_type(Type.Link):
+            return
+        if isinstance(new, LinkMarker):
+            self._def = new
+        elif isinstance(new, list):
             self._def = reduce(or_, new)
+        else:
+            raise ValueError("Invalid type assignment")
 
     @property
     def race(self) -> Race:
@@ -166,7 +185,7 @@ class Card:
 
     @race.setter
     def race(self, new: int | Race):
-        self._race = int(new)
+        self._race = new
 
     @property
     def attribute(self) -> Attribute:
@@ -174,7 +193,7 @@ class Card:
 
     @attribute.setter
     def attribute(self, new: int | Attribute):
-        self._attribute = int(new)
+        self._attribute = new
 
     @property
     def ocgdate(self) -> Optional[datetime]:
@@ -184,8 +203,11 @@ class Card:
             return datetime.max
 
     @ocgdate.setter
-    def ocgdate(self, value: int | datetime) -> None:
-        self._ocgdate = self._convert_to_timestamp(value)
+    def ocgdate(self, new: int | datetime) -> None:
+        if isinstance(new, datetime):
+            self._ocgdate = self._convert_to_timestamp(new)
+        elif isinstance(new, int):
+            self._ocgdate = new
 
     @property
     def tcgdate(self) -> Optional[datetime]:
@@ -195,8 +217,11 @@ class Card:
             return datetime.max
 
     @tcgdate.setter
-    def tcgdate(self, value: int | datetime) -> None:
-        self._tcgdate = self._convert_to_timestamp(value)
+    def tcgdate(self, new: int | datetime) -> None:
+        if isinstance(new, datetime):
+            self._tcgdate = self._convert_to_timestamp(new)
+        elif isinstance(new, int):
+            self._tcgdate = new
 
     def _convert_to_timestamp(self, value: int | datetime) -> int:
         if isinstance(value, int):
