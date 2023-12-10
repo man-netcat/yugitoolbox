@@ -13,6 +13,7 @@ Database wrapper and tools for Yu-Gi-Oh! databases.
 - Render card images
 
 ## How to use
+
 ### Search features
 ```py
 >>> from yugitoolbox import OmegaDB
@@ -32,6 +33,7 @@ War Rock Meteoragon (10497636): EARTH Level 7 [Warrior/Effect]
 >>> card.get_sets(db) 
 [Lightning Overdrive, World Premiere Pack 2021]
 ```
+
 ### Custom DB
 ```py
 >>> from yugitoolbox import CustomDB
@@ -45,15 +47,24 @@ Ancient Warriors - Headstrong Xiahou Rang (211306220): FIRE Level 7 [BeastWarrio
 Ancient Warriors - Majestic Yuan Ben (212806202): LIGHT Level 8 [BeastWarrior/Effect]
 Ancient Warriors - Talented Cao Zi (212906226): FIRE Level 4 [BeastWarrior/Effect]
 ```
+
 ### Writing CustomDB object to Sqlite DB
 ```py
 >>> customdb.write_to_database()
 ```
 
-## Roadmap
-###
+### Rendering card images
+Note: this is a work in progress.
 ```
 >>> for card in customdb.get_cards():
 ...     card.render()
 ```
+Examples:
+
+![Stardust Dragon](https://raw.githubusercontent.com/man-netcat/yugitoolbox/main/example_renders/44508094.png)
+![Hundred Eyes Dragon](https://raw.githubusercontent.com/man-netcat/yugitoolbox/main/example_renders/100000150.png)
+
+Custom card render example:
+
+![Ancient Warriors - Majestic Yuan Ben](https://raw.githubusercontent.com/man-netcat/yugitoolbox/main/example_renders/212806202.png)
 
