@@ -41,11 +41,11 @@ War Rock Meteoragon (10497636): EARTH Level 7 [Warrior/Effect]
 >>> for card in customdb.get_cards():
 ...     print(card)
 ... 
-Ancient Warriors - Heroic Zhao Long (210000229): WIND Level 4 [BeastWarrior/Effect]
-Ancient Warriors - Fabulous Zhang Jun (210708231): FIRE Level 6 [BeastWarrior/Effect]
-Ancient Warriors - Headstrong Xiahou Rang (211306220): FIRE Level 7 [BeastWarrior/Effect]
-Ancient Warriors - Majestic Yuan Ben (212806202): LIGHT Level 8 [BeastWarrior/Effect]
-Ancient Warriors - Talented Cao Zi (212906226): FIRE Level 4 [BeastWarrior/Effect]
+Ancient Warriors - Heroic Zhao Long (210000229): WIND Level 4 [Beast Warrior/Effect]
+Ancient Warriors - Fabulous Zhang Jun (210708231): FIRE Level 6 [Beast Warrior/Effect]
+Ancient Warriors - Headstrong Xiahou Rang (211306220): FIRE Level 7 [Beast Warrior/Effect]
+Ancient Warriors - Majestic Yuan Ben (212806202): LIGHT Level 8 [Beast Warrior/Effect]
+Ancient Warriors - Talented Cao Zi (212906226): FIRE Level 4 [Beast Warrior/Effect]
 ```
 
 ### Writing CustomDB object to Sqlite DB
