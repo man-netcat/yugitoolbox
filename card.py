@@ -62,7 +62,9 @@ class Card:
     @property
     def levelstr(self) -> str:
         return (
-            "Rank "
+            "Level -"
+            if self.is_dark_synchro
+            else "Rank "
             if self.has_type(Type.Xyz)
             else "Link "
             if self.has_type(Type.Link)
@@ -71,6 +73,11 @@ class Card:
 
     @property
     def typestr(self) -> str:
+        def split_camel_case(s: str) -> str:
+            import re
+
+            return " ".join(re.findall(r"[A-Z][a-z]*", s))
+
         if self.is_skill:
             return "[Skill]"
 
@@ -81,7 +88,7 @@ class Card:
         ]
 
         if self.has_type(Type.Monster):
-            typestr = f"[{self.race.name}/{'/'.join(type_names)}]"
+            typestr = f"[{split_camel_case(self.race.name)}/{'/'.join(type_names)}]"
         else:
             typestr = "[" + " ".join(type_names) + "]"
 
