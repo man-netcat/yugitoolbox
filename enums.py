@@ -8,7 +8,6 @@ class Type(IntFlag):
     Trap = 0x4
     Unknown = 0x8
     Normal = 0x10
-    Effect = 0x20
     Fusion = 0x40
     Ritual = 0x80
     TrapMonster = 0x100
@@ -30,6 +29,7 @@ class Type(IntFlag):
     Pendulum = 0x1000000
     SpSummon = 0x2000000
     Link = 0x4000000
+    Effect = 0x20
 
 
 class LinkMarker(IntFlag):
