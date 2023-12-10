@@ -190,20 +190,20 @@ class Renderer:
             Renderer.layers.append(level)
 
     @staticmethod
-    def get_st_icon(card: Card):
+    def get_property(card: Card):
         icon = None
         if card.has_type(Type.Continuous):
-            icon = "ST_Icons/Continuous.png"
+            icon = "Property/Continuous.png"
         elif card.has_type(Type.Counter):
-            icon = "ST_Icons/Counter.png"
+            icon = "Property/Counter.png"
         elif card.has_type(Type.QuickPlay):
-            icon = "ST_Icons/QuickPlay.png"
+            icon = "Property/QuickPlay.png"
         elif card.has_type(Type.Field):
-            icon = "ST_Icons/Field.png"
+            icon = "Property/Field.png"
         elif card.has_type(Type.QuickPlay):
-            icon = "ST_Icons/QuickPlay.png"
+            icon = "Property/QuickPlay.png"
         elif card.has_type(Type.Ritual):
-            icon = "ST_Icons/Ritual.png"
+            icon = "Property/Ritual.png"
 
         if card.has_category(Category.SkillCard):
             return
@@ -244,7 +244,7 @@ class Renderer:
         Renderer.get_attribute(card)
 
         if any(card.has_type(x) for x in [Type.Spell, Type.Trap]):
-            Renderer.get_st_icon(card)
+            Renderer.get_property(card)
         elif card.is_dark_synchro:
             Renderer.get_neg_level(card)
         elif card.has_type(Type.Xyz):
