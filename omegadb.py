@@ -16,12 +16,18 @@ OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 class OmegaDB(YugiDB):
     initialised = False
 
-    def __init__(self, force_update: bool = False, rebuild_pkl: bool = False):
+    def __init__(
+        self,
+        skip_update: bool = False,
+        force_update: bool = False,
+        rebuild_pkl: bool = False,
+    ):
         self.name = "OmegaDB"
         self.dbpath = "db/omega/omega.db"
         downloaded = False
         if not OmegaDB.initialised:
-            downloaded = self._download_omegadb(force_update)
+            if not skip_update:
+                downloaded = self._download_omegadb(force_update)
             OmegaDB.initialised = True
         super().__init__(rebuild_pkl=rebuild_pkl or downloaded)
 
