@@ -2,34 +2,45 @@ from enum import IntEnum, IntFlag
 
 
 class Type(IntFlag):
-    NoneType = 0x0
+    NoType = 0x0
     Monster = 0x1
     Spell = 0x2
     Trap = 0x4
-    Unknown = 0x8
     Normal = 0x10
-    Fusion = 0x40
     Ritual = 0x80
+    Tuner = 0x1000
+    Pendulum = 0x1000000
+    Effect = 0x20
+    Token = 0x4000
     TrapMonster = 0x100
+    SpSummon = 0x2000000
+
+
+class EDType(IntFlag):
+    MainDeck = 0x0
+    Fusion = 0x40
+    Synchro = 0x2000
+    Xyz = 0x800000
+    Link = 0x4000000
+
+
+class Ability(IntFlag):
+    NoAbility = 0x0
     Spirit = 0x200
     Union = 0x400
     Gemini = 0x800
-    Tuner = 0x1000
-    Synchro = 0x2000
-    Token = 0x4000
-    Unknown2 = 0x8000
+    Flip = 0x200000
+    Toon = 0x400000
+
+
+class Property(IntFlag):
+    Normal = 0x0
+    Ritual = 0x80
     QuickPlay = 0x10000
     Continuous = 0x20000
     Equip = 0x40000
     Field = 0x80000
     Counter = 0x100000
-    Flip = 0x200000
-    Toon = 0x400000
-    Xyz = 0x800000
-    Pendulum = 0x1000000
-    SpSummon = 0x2000000
-    Link = 0x4000000
-    Effect = 0x20
 
 
 class LinkMarker(IntFlag):
