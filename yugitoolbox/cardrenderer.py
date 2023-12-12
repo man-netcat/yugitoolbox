@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 IMG_BASE_URL = "https://images.ygoprodeck.com/images/cards_cropped/%s.jpg"
 CARD_SIZE = (813, 1185)
+ASSET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
 
 class Renderer:
@@ -26,6 +27,10 @@ class Renderer:
         frame = ""
         if card.has_category(Category.SkillCard):
             frame = "Frames/Skill.png"
+        elif card.has_type(Type.Trap):
+            frame = "Frames/Trap.png"
+        elif card.has_type(Type.Spell):
+            frame = "Frames/Spell.png"
         elif card.has_category(Category.RedGod):
             frame = "Frames/Slifer.png"
         elif card.has_category(Category.BlueGod):
@@ -44,10 +49,6 @@ class Renderer:
             frame = "Frames/Synchro.png"
         elif card.has_edtype(EDType.Xyz):
             frame = "Frames/Xyz.png"
-        elif card.has_type(Type.Trap):
-            frame = "Frames/Trap.png"
-        elif card.has_type(Type.Spell):
-            frame = "Frames/Spell.png"
         elif card.has_edtype(EDType.Link):
             frame = "Frames/Link.png"
         elif card.has_type(Type.Token):
@@ -123,8 +124,8 @@ class Renderer:
     def get_art(card: Card):
         art_url = IMG_BASE_URL % card.id
         alias_url = IMG_BASE_URL % card.alias
-        art_path = os.path.join("yugitoolbox/assets/Art", f"{card.id}.png")
-        custom_art_path = os.path.join("yugitoolbox/assets/CustomArt", f"{card.id}.png")
+        art_path = os.path.join(ASSET_DIR, "Art", f"{card.id}.png")
+        custom_art_path = os.path.join(ASSET_DIR, "CustomArt", f"{card.id}.png")
         if os.path.exists(art_path):
             Renderer.layers.append(f"Art/{card.id}.png")
             return
@@ -259,17 +260,20 @@ class Renderer:
 
     @staticmethod
     def build_template():
-        extended_path = os.path.join("yugitoolbox/assets", Renderer.layers[0])
+        extended_path = os.path.join(ASSET_DIR, Renderer.layers[0])
         base_image = Image.open(extended_path).convert("RGBA")
         for image_path in Renderer.layers[1:]:
-            extended_path = os.path.join("yugitoolbox/assets", image_path)
+            extended_path = os.path.join(ASSET_DIR, image_path)
             overlay = Image.open(extended_path).convert("RGBA")
             base_image = Image.alpha_composite(base_image, overlay)
         return base_image
 
     @staticmethod
     def draw_card_name(card: Card):
-        font_path = "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf"
+        font_path = os.path.join(
+            ASSET_DIR,
+            "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+        )
         font_size = 93
         text_position = (64, 52)
 
@@ -321,7 +325,10 @@ class Renderer:
         # Race/Type
         Renderer.draw_text_segment(
             card.type_str,
-            "yugitoolbox/assets/Fonts/Yu-Gi-Oh! ITC Stone Serif Small Caps Bold.ttf",
+            os.path.join(
+                ASSET_DIR,
+                "Fonts/Yu-Gi-Oh! ITC Stone Serif Small Caps Bold.ttf",
+            ),
             31,
             (65, 888),
             "#000",
@@ -331,7 +338,10 @@ class Renderer:
         # ATK
         Renderer.draw_text_segment(
             str(card.atk) if card.atk >= 0 else "?",
-            "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+            os.path.join(
+                ASSET_DIR,
+                "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+            ),
             41,
             (511, 1077),
             "#000",
@@ -339,7 +349,7 @@ class Renderer:
         if card.has_edtype(EDType.Link):
             Renderer.draw_text_segment(
                 str(card.level),
-                "yugitoolbox/assets/Fonts/RoGSanSrfStd-Bd.otf",
+                os.path.join(ASSET_DIR, "Fonts/RoGSanSrfStd-Bd.otf"),
                 24,
                 (722, 1083),
                 "#000",
@@ -349,7 +359,10 @@ class Renderer:
             # DEF
             Renderer.draw_text_segment(
                 str(card.def_) if card.def_ >= 0 else "?",
-                "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+                os.path.join(
+                    ASSET_DIR,
+                    "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+                ),
                 41,
                 (676, 1077),
                 "#000",
@@ -359,7 +372,10 @@ class Renderer:
             for x in [72, 718]:
                 Renderer.draw_text_segment(
                     str(card.scale),
-                    "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+                    os.path.join(
+                        ASSET_DIR,
+                        "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+                    ),
                     60,
                     (x, 812),
                     "#000",
@@ -405,11 +421,11 @@ class Renderer:
                 _, pendtext, _, mats, text = sections
 
         if card.has_type(Type.Normal) and not card.has_type(Type.Token):
-            font_path = (
-                "yugitoolbox/assets/Fonts/Yu-Gi-Oh! ITC Stone Serif LT Italic.ttf"
+            font_path = os.path.join(
+                ASSET_DIR, "Fonts/Yu-Gi-Oh! ITC Stone Serif LT Italic.ttf"
             )
         else:
-            font_path = "yugitoolbox/assets/Fonts/Yu-Gi-Oh! Matrix Book.ttf"
+            font_path = os.path.join(ASSET_DIR, "Fonts/Yu-Gi-Oh! Matrix Book.ttf")
         if card.has_type(Type.Monster):
             bbox = (65, 925)
         else:

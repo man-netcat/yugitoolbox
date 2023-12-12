@@ -9,6 +9,8 @@ from .archetype import Archetype
 from .card import Card
 from .yugidb import YugiDB
 
+SQL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sql")
+
 
 class CustomDB(YugiDB):
     def __init__(self, name, dbpath, rebuild_pkl=False):
@@ -114,16 +116,21 @@ class CustomDB(YugiDB):
         self.save_pickles()
 
     def write_to_database(self):
+        print(self.dbpath)
+        db_directory = os.path.dirname(self.dbpath)
+        if not os.path.exists(db_directory):
+            os.makedirs(db_directory)
         con = sqlite3.connect(self.dbpath)
         cur = con.cursor()
 
         cur.executescript("DROP TABLE IF EXISTS datas;")
         cur.executescript("DROP TABLE IF EXISTS texts;")
         cur.executescript("DROP TABLE IF EXISTS setcodes;")
+        schema = os.path.join(SQL_DIR, "customdb.sql")
 
-        with open("yugitoolbox/sql/customdb.sql", "r") as file:
+        with open(schema, "r") as file:
             sql_script = file.read()
-            cur.executescript(sql_script)
+        cur.executescript(sql_script)
 
         cur.executemany(
             """

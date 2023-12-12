@@ -1,2 +1,8 @@
 __pycache__
 .vscode
+sandbox.py
+out
+db
+dist
+build
+yugitoolbox.egg-info

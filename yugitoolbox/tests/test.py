@@ -1,6 +1,5 @@
 from unittest import TestCase, main
 
-
 from yugitoolbox import *
 
 
@@ -139,14 +138,12 @@ class TestDB(TestCase):
         self.assertCountEqual(c.linkmarkers, [LinkMarker.Top, LinkMarker.Bottom])
 
     def test_deck(self):
-        omegacode1 = "M+ffLv2SpUJvAQMMO9oKsYDwLo1vjDB8NmIdy6HbV5hcbn5jgeHPrZdYYXiD8j0GGF4++wujxvadTDAcWZ3MMjFpHysM2y0pZBRbdIsJhFukVFlg+IygBxzf4drLBMNhunysOxo5mSUXdTGaH7Vn8Jq4lAmExeuPsYBwYLYx8wGp/ywgvFsrCY4/HX7HFH+/gEUsTYX1ReMM1ll717Pur73Cesb8MeuqM09Y/mjkszAs12T5bVnHnGd8jlkt6hqz4LabzJfr3jEbRPqzgMIFAA=="
-        testdeck = Deck.from_omegacode(TestDB.odb, omegacode1)
-        omegacode2 = testdeck.to_omegacode()
-        # self.assertEqual(omegacode1, omegacode2)
-        ydke_code1 = "ydke://EUKKAwrmpwEK5qcBR5uPAEebjwBHm48AvadvAfx5vAKzoLECTkEDAE5BAwBOQQMAfjUBBUwyuADDhdcAnNXGA/ZJ0ACmm/QBPqRxAT6kcQE+pHEBVhgUAVYYFAFWGBQBZOgnA2ToJwNk6CcDIkiZACJImQAiSJkAdgljAnYJYwJ2CWMCVOZcAVTmXAF9e0AChKFCAYShQgGEoUIBPO4FAzzuBQM=!y7sdAIoTdQOKE3UDwLXNA9EgZgUNUFsFtWJvAqRbfAOkW3wDlk8AAoVAsQKA9rsBlI9dAQdR1QE5ySIF!URCDA1EQgwNREIMDI9adAiPWnQJvdu8Ab3bvANcanwHXGp8B1xqfASaQQgMmkEIDJpBCA0O+3QBDvt0A!"
-        testdeck = Deck.from_ydke(TestDB.odb, ydke_code1)
-        ydke_code2 = testdeck.to_ydke()
-        self.assertEqual(ydke_code1, ydke_code2)
+        omegacode = "M+ffLv2SpUJvAQMMO9oKsYDwLo1vjDB8NmIdy6HbV5hcbn5jgeHPrZdYYXiD8j0GGF4++wujxvadTDAcWZ3MMjFpHysM2y0pZBRbdIsJhFukVFlg+IygBxzf4drLBMNhunysOxo5mSUXdTGaH7Vn8Jq4lAmExeuPsYBwYLYx8wGp/ywgvFsrCY4/HX7HFH+/gEUsTYX1ReMM1ll717Pur73Cesb8MeuqM09Y/mjkszAs12T5bVnHnGd8jlkt6hqz4LabzJfr3jEbRPqzgMIFAA=="
+        testdeck = Deck.from_omegacode(TestDB.odb, omegacode)
+        # self.assertEqual(omegacode, testdeck.omegacode)
+        ydke_code = "ydke://EUKKAwrmpwEK5qcBR5uPAEebjwBHm48AvadvAfx5vAKzoLECTkEDAE5BAwBOQQMAfjUBBUwyuADDhdcAnNXGA/ZJ0ACmm/QBPqRxAT6kcQE+pHEBVhgUAVYYFAFWGBQBZOgnA2ToJwNk6CcDIkiZACJImQAiSJkAdgljAnYJYwJ2CWMCVOZcAVTmXAF9e0AChKFCAYShQgGEoUIBPO4FAzzuBQM=!y7sdAIoTdQOKE3UDwLXNA9EgZgUNUFsFtWJvAqRbfAOkW3wDlk8AAoVAsQKA9rsBlI9dAQdR1QE5ySIF!URCDA1EQgwNREIMDI9adAiPWnQJvdu8Ab3bvANcanwHXGp8B1xqfASaQQgMmkEIDJpBCA0O+3QBDvt0A!"
+        testdeck = Deck.from_ydke(TestDB.odb, ydke_code)
+        self.assertEqual(ydke_code, testdeck.ydke)
 
 
 if __name__ == "__main__":

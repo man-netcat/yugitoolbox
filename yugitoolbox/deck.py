@@ -20,12 +20,18 @@ class Deck:
     main: list[tuple[int, int]]
     extra: list[tuple[int, int]]
     side: list[tuple[int, int]]
+    db: YugiDB
 
     def __str__(self) -> str:
         def format_deck_section(cards: list[tuple[int, int]], section_name: str) -> str:
             return (
                 f"{section_name} ({sum([count for _, count in cards])} cards):\n"
-                + "\n".join([f"  {card} x{count}" for card, count in cards])
+                + "\n".join(
+                    [
+                        f"  {self.db.get_card_by_id(cardid).name} x{count}"
+                        for cardid, count in cards
+                    ]
+                )
             )
 
         main_str = format_deck_section(self.main, "Main Deck")
@@ -37,6 +43,7 @@ class Deck:
     def __repr__(self) -> str:
         return self.name if self.name else "Anonymous Deck"
 
+    @property
     def is_valid(self) -> bool:
         return all(
             [
@@ -65,7 +72,7 @@ class Deck:
         main = [
             (card_id, count)
             for card_id, count in main_extra
-            if db.get_card_by_id(card_id).has_edtype(EDType.MainDeck)
+            if not db.get_card_by_id(card_id).has_edtype()
         ]
         extra = [
             (card_id, count)
@@ -73,12 +80,13 @@ class Deck:
             if db.get_card_by_id(card_id).has_edtype()
         ]
         side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
-        return cls(name, main, extra, side)
+        return cls(name, main, extra, side, db)
 
-    def to_omegacode(self):
+    @property
+    def omegacode(self):
         return base64.b64encode(
             zlib.compress(
-                bytearray([self.total_main() + self.total_extra(), self.total_side()])
+                bytearray([self.total_main + self.total_extra, self.total_side])
                 + b"".join(
                     card_id.to_bytes(4, byteorder="big") * count
                     for card_id, count in self.main + self.extra + self.side
@@ -100,9 +108,10 @@ class Deck:
 
         main, extra, side = map(decode_component, ydke[len("ydke://") :].split("!")[:3])
 
-        return cls(name, main, extra, side)
+        return cls(name, main, extra, side, db)
 
-    def to_ydke(self) -> str:
+    @property
+    def ydke(self) -> str:
         def encode_component(cards: list[tuple[int, int]]) -> str:
             return base64.b64encode(
                 b"".join(
@@ -137,27 +146,32 @@ class Deck:
     def get_archetype_counts(self, db: YugiDB) -> ItemsView[Archetype, int]:
         return Counter(
             db.get_archetype_by_id(archid)
-            for card_id, card_count in self.all_cards()
+            for card_id, card_count in self.all_cards
             for archid in db.get_card_by_id(card_id).archetypes * card_count
         ).items()
 
     def get_archetype_ratios(self, db: YugiDB) -> list[tuple[Archetype, float]]:
         return [
-            (arch, count / self.total_cards() * 100)
+            (arch, count / self.total_cards * 100)
             for arch, count in self.get_archetype_counts(db)
         ]
 
+    @property
     def total_main(self) -> int:
         return sum(count for _, count in self.main)
 
+    @property
     def total_extra(self) -> int:
         return sum(count for _, count in self.extra)
 
+    @property
     def total_side(self) -> int:
         return sum(count for _, count in self.side)
 
+    @property
     def all_cards(self) -> list[tuple[int, int]]:
         return self.main + self.extra + self.side
 
+    @property
     def total_cards(self) -> int:
-        return sum(count for _, count in self.all_cards())
+        return sum(count for _, count in self.all_cards)
