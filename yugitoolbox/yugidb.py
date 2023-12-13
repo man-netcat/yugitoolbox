@@ -5,7 +5,7 @@ import pickle
 import sqlite3
 from abc import abstractmethod
 from collections import Counter
-from typing import Callable, ItemsView, ValuesView
+from typing import Callable, ItemsView, Optional, ValuesView
 
 from .archetype import Archetype
 from .card import Card
@@ -84,13 +84,9 @@ class YugiDB:
         return self.card_data[id]
 
     def get_cards_by_ids(self, ids: list[int]) -> list[Card]:
-        return [self.get_card_by_id(id) for id in ids]
+        return [self.get_card_by_id(id) for id in ids if id in self.card_data]
 
     def get_cards_by_value(self, by: str, value: str | int) -> list[Card]:
-        if by not in Card.__dataclass_fields__.keys():
-            raise RuntimeError(
-                f"'by' not in [{', '.join(Card.__dataclass_fields__.keys())}]"
-            )
         return [
             card
             for card in self.get_cards()
@@ -123,7 +119,7 @@ class YugiDB:
         return self.set_data[id]
 
     def get_sets_by_ids(self, ids: list[int]) -> list[Set]:
-        return [self.get_set_by_id(id) for id in ids]
+        return [self.get_set_by_id(id) for id in ids if id in self.set_data]
 
     def get_sets_by_value(self, by: str, value: str | int) -> list[Set]:
         if by not in Set.__dataclass_fields__.keys():
@@ -147,7 +143,7 @@ class YugiDB:
         return self.arch_data[id]
 
     def get_archetypes_by_ids(self, ids: list[int]) -> list[Archetype]:
-        return [self.get_archetype_by_id(id) for id in ids]
+        return [self.get_archetype_by_id(id) for id in ids if id in self.arch_data]
 
     def get_archetypes_by_value(self, by: str, value: str | int) -> list[Archetype]:
         if by not in Archetype.__dataclass_fields__.keys():
@@ -226,17 +222,18 @@ class YugiDB:
     def get_set_cards(self, set: Set) -> list[Card]:
         return [self.get_card_by_id(id) for id in set.contents]
 
-    def get_set_archetype_counts(self, set_: Set) -> ItemsView[Archetype, int]:
+    def get_set_archetype_counts(self, s: Set) -> ItemsView[Archetype, int]:
         return Counter(
             self.get_archetype_by_id(archid)
-            for card in self.get_cards_by_ids(set_.contents)
+            for card in self.get_cards_by_ids(s.contents)
             for archid in set(card.archetypes + card.support)
+            if card is not None
         ).items()
 
-    def get_set_archetype_ratios(self, set_: Set) -> list[tuple[Archetype, float]]:
+    def get_set_archetype_ratios(self, s: Set) -> list[tuple[Archetype, float]]:
         return [
-            (archid, count / set_.set_total() * 100)
-            for archid, count in self.get_set_archetype_counts(set_)
+            (archid, count / s.set_total * 100)
+            for archid, count in self.get_set_archetype_counts(s)
         ]
 
     def clean(self):

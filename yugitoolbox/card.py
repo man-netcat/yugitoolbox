@@ -1,17 +1,10 @@
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import reduce
 from operator import or_
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from .enums import *
-
-if TYPE_CHECKING:
-    from .archetype import Archetype
-    from .set import Set
-    from .yugidb import YugiDB
 
 
 @dataclass
@@ -244,8 +237,6 @@ class Card:
 
     @property
     def edtype(self):
-        if not self.has_type(Type.Monster):
-            raise RuntimeError("Card is not a Monster card.")
         try:
             return EDType(self._enum_values(self._type, EDType)[0])
         except:
@@ -260,8 +251,6 @@ class Card:
 
     @property
     def property_(self):
-        if not self.has_any_type([Type.Spell, Type.Trap]):
-            raise RuntimeError("Card is not a Monster card.")
         try:
             return Property(self._enum_values(self._type, Property)[0])
         except:
@@ -276,8 +265,6 @@ class Card:
 
     @property
     def ability(self):
-        if not self.has_type(Type.Monster):
-            raise RuntimeError("Card is not a Monster card.")
         try:
             return Ability(self._enum_values(self._type, Ability)[0])
         except:
@@ -464,18 +451,6 @@ class Card:
             sum((value << (16 * i)) for i, value in enumerate(values)) << 32
         )
 
-    def get_archetypes(self, db: YugiDB) -> list[Archetype]:
-        return [db.get_archetype_by_id(id) for id in self.archetypes if id != 0]
-
-    def get_support(self, db: YugiDB) -> list[Archetype]:
-        return [db.get_archetype_by_id(id) for id in self.support if id != 0]
-
-    def get_related(self, db: YugiDB) -> list[Archetype]:
-        return [db.get_archetype_by_id(id) for id in self.related if id != 0]
-
-    def get_sets(self, db: YugiDB) -> list["Set"]:
-        return [db.get_set_by_id(id) for id in self.sets]
-
     @property
     def has_atk_equ_def(self) -> bool:
         return self.has_type(Type.Monster) and self.atk == self._def
@@ -527,7 +502,9 @@ class Card:
         return self.has_category(Category.PreErrata)
 
     @staticmethod
-    def compare_small_world(handcard: Card, deckcard: Card, addcard: Card) -> bool:
+    def compare_small_world(
+        handcard: "Card", deckcard: "Card", addcard: "Card"
+    ) -> bool:
         return all(
             sum(
                 [
