@@ -71,13 +71,16 @@ class YugiDB:
         with open(self.setspkl, "wb") as file:
             pickle.dump(self.set_data, file)
 
-    def get_cards(self) -> ValuesView[Card]:
+    @property
+    def cards(self) -> ValuesView[Card]:
         return self.card_data.values()
 
-    def get_archetypes(self) -> ValuesView[Archetype]:
+    @property
+    def archetypes(self) -> ValuesView[Archetype]:
         return self.arch_data.values()
 
-    def get_sets(self) -> ValuesView[Set]:
+    @property
+    def sets(self) -> ValuesView[Set]:
         return self.set_data.values()
 
     def get_card_by_id(self, id: int) -> Card:
@@ -89,7 +92,7 @@ class YugiDB:
     def get_cards_by_value(self, by: str, value: str | int) -> list[Card]:
         return [
             card
-            for card in self.get_cards()
+            for card in self.cards
             if isinstance(getattr(card, by), (list, str))
             and value in getattr(card, by)
             or getattr(card, by) == value
@@ -101,7 +104,7 @@ class YugiDB:
         return [self.get_cards_by_value(by, value) for value in values]
 
     def get_cards_by_query(self, query: Callable[[Card], bool]):
-        return [card for card in self.get_cards() if query(card)]
+        return [card for card in self.cards if query(card)]
 
     def get_cards_fuzzy(self, fuzzy_string: str) -> list[tuple[Card, float]]:
         from jaro import jaro_winkler_metric
@@ -109,7 +112,7 @@ class YugiDB:
         return sorted(
             [
                 (card, jaro_winkler_metric(card.name, fuzzy_string))
-                for card in self.get_cards()
+                for card in self.cards
             ],
             key=lambda x: x[1],
             reverse=True,
@@ -128,7 +131,7 @@ class YugiDB:
             )
         return [
             set
-            for set in self.get_sets()
+            for set in self.sets
             if isinstance(getattr(set, by), (list, str))
             and value in getattr(set, by)
             or getattr(set, by) == value
@@ -152,7 +155,7 @@ class YugiDB:
             )
         return [
             arch
-            for arch in self.get_archetypes()
+            for arch in self.archetypes
             if isinstance(getattr(arch, by), (list, str))
             and value in getattr(arch, by)
             or getattr(arch, by) == value
@@ -168,7 +171,7 @@ class YugiDB:
     ) -> list[Card]:
         return [
             card
-            for card in self.get_cards()
+            for card in self.cards
             if any(card_name in card._text for card_name in given_cards)
             or any(
                 arch_name
@@ -183,7 +186,7 @@ class YugiDB:
     def get_unscripted(self, include_skillcards: bool = False) -> list[Card]:
         return [
             card
-            for card in self.get_cards()
+            for card in self.cards
             if not card.id == 111004001
             and (card.script != 1.0 or card.script == None)
             and any(
