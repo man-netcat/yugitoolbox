@@ -14,9 +14,9 @@ from .set import Set
 
 
 class YugiDB:
-    card_data: dict[int, Card]
-    arch_data: dict[int, Archetype]
-    set_data: dict[int, Set]
+    _card_data: dict[int, Card]
+    _arch_data: dict[int, Archetype]
+    _set_data: dict[int, Set]
     name: str
     dbpath: str
 
@@ -56,38 +56,38 @@ class YugiDB:
 
     def _load_objects(self):
         with open(self.cardpkl, "rb") as file:
-            self.card_data = pickle.load(file)
+            self._card_data = pickle.load(file)
         with open(self.archpkl, "rb") as file:
-            self.arch_data = pickle.load(file)
+            self._arch_data = pickle.load(file)
         with open(self.setspkl, "rb") as file:
-            self.set_data = pickle.load(file)
+            self._set_data = pickle.load(file)
 
     def save_pickles(self):
         print(f"Pickling pickles for {self.name}...")
         with open(self.cardpkl, "wb") as file:
-            pickle.dump(self.card_data, file)
+            pickle.dump(self._card_data, file)
         with open(self.archpkl, "wb") as file:
-            pickle.dump(self.arch_data, file)
+            pickle.dump(self._arch_data, file)
         with open(self.setspkl, "wb") as file:
-            pickle.dump(self.set_data, file)
+            pickle.dump(self._set_data, file)
 
     @property
     def cards(self) -> ValuesView[Card]:
-        return self.card_data.values()
+        return self._card_data.values()
 
     @property
     def archetypes(self) -> ValuesView[Archetype]:
-        return self.arch_data.values()
+        return self._arch_data.values()
 
     @property
     def sets(self) -> ValuesView[Set]:
-        return self.set_data.values()
+        return self._set_data.values()
 
     def get_card_by_id(self, id: int) -> Card:
-        return self.card_data[id]
+        return self._card_data[id]
 
     def get_cards_by_ids(self, ids: list[int]) -> list[Card]:
-        return [self.get_card_by_id(id) for id in ids if id in self.card_data]
+        return [self.get_card_by_id(id) for id in ids if id in self._card_data]
 
     def get_cards_by_value(self, by: str, value: str | int) -> list[Card]:
         return [
@@ -119,10 +119,10 @@ class YugiDB:
         )[:20]
 
     def get_set_by_id(self, id: int) -> Set:
-        return self.set_data[id]
+        return self._set_data[id]
 
     def get_sets_by_ids(self, ids: list[int]) -> list[Set]:
-        return [self.get_set_by_id(id) for id in ids if id in self.set_data]
+        return [self.get_set_by_id(id) for id in ids if id in self._set_data]
 
     def get_sets_by_value(self, by: str, value: str | int) -> list[Set]:
         if by not in Set.__dataclass_fields__.keys():
@@ -143,10 +143,10 @@ class YugiDB:
         return [self.get_sets_by_value(by, value) for value in values]
 
     def get_archetype_by_id(self, id: int) -> Archetype:
-        return self.arch_data[id]
+        return self._arch_data[id]
 
     def get_archetypes_by_ids(self, ids: list[int]) -> list[Archetype]:
-        return [self.get_archetype_by_id(id) for id in ids if id in self.arch_data]
+        return [self.get_archetype_by_id(id) for id in ids if id in self._arch_data]
 
     def get_archetypes_by_value(self, by: str, value: str | int) -> list[Archetype]:
         if by not in Archetype.__dataclass_fields__.keys():
@@ -251,9 +251,9 @@ class YugiDB:
         new = YugiDB()
         new.name = new_name
         new.dbpath = db_path
-        new.card_data = db1.card_data | db2.card_data
-        new.arch_data = db1.arch_data | db2.arch_data
-        new.set_data = db1.set_data | db2.set_data
+        new._card_data = db1._card_data | db2._card_data
+        new._arch_data = db1._arch_data | db2._arch_data
+        new._set_data = db1._set_data | db2._set_data
         return new
 
     @abstractmethod

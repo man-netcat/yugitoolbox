@@ -52,7 +52,7 @@ class CustomDB(YugiDB):
             con,
         ).to_dict(orient="records")
 
-        self.card_data = {card["id"]: Card(**card) for card in cards}
+        self._card_data = {card["id"]: Card(**card) for card in cards}
 
     def _build_archetype_db(self, con):
         archetypes: list[dict] = pd.read_sql_query(
@@ -72,7 +72,7 @@ class CustomDB(YugiDB):
             arch["id"]: Archetype(**arch) for arch in archetypes
         }
 
-        for card in self.card_data.values():
+        for card in self._card_data.values():
             for archid in card.archetypes:
                 if archid == 0 or archid not in self.arch_data:
                     continue
@@ -87,7 +87,7 @@ class CustomDB(YugiDB):
                 self.arch_data[archid].related.append(card.id)
 
     def _build_set_db(self, _):
-        self.set_data = {}
+        self._set_data = {}
 
     @classmethod
     def from_data(
@@ -101,7 +101,7 @@ class CustomDB(YugiDB):
         custom_db.name = name
         custom_db.dbpath = dbpath
 
-        custom_db.card_data = {card.id: card for card in card_data}
+        custom_db._card_data = {card.id: card for card in card_data}
         custom_db.arch_data = {arch.id: arch for arch in arch_data}
 
         return custom_db
@@ -158,14 +158,14 @@ class CustomDB(YugiDB):
                     card._ocgdate,
                     card._tcgdate,
                 )
-                for card in self.card_data.values()
+                for card in self._card_data.values()
             ],
         )
         cur.executemany(
             """
         INSERT INTO texts (id, name, desc) VALUES (?, ?, ?)
         """,
-            [(card.id, card.name, card._text) for card in self.card_data.values()],
+            [(card.id, card.name, card._text) for card in self._card_data.values()],
         )
         cur.executemany(
             """

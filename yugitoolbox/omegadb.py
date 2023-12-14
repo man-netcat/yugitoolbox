@@ -124,7 +124,7 @@ class OmegaDB(YugiDB):
             con,
         ).to_dict(orient="records")
 
-        self.card_data = {card["id"]: Card(**card) for card in cards}
+        self._card_data = {card["id"]: Card(**card) for card in cards}
 
     def _build_archetype_db(self, con):
         archetypes: list[dict] = pd.read_sql_query(
@@ -144,7 +144,7 @@ class OmegaDB(YugiDB):
             arch["id"]: Archetype(**arch) for arch in archetypes
         }
 
-        for card in self.card_data.values():
+        for card in self._card_data.values():
             for archid in card.archetypes:
                 if archid == 0 or archid not in self.arch_data:
                     continue
@@ -188,7 +188,7 @@ class OmegaDB(YugiDB):
                 contents=[
                     int(id)
                     for id in set["cardids"].split(",")
-                    if int(id) in self.card_data
+                    if int(id) in self._card_data
                 ],
             )
             for set in sets
@@ -196,7 +196,7 @@ class OmegaDB(YugiDB):
 
         for set in self.set_data.values():
             for cardid in set.contents:
-                self.card_data[cardid].sets.append(set.id)
+                self._card_data[cardid].sets.append(set.id)
 
     def write_changes(self):
         print("Generating changelog...")
