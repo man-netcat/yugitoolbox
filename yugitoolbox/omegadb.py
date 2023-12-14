@@ -199,37 +199,34 @@ class OmegaDB(YugiDB):
 
     def write_changes(self):
         print("Generating changelog...")
-        conn_before = sqlite3.connect(self.dbpath_old)
-        conn_after = sqlite3.connect(self.dbpath)
-        cursor = conn_after.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = ["datas", "texts", "koids", "setcodes", "packs", "relations"]
         changes = {}
 
         for table in tables:
-            print(table)
-            cursor_before = conn_before.cursor()
-            cursor_after = conn_after.cursor()
+            with sqlite3.connect(self.dbpath_old) as con:
+                rows_before = pd.read_sql_query(
+                    f"SELECT * FROM {table}",
+                    con,
+                )
 
-            cursor_before.execute(f"SELECT * FROM {table};")
-            rows_before = set(cursor_before.fetchall())
+            with sqlite3.connect(self.dbpath) as con:
+                rows_after = pd.read_sql_query(
+                    f"SELECT * FROM {table}",
+                    con,
+                )
 
-            cursor_after.execute(f"SELECT * FROM {table};")
-            rows_after = set(cursor_after.fetchall())
-
-            added_rows = list(rows_after - rows_before)
-            removed_rows = list(rows_before - rows_after)
-
-            print(added_rows)
-            print(removed_rows)
-
-            changes[table] = {
-                "added": added_rows,
-                "removed": removed_rows,
-            }
-
-        conn_before.close()
-        conn_after.close()
+            merged = pd.merge(rows_before, rows_after, how="outer", indicator=True)
+            removed = (
+                merged[merged["_merge"] == "left_only"]
+                .drop("_merge", axis=1)
+                .to_dict(orient="records")
+            )
+            added = (
+                merged[merged["_merge"] == "right_only"]
+                .drop("_merge", axis=1)
+                .to_dict(orient="records")
+            )
+            changes[table] = {"removed": removed, "added": added}
 
         from datetime import datetime
 
