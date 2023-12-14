@@ -48,14 +48,13 @@ class OmegaDB(YugiDB):
         hashpath = os.path.join(self.dbdir, "omega.hash")
         hashpath_old = os.path.join(self.dbdir, "omega_old.hash")
 
-        shutil.copy(self.dbpath, self.dbpath_old)
-        shutil.copy(hashpath, hashpath_old)
-
         if not os.path.exists(self.dbdir):
             os.makedirs(self.dbdir)
 
         if os.path.exists(self.dbpath) and not force_update:
+            shutil.copy(self.dbpath, self.dbpath_old)
             if os.path.exists(hashpath):
+                shutil.copy(hashpath, hashpath_old)
                 with open(hashpath) as f:
                     old_hash = f.read()
             else:
