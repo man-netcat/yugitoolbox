@@ -68,23 +68,23 @@ class CustomDB(YugiDB):
             con,
         ).to_dict(orient="records")
 
-        self.arch_data: dict[int, Archetype] = {
+        self._arch_data: dict[int, Archetype] = {
             arch["id"]: Archetype(**arch) for arch in archetypes
         }
 
         for card in self._card_data.values():
             for archid in card.archetypes:
-                if archid == 0 or archid not in self.arch_data:
+                if archid == 0 or archid not in self._arch_data:
                     continue
-                self.arch_data[archid].members.append(card.id)
+                self._arch_data[archid].members.append(card.id)
             for archid in card.support:
-                if archid == 0 or archid not in self.arch_data:
+                if archid == 0 or archid not in self._arch_data:
                     continue
-                self.arch_data[archid].support.append(card.id)
+                self._arch_data[archid].support.append(card.id)
             for archid in card.related:
-                if archid == 0 or archid not in self.arch_data:
+                if archid == 0 or archid not in self._arch_data:
                     continue
-                self.arch_data[archid].related.append(card.id)
+                self._arch_data[archid].related.append(card.id)
 
     def _build_set_db(self, _):
         self._set_data = {}
@@ -102,7 +102,7 @@ class CustomDB(YugiDB):
         custom_db.dbpath = dbpath
 
         custom_db._card_data = {card.id: card for card in card_data}
-        custom_db.arch_data = {arch.id: arch for arch in arch_data}
+        custom_db._arch_data = {arch.id: arch for arch in arch_data}
 
         return custom_db
 
@@ -171,7 +171,7 @@ class CustomDB(YugiDB):
             """
         INSERT INTO setcodes (name, officialcode) VALUES (?, ?)
         """,
-            [(arch.name, arch.id) for arch in self.arch_data.values()],
+            [(arch.name, arch.id) for arch in self._arch_data.values()],
         )
 
         con.commit()
