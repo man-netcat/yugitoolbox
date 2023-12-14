@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
 import os
+import shutil
+import sqlite3
 
 import pandas as pd
 import requests
@@ -24,6 +27,7 @@ class OmegaDB(YugiDB):
     ):
         self.name = "OmegaDB"
         self.dbpath = "db/omega/omega.db"
+        self.dbpath_old = "db/omega/omega_old.db"
         downloaded = False
         if not OmegaDB.initialised:
             if not skip_update:
@@ -40,11 +44,15 @@ class OmegaDB(YugiDB):
 
         db_url = os.path.join(OMEGA_BASE_URL, "OmegaDB.cdb")
         hash_url = os.path.join(OMEGA_BASE_URL, "Database.hash")
-        dbdir = os.path.dirname(self.dbpath)
-        hashpath = os.path.join(dbdir, "omega.hash")
+        self.dbdir = os.path.dirname(self.dbpath)
+        hashpath = os.path.join(self.dbdir, "omega.hash")
+        hashpath_old = os.path.join(self.dbdir, "omega_old.hash")
 
-        if not os.path.exists(dbdir):
-            os.makedirs(dbdir)
+        shutil.copy(self.dbpath, self.dbpath_old)
+        shutil.copy(hashpath, hashpath_old)
+
+        if not os.path.exists(self.dbdir):
+            os.makedirs(self.dbdir)
 
         if os.path.exists(self.dbpath) and not force_update:
             if os.path.exists(hashpath):
@@ -76,6 +84,7 @@ class OmegaDB(YugiDB):
         print("Downloading up-to-date db...")
         download(db_url, self.dbpath)
         download(hash_url, hashpath)
+        self.write_changes()
         return True
 
     def _build_card_db(self, con):
@@ -188,3 +197,45 @@ class OmegaDB(YugiDB):
         for set in self.set_data.values():
             for cardid in set.contents:
                 self.card_data[cardid].sets.append(set.id)
+
+    def write_changes(self):
+        print("Generating changelog...")
+        conn_before = sqlite3.connect(self.dbpath_old)
+        conn_after = sqlite3.connect(self.dbpath)
+        cursor = conn_after.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = ["datas", "texts", "koids", "setcodes", "packs", "relations"]
+        changes = {}
+
+        for table in tables:
+            print(table)
+            cursor_before = conn_before.cursor()
+            cursor_after = conn_after.cursor()
+
+            cursor_before.execute(f"SELECT * FROM {table};")
+            rows_before = set(cursor_before.fetchall())
+
+            cursor_after.execute(f"SELECT * FROM {table};")
+            rows_after = set(cursor_after.fetchall())
+
+            added_rows = list(rows_after - rows_before)
+            removed_rows = list(rows_before - rows_after)
+
+            print(added_rows)
+            print(removed_rows)
+
+            changes[table] = {
+                "added": added_rows,
+                "removed": removed_rows,
+            }
+
+        conn_before.close()
+        conn_after.close()
+
+        from datetime import datetime
+
+        current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        changelog = f"changelog_{current_time}.json"
+
+        with open(os.path.join(self.dbdir, changelog), "w") as f:
+            json.dump(changes, f, indent=2)
