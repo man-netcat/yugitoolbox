@@ -94,15 +94,15 @@ class CustomDB(YugiDB):
         cls,
         name: str,
         dbpath: str,
-        card_data: list[Card],
-        arch_data: list[Archetype] = [],
+        cards: list[Card],
+        archetypes: list[Archetype] = [],
     ):
         custom_db = cls.__new__(cls)
         custom_db.name = name
         custom_db.dbpath = dbpath
 
-        custom_db._card_data = {card.id: card for card in card_data}
-        custom_db._arch_data = {arch.id: arch for arch in arch_data}
+        custom_db._card_data = {card.id: card for card in cards}
+        custom_db._arch_data = {arch.id: arch for arch in archetypes}
 
         return custom_db
 
