@@ -11,7 +11,7 @@ setup(
         "pandas==2.1.4",
         "Pillow==10.1.0",
         "Requests==2.31.0",
-        "setuptools==65.5.0",
+        "setuptools==65.5.1",
     ],
     package_data={
         "yugitoolbox": [
