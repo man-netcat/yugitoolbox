@@ -83,7 +83,8 @@ class OmegaDB(YugiDB):
         print("Downloading up-to-date db...")
         download(db_url, self.dbpath)
         download(hash_url, hashpath)
-        self.write_changes()
+        if os.path.exists(self.dbpath_old):
+            self.write_changes()
         return True
 
     def _build_card_db(self, con):
