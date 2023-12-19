@@ -21,6 +21,9 @@ class Set:
     def __repr__(self) -> str:
         return self.name
 
+    def __contains__(self, card_id: int) -> bool:
+        return card_id in self.contents
+
     @property
     def ocgdate(self) -> Optional[datetime]:
         try:

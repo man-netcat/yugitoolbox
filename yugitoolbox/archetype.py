@@ -18,6 +18,9 @@ class Archetype:
     def __str__(self) -> str:
         return self.name
 
+    def __contains__(self, card_id: int) -> bool:
+        return card_id in self.combined_cards
+
     @property
     def combined_cards(self) -> list[int]:
         return list(set(self.members + self.support + self.related))

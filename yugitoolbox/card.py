@@ -124,6 +124,12 @@ class Card:
         else:
             raise ValueError("Invalid type assignment")
 
+    def append_type(self, type: Type) -> None:
+        self._type |= type
+
+    def remove_type(self, type: Type) -> None:
+        self._type &= ~type
+
     @property
     def category(self) -> list[Category]:
         return self._enum_values(self._category, Category)
@@ -137,6 +143,12 @@ class Card:
         else:
             raise ValueError("Invalid type assignment")
 
+    def append_category(self, category: Category) -> None:
+        self._category |= category
+
+    def remove_category(self, category: Category) -> None:
+        self._category &= ~category
+
     @property
     def genre(self) -> list[Genre]:
         return self._enum_values(self._genre, Genre)
@@ -149,6 +161,12 @@ class Card:
             self._genre = reduce(or_, new)
         else:
             raise ValueError("Invalid type assignment")
+
+    def append_genre(self, genre: Genre) -> None:
+        self._genre |= genre
+
+    def remove_genre(self, genre: Genre) -> None:
+        self._genre &= ~genre
 
     @property
     def level(self) -> int:
@@ -222,10 +240,13 @@ class Card:
         if not self.has_edtype(EDType.Link):
             return
 
-        current_markers = self._enum_values(self._def, LinkMarker)
-        current_markers.append(marker)
+        self._def |= marker
 
-        self._def = reduce(or_, current_markers)
+    def remove_linkmarker(self, marker: LinkMarker) -> None:
+        if not self.has_edtype(EDType.Link):
+            return
+
+        self._def &= ~marker
 
     @property
     def race(self) -> Race:
