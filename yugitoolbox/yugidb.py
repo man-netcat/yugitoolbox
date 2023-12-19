@@ -91,11 +91,11 @@ class YugiDB:
 
     def get_cards_by_value(self, by: str, value: str | int) -> list[Card]:
         return [
-            card
-            for card in self.cards
-            if isinstance(getattr(card, by), (list, str))
-            and value in getattr(card, by)
-            or getattr(card, by) == value
+            c
+            for c in self.cards
+            if isinstance(getattr(c, by), int)
+            and getattr(c, by) == value
+            or value in getattr(c, by)
         ]
 
     def get_cards_by_values(
@@ -125,16 +125,12 @@ class YugiDB:
         return [self.get_set_by_id(id) for id in ids if id in self._set_data]
 
     def get_sets_by_value(self, by: str, value: str | int) -> list[Set]:
-        if by not in Set.__dataclass_fields__.keys():
-            raise RuntimeError(
-                f"'by' not in [{', '.join(Set.__dataclass_fields__.keys())}]"
-            )
         return [
-            set
-            for set in self.sets
-            if isinstance(getattr(set, by), (list, str))
-            and value in getattr(set, by)
-            or getattr(set, by) == value
+            s
+            for s in self.sets
+            if isinstance(getattr(s, by), int)
+            and getattr(s, by) == value
+            or value in getattr(s, by)
         ]
 
     def get_sets_by_values(
@@ -149,16 +145,12 @@ class YugiDB:
         return [self.get_archetype_by_id(id) for id in ids if id in self._arch_data]
 
     def get_archetypes_by_value(self, by: str, value: str | int) -> list[Archetype]:
-        if by not in Archetype.__dataclass_fields__.keys():
-            raise RuntimeError(
-                f"'by' not in [{', '.join(Archetype.__dataclass_fields__.keys())}]"
-            )
         return [
-            arch
-            for arch in self.archetypes
-            if isinstance(getattr(arch, by), (list, str))
-            and value in getattr(arch, by)
-            or getattr(arch, by) == value
+            a
+            for a in self.archetypes
+            if isinstance(getattr(a, by), int)
+            and getattr(a, by) == value
+            or value in getattr(a, by)
         ]
 
     def get_archetypes_by_values(
