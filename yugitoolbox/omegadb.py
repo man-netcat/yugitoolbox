@@ -102,7 +102,7 @@ class OmegaDB(YugiDB):
                 "datas.attribute as _attribute",
                 "datas.category as _category",
                 "datas.genre as _genre",
-                "datas.script",
+                "datas.script as _script",
                 "datas.support as _supportcode",
                 "datas.ocgdate as _ocgdate",
                 "datas.tcgdate as _tcgdate",

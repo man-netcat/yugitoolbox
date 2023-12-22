@@ -180,7 +180,7 @@ class YugiDB:
             card
             for card in self.cards
             if not card.id == 111004001
-            and (card.script != 1.0 or card.script == None)
+            and (card._script != 1.0 or card._script == None)
             and any(
                 card.has_type(type)
                 for type in [

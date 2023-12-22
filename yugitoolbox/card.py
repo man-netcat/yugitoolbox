@@ -11,6 +11,7 @@ from .enums import *
 class Card:
     id: int
     name: str
+    _text: str = ""
     _type: int = 0
     _race: int = 0
     _attribute: int = 0
@@ -19,16 +20,15 @@ class Card:
     _level: int = 0
     atk: int = 0
     _def: int = 0
-    _text: str = ""
-    sets: list[int] = field(default_factory=list)
     _tcgdate: int = 0
     _ocgdate: int = 0
     ot: int = 0
     _archcode: int = 0
     _supportcode: int = 0
     alias: int = 0
-    script: str = ""
     koid: int = 0
+    _script: str = ""
+    sets: list[int] = field(default_factory=list)
 
     def __hash__(self):
         return hash(self.name)
@@ -545,11 +545,16 @@ class Card:
         return list(set(self.archetypes + self.support + self.related))
 
     @property
-    def get_script(self) -> Optional[str]:
+    def script(self) -> Optional[str]:
+        if self._script != "":
+            return self._script
+
         import requests
 
         base_url = "https://raw.githubusercontent.com/Fluorohydride/ygopro-scripts/master/c%s.lua"
         r = requests.get(base_url % self.id)
+        if not r.ok:
+            r = requests.get(base_url % self.alias)
         return r.text if r.ok else None
 
     def get_trivia(self) -> Optional[str]:
