@@ -9,7 +9,7 @@ Database wrapper and tools for Yu-Gi-Oh! databases.
 - Searching cards, archetypes and sets by several attributes
 - Creating deck objects from Omega code or YDKE
 - Writes data to .pkl files for fast accessing
-- Writing CustomDB back to Sqlite DB
+- Creating a custom card DB and writing it back to an Sqlite DB for use in simulators
 - Render card images
 
 ## How to use
