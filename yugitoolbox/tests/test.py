@@ -5,6 +5,7 @@ from yugitoolbox import *
 
 class TestDB(TestCase):
     odb = OmegaDB()
+    maxDiff = None
 
     def test_effect_monster(self):
         # War Rock Meteoragon
@@ -140,7 +141,7 @@ class TestDB(TestCase):
     def test_deck(self):
         omegacode = "M+ffLv2SpUJvAQMMO9oKsYDwLo1vjDB8NmIdy6HbV5hcbn5jgeHPrZdYYXiD8j0GGF4++wujxvadTDAcWZ3MMjFpHysM2y0pZBRbdIsJhFukVFlg+IygBxzf4drLBMNhunysOxo5mSUXdTGaH7Vn8Jq4lAmExeuPsYBwYLYx8wGp/ywgvFsrCY4/HX7HFH+/gEUsTYX1ReMM1ll717Pur73Cesb8MeuqM09Y/mjkszAs12T5bVnHnGd8jlkt6hqz4LabzJfr3jEbRPqzgMIFAA=="
         testdeck = Deck.from_omegacode(TestDB.odb, omegacode)
-        # self.assertEqual(omegacode, testdeck.omegacode)
+        self.assertEqual(omegacode, testdeck.omegacode)
         ydke_code = "ydke://EUKKAwrmpwEK5qcBR5uPAEebjwBHm48AvadvAfx5vAKzoLECTkEDAE5BAwBOQQMAfjUBBUwyuADDhdcAnNXGA/ZJ0ACmm/QBPqRxAT6kcQE+pHEBVhgUAVYYFAFWGBQBZOgnA2ToJwNk6CcDIkiZACJImQAiSJkAdgljAnYJYwJ2CWMCVOZcAVTmXAF9e0AChKFCAYShQgGEoUIBPO4FAzzuBQM=!y7sdAIoTdQOKE3UDwLXNA9EgZgUNUFsFtWJvAqRbfAOkW3wDlk8AAoVAsQKA9rsBlI9dAQdR1QE5ySIF!URCDA1EQgwNREIMDI9adAiPWnQJvdu8Ab3bvANcanwHXGp8B1xqfASaQQgMmkEIDJpBCA0O+3QBDvt0A!"
         testdeck = Deck.from_ydke(TestDB.odb, ydke_code)
         self.assertEqual(ydke_code, testdeck.ydke)

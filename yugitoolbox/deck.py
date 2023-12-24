@@ -21,6 +21,7 @@ class Deck:
     extra: list[tuple[int, int]]
     side: list[tuple[int, int]]
     db: YugiDB
+    cover_card: int = 0
 
     def __str__(self) -> str:
         def format_deck_section(cards: list[tuple[int, int]], section_name: str) -> str:
@@ -66,9 +67,11 @@ class Deck:
             ]
 
         bytes_arr = zlib.decompress(base64.b64decode(code), -8)
-        main_size, side_size = bytes_arr[:2]
+        deck_offset = 2
+        main_size, side_size = bytes_arr[:deck_offset]
 
-        main_extra = decode_card_tuples(2, 2 + 4 * main_size)
+        side_offset = 2 + 4 * main_size
+        main_extra = decode_card_tuples(deck_offset, side_offset)
         main = [
             (card_id, count)
             for card_id, count in main_extra
@@ -79,8 +82,15 @@ class Deck:
             for card_id, count in main_extra
             if db.get_card_by_id(card_id).has_edtype()
         ]
-        side = decode_card_tuples(2 + 4 * main_size, 2 + 4 * main_size + 4 * side_size)
-        return cls(name, main, extra, side, db)
+
+        cover_offset = 2 + 4 * main_size + 4 * side_size
+        side = decode_card_tuples(side_offset, cover_offset)
+        cover_card = int.from_bytes(
+            bytes_arr[cover_offset : cover_offset + 4],
+            byteorder="little",
+        )
+
+        return cls(name, main, extra, side, db, cover_card)
 
     @property
     def omegacode(self):
@@ -88,9 +98,10 @@ class Deck:
             zlib.compress(
                 bytearray([self.total_main + self.total_extra, self.total_side])
                 + b"".join(
-                    card_id.to_bytes(4, byteorder="big") * count
+                    card_id.to_bytes(4, byteorder="little") * count
                     for card_id, count in self.main + self.extra + self.side
-                ),
+                )
+                + self.cover_card.to_bytes(4, byteorder="little"),
                 wbits=-15,
             )
         ).decode()
@@ -134,7 +145,7 @@ class Deck:
         ]
 
         valids = [
-            (triple)
+            triple
             for triple in permutations(md_cards, 3)
             if Card.compare_small_world(
                 *[db.get_card_by_id(card_id) for card_id in triple]
