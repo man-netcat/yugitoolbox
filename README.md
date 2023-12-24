@@ -55,7 +55,7 @@ Ancient Warriors - Talented Cao Zi (212906226): FIRE Level 4 [Beast Warrior/Effe
 
 ### Rendering card images
 Note: this is a work in progress.
-```
+```py
 >>> for card in customdb.get_cards():
 ...     card.render()
 ```
