@@ -526,6 +526,8 @@ class Card:
     def compare_small_world(
         handcard: "Card", deckcard: "Card", addcard: "Card"
     ) -> bool:
+        from itertools import pairwise
+
         return all(
             sum(
                 [
@@ -537,7 +539,7 @@ class Card:
                 ]
             )
             == 1
-            for card1, card2 in [[handcard, deckcard], [deckcard, addcard]]
+            for card1, card2 in pairwise([handcard, deckcard, addcard])
         )
 
     @property
