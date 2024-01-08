@@ -1,10 +1,18 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from functools import reduce
+from math import isnan
 from operator import or_
 from typing import Optional
+from urllib.parse import quote
+
+import requests
+from bs4 import BeautifulSoup
+from fake_useragent import UserAgent
 
 from .enums import *
+
+ua = UserAgent()
 
 
 @dataclass
@@ -26,7 +34,7 @@ class Card:
     _archcode: int = 0
     _supportcode: int = 0
     alias: int = 0
-    koid: int = 0
+    _koid: int = 0
     _script: str = ""
     sets: list[int] = field(default_factory=list)
 
@@ -201,7 +209,7 @@ class Card:
     def scale(self) -> int:
         if self.has_type(Type.Pendulum):
             return self._level >> 24
-        return 0
+        return -1
 
     @scale.setter
     def scale(self, new: int):
@@ -305,6 +313,16 @@ class Card:
     @attribute.setter
     def attribute(self, new: int | Attribute):
         self._attribute = new
+
+    @property
+    def koid(self) -> int:
+        if not isnan(self._koid):
+            return int(self._koid)
+        return -1
+
+    @koid.setter
+    def koid(self, new: int):
+        self._koid = new
 
     @property
     def ocgdate(self) -> Optional[datetime]:
@@ -551,21 +569,14 @@ class Card:
         if self._script != "":
             return self._script
 
-        import requests
-
         base_url = "https://raw.githubusercontent.com/Fluorohydride/ygopro-scripts/master/c%s.lua"
         r = requests.get(base_url % self.id)
         if not r.ok:
             r = requests.get(base_url % self.alias)
         return r.text if r.ok else None
 
-    def get_trivia(self) -> Optional[str]:
-        from urllib.parse import quote
-
-        import requests
-        from bs4 import BeautifulSoup
-        from fake_useragent import UserAgent
-
+    @property
+    def trivia(self) -> Optional[str]:
         ua = UserAgent()
         base_url = "https://yugipedia.com/wiki/Card_Trivia:%s"
         card_url = base_url % quote(self.name)
@@ -573,34 +584,14 @@ class Card:
         if not r.ok:
             return None
         soup = BeautifulSoup(r.content, "html.parser")
-        result = soup.select_one("#mw-content-text > div")
-        if not result:
+        res = soup.select_one("#mw-content-text > div")
+        if not res:
             return None
-        div_elements = result.find_all("div")
+        div_elements = res.find_all("div")
         for div_element in div_elements:
             div_element.extract()
 
-        return result.text if result else None
-
-    def get_rulings(self) -> Optional[tuple[str, str]]:
-        # TODO: finish this
-        konami_rush_db_base_url = "https://www.db.yugioh-card.com/rushdb/card_search.action?ope=2&cid=%s&request_locale=ja"
-        konami_rush_faq_base_url = "https://www.db.yugioh-card.com/rushdb/faq_search.action?ope=4&cid=%s&request_locale=ja"
-        konami_db_base_url = "https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=%s&request_locale=%s"
-        ygorganisation_base_url = "https://db.ygorganization.com/card#%s:%s"
-
-        if self.koid:
-            if self.is_rush:
-                database_url = konami_rush_db_base_url % self.koid
-                faq_url = konami_rush_faq_base_url % self.koid
-            else:
-                if self.ot == OT.OCG:
-                    db_locale = "ja"
-                else:
-                    db_locale = "en"
-                database_url = konami_db_base_url % (self.koid, db_locale)
-                faq_url = ygorganisation_base_url % (self.koid, "en")
-            return database_url, faq_url
+        return res.text if res else None
 
     def render(self, dir="out"):
         from .cardrenderer import Renderer

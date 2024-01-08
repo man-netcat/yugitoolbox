@@ -108,7 +108,7 @@ class OmegaDB(YugiDB):
                 "datas.tcgdate as _tcgdate",
                 "texts.name",
                 "texts.desc as _text",
-                "koids.koid",
+                "koids.koid as _koid",
             ]
         )
 

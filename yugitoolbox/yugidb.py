@@ -44,6 +44,12 @@ class YugiDB:
         else:
             self._load_objects()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
     def _build_objects(self):
         with sqlite3.connect(self.dbpath) as con:
             print(f"Building card db for {self.name}...")
@@ -231,7 +237,7 @@ class YugiDB:
             for archid, count in self.get_set_archetype_counts(s)
         ]
 
-    def clean(self):
+    def clean_dir(self):
         for file_name in os.listdir(self.dbdir):
             file_path = os.path.join(self.dbdir, file_name)
             file_path = file_path.replace("\\", "/")

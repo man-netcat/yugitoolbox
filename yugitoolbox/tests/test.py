@@ -4,7 +4,7 @@ from yugitoolbox import *
 
 
 class TestDB(TestCase):
-    odb = OmegaDB()
+    odb = OmegaDB(skip_update=True)
     maxDiff = None
 
     def test_effect_monster(self):

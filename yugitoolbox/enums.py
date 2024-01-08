@@ -88,7 +88,7 @@ class Race(IntFlag):
     Highdragon = 0x10000000
     OmegaPsychic = 0x20000000
     CelestialKnight = 0x40000000
-    Galaxy = -0x80000000
+    Galaxy = 0x80000000
 
 
 class Attribute(IntFlag):
