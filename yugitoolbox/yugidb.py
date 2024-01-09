@@ -108,7 +108,7 @@ class YugiDB:
         return matching_cards
 
     def get_cards_by_query(self, query: Callable[[Card], bool]) -> list[Card]:
-        return [card for card in self.card_query.all() if query(card)]
+        return [card for card in self.cards if query(card)]
 
     @property
     def arch_query(self):

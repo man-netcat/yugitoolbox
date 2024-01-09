@@ -4,8 +4,7 @@ from yugitoolbox import *
 
 
 class TestDB(TestCase):
-    sqlite_connection_string = f"sqlite:///db/omega/omega.db"
-    db = YugiDB(sqlite_connection_string)
+    db = OmegaDB(skip_update=True)
     maxDiff = None
 
     def test_archetype(self):

@@ -12,13 +12,15 @@ OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 
 
 class OmegaDB(YugiDB):
-    def __init__(self):
+    def __init__(self, force_update: bool = False, skip_update: bool = False):
         self.dbpath = "db/omega/omega.db"
         self.dbpath_old = "db/omega/omega_old.db"
+        self.force_update = force_update
+        self.skip_update = skip_update
         self.download()
         super().__init__("sqlite:///db/omega/omega.db")
 
-    def download(self, force_update: bool = False):
+    def download(self):
         def download(url: str, path: str):
             r = requests.get(url, allow_redirects=True)
             r.raise_for_status()
@@ -34,7 +36,10 @@ class OmegaDB(YugiDB):
         if not os.path.exists(self.dbdir):
             os.makedirs(self.dbdir)
 
-        if os.path.exists(self.dbpath) and not force_update:
+        if os.path.exists(self.dbpath) and self.skip_update:
+            return
+
+        if os.path.exists(self.dbpath) and not self.force_update:
             shutil.copy(self.dbpath, self.dbpath_old)
             if os.path.exists(hashpath):
                 shutil.copy(hashpath, hashpath_old)
