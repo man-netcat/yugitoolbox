@@ -130,6 +130,7 @@ class YugiDB:
                 ],
             )
             for row in results
+            if row.id != 0
         ]
 
     @property

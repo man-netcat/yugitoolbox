@@ -16,7 +16,7 @@ class Archetype:
         return self.name
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name}\nMembers: {self.members}\nSupport: {self.support}\nRelated: {self.related}"
 
     def __contains__(self, card_id: int) -> bool:
         return card_id in self.combined_cards
