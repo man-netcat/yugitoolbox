@@ -29,9 +29,10 @@ class OmegaDB(YugiDB):
         self.dbpath = "db/omega/omega.db"
         self.dbpath_old = "db/omega/omega_old.db"
         downloaded = False
-        if not OmegaDB.initialised:
-            if not skip_update:
-                downloaded = self._download_omegadb(force_update)
+        if not os.path.exists(self.dbpath):
+            downloaded = self._download_omegadb(force_update)
+        elif not OmegaDB.initialised and not skip_update:
+            downloaded = self._download_omegadb(force_update)
             OmegaDB.initialised = True
         super().__init__(rebuild_pkl=rebuild_pkl or downloaded)
 
