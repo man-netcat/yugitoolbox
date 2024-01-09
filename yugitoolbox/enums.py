@@ -1,17 +1,20 @@
 from enum import IntEnum, IntFlag
 
 
-class Type(IntFlag):
+class CardType(IntFlag):
     NoType = 0x0
     Monster = 0x1
     Spell = 0x2
     Trap = 0x4
+
+
+class MDType(IntFlag):
+    NoType = 0x0
     Normal = 0x10
     Ritual = 0x80
     Tuner = 0x1000
     Pendulum = 0x1000000
     Effect = 0x20
-    Token = 0x4000
     TrapMonster = 0x100
     SpSummon = 0x2000000
 
@@ -22,6 +25,7 @@ class EDType(IntFlag):
     Synchro = 0x2000
     Xyz = 0x800000
     Link = 0x4000000
+    Token = 0x4000
 
 
 class Ability(IntFlag):
@@ -56,7 +60,7 @@ class LinkMarker(IntFlag):
 
 
 class Race(IntFlag):
-    Unknown = 0x0
+    NoType = 0x0
     Warrior = 0x1
     Spellcaster = 0x2
     Fairy = 0x4
@@ -92,7 +96,7 @@ class Race(IntFlag):
 
 
 class Attribute(IntFlag):
-    Unknown = 0x00
+    NoAttribute = 0x00
     EARTH = 0x01
     WATER = 0x02
     FIRE = 0x04

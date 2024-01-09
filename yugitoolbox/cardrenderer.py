@@ -27,9 +27,9 @@ class Renderer:
         frame = ""
         if card.has_category(Category.SkillCard):
             frame = "Frames/Skill.png"
-        elif card.has_type(Type.Trap):
+        elif card.has_cardtype(CardType.Trap):
             frame = "Frames/Trap.png"
-        elif card.has_type(Type.Spell):
+        elif card.has_cardtype(CardType.Spell):
             frame = "Frames/Spell.png"
         elif card.has_category(Category.RedGod):
             frame = "Frames/Slifer.png"
@@ -43,7 +43,7 @@ class Renderer:
             frame = "Frames/Legendary_Dragon.png"
         elif card.has_edtype(EDType.Fusion):
             frame = "Frames/Fusion.png"
-        elif card.has_type(Type.Ritual):
+        elif card.has_mdtype(MDType.Ritual):
             frame = "Frames/Ritual.png"
         elif card.has_edtype(EDType.Synchro):
             frame = "Frames/Synchro.png"
@@ -51,19 +51,19 @@ class Renderer:
             frame = "Frames/Xyz.png"
         elif card.has_edtype(EDType.Link):
             frame = "Frames/Link.png"
-        elif card.has_type(Type.Token):
+        elif card.is_token:
             frame = "Frames/Token.png"
-        elif card.has_type(Type.Normal):
+        elif card.has_mdtype(MDType.Normal):
             frame = "Frames/Normal.png"
-        elif card.has_type(Type.Effect):
+        elif card.has_mdtype(MDType.Effect):
             frame = "Frames/Effect.png"
         Renderer.layers.append(frame)
-        if card.has_type(Type.Pendulum):
+        if card.has_mdtype(MDType.Pendulum):
             Renderer.layers.append("Frames/Pendulum.png")
 
     @staticmethod
     def _get_common(card: Card):
-        if card.has_type(Type.Pendulum):
+        if card.has_mdtype(MDType.Pendulum):
             Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Effect_Bar.png")
             Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Box_Medium.png")
         elif card.has_edtype(EDType.Xyz):
@@ -91,16 +91,16 @@ class Renderer:
 
         if card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Effect_Box_Skill.png")
-        elif not card.has_type(Type.Pendulum):
+        elif not card.has_mdtype(MDType.Pendulum):
             Renderer.layers.append("Common/Effect_Box.png")
 
         Renderer.layers.append("Common/Border.png")
         import random
 
         Renderer.layers.append(f"Stickers/Holo_Sticker_{random.randint(1, 4)}.png")
-        if (card.has_edtype(EDType.Xyz) or card.is_dark_synchro) and not card.has_type(
-            Type.Pendulum
-        ):
+        if (
+            card.has_edtype(EDType.Xyz) or card.is_dark_synchro
+        ) and not card.has_mdtype(MDType.Pendulum):
             Renderer.layers.append("Text/Limitation/White/Creator.png")
         else:
             Renderer.layers.append("Text/Limitation/Black/Creator.png")
@@ -110,11 +110,11 @@ class Renderer:
         if card.is_skill:
             return
         attr = ""
-        if card.has_type(Type.Spell) and card.has_category(Category.SkillCard):
+        if card.has_cardtype(CardType.Spell) and card.has_category(Category.SkillCard):
             attr = "Attributes/SPELL.png"
-        elif card.has_type(Type.Trap):
+        elif card.has_cardtype(CardType.Trap):
             attr = "Attributes/TRAP.png"
-        elif card.attribute != Attribute.Unknown:
+        elif card.attribute != Attribute.NoAttribute:
             attr = f"Attributes/{card.attribute.name}.png"
         else:
             return
@@ -139,7 +139,7 @@ class Renderer:
                     return
             art_img = Image.open(BytesIO(response.content)).convert("RGBA")
         card_size = CARD_SIZE
-        if card.has_type(Type.Pendulum):
+        if card.has_mdtype(MDType.Pendulum):
             bbox = (55, 212, 759, 739)
             new_width = 704
             aspect_ratio = art_img.width / art_img.height
@@ -213,12 +213,12 @@ class Renderer:
         text = None
         if icon:
             Renderer.layers.append(icon)
-            if card.has_type(Type.Spell):
+            if card.has_cardtype(CardType.Spell):
                 text = "Text/Spell_Card_w_Icon.png"
             else:
                 text = "Text/Trap_Card_w_Icon.png"
         else:
-            if card.has_type(Type.Spell):
+            if card.has_cardtype(CardType.Spell):
                 text = "Text/Spell_Card.png"
             else:
                 text = "Text/Trap_Card.png"
@@ -226,7 +226,7 @@ class Renderer:
 
     @staticmethod
     def _get_atk_def_link(card: Card):
-        if not card.has_type(Type.Monster):
+        if not card.has_cardtype(CardType.Monster):
             return
 
         if card.has_edtype(EDType.Link):
@@ -245,7 +245,7 @@ class Renderer:
         Renderer._get_common(card)
         Renderer._get_attribute(card)
 
-        if card.has_any_type([Type.Spell, Type.Trap]):
+        if card.is_spelltrap:
             Renderer._get_property(card)
         elif card.is_dark_synchro:
             Renderer._get_neg_level(card)
@@ -255,7 +255,7 @@ class Renderer:
             Renderer._get_linkmarkers(card)
         else:
             Renderer._get_level(card)
-        if card.has_type(Type.Pendulum):
+        if card.has_mdtype(MDType.Pendulum):
             Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Scales.png")
         Renderer._get_atk_def_link(card)
 
@@ -279,7 +279,7 @@ class Renderer:
         text_position = (64, 52)
 
         if (
-            card.has_any_type([Type.Spell, Type.Trap])
+            card.is_spelltrap
             or card.has_any_edtype([EDType.Xyz, EDType.Link])
             or card.is_dark_synchro
         ):
@@ -321,9 +321,9 @@ class Renderer:
 
     @staticmethod
     def _draw_segments(card: Card):
-        if not card.has_type(Type.Monster) and not card.is_skill:
+        if card.is_spelltrap or card.is_skill:
             return
-        # Race/Type
+        # Race/MDType
         Renderer._draw_text_segment(
             card.type_str,
             os.path.join(
@@ -334,8 +334,6 @@ class Renderer:
             (65, 888),
             "#000",
         )
-        if card.is_skill:
-            return
         # ATK
         Renderer._draw_text_segment(
             str(card.atk) if card.atk >= 0 else "?",
@@ -370,7 +368,7 @@ class Renderer:
                 "#000",
             )
 
-        if card.has_type(Type.Pendulum):
+        if card.has_mdtype(MDType.Pendulum):
             for x in [72, 718]:
                 Renderer._draw_text_segment(
                     str(card.scale),
@@ -422,18 +420,18 @@ class Renderer:
             case 5:
                 _, pendtext, _, mats, text = sections
 
-        if card.has_type(Type.Normal) and not card.has_type(Type.Token):
+        if card.has_mdtype(MDType.Normal) and not card.is_token:
             font_path = os.path.join(
                 ASSET_DIR, "Fonts/Yu-Gi-Oh! ITC Stone Serif LT Italic.ttf"
             )
         else:
             font_path = os.path.join(ASSET_DIR, "Fonts/Yu-Gi-Oh! Matrix Book.ttf")
-        if card.has_type(Type.Monster):
+        if card.has_cardtype(CardType.Monster):
             bbox = (65, 925)
         else:
             bbox = (65, 895)
         Renderer._draw_effect(text, 78, mats, font_path, 19, bbox)
-        if card.has_type(Type.Pendulum):
+        if card.has_mdtype(MDType.Pendulum):
             Renderer._draw_effect(pendtext, 62, None, font_path, 19, (128, 751))
 
     @staticmethod

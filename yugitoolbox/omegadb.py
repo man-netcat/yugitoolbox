@@ -194,10 +194,6 @@ class OmegaDB(YugiDB):
             for set in sets
         }
 
-        for set in self._set_data.values():
-            for cardid in set.contents:
-                self._card_data[cardid].sets.append(set.id)
-
     def write_changes(self):
         print("Generating changelog...")
         tables = ["datas", "texts", "koids", "setcodes", "packs", "relations"]

@@ -9,7 +9,7 @@ from typing import Callable, ItemsView, Optional, ValuesView
 
 from .archetype import Archetype
 from .card import Card
-from .enums import OT, Type
+from .enums import OT, CardType, MDType
 from .set import Set
 
 
@@ -187,13 +187,15 @@ class YugiDB:
             for card in self.cards
             if not card.id == 111004001
             and (card._script != 1.0 or card._script == None)
-            and any(
-                card.has_type(type)
-                for type in [
-                    Type.Spell,
-                    Type.Trap,
-                    Type.Effect,
-                ]
+            and (
+                any(
+                    card.has_cardtype(type)
+                    for type in [
+                        CardType.Spell,
+                        CardType.Trap,
+                    ]
+                )
+                or card.has_mdtype(MDType.Effect)
             )
             and not card.alias
             and (not card.ot == OT.Illegal or (include_skillcards and card.is_skill))
@@ -209,7 +211,7 @@ class YugiDB:
         return [self.get_archetype_by_id(id) for id in card.related]
 
     def get_card_sets(self, card: Card) -> list[Set]:
-        return [self.get_set_by_id(id) for id in card.sets]
+        return [self.get_set_by_id(set.id) for set in self.sets if card.id in set]
 
     def get_archetype_cards(self, arch: Archetype) -> list[Card]:
         return [self.get_card_by_id(id) for id in arch.members]
