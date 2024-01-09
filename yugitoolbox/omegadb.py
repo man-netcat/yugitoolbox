@@ -17,8 +17,6 @@ OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 
 
 class OmegaDB(YugiDB):
-    initialised = False
-
     def __init__(
         self,
         skip_update: bool = False,
@@ -29,11 +27,8 @@ class OmegaDB(YugiDB):
         self.dbpath = "db/omega/omega.db"
         self.dbpath_old = "db/omega/omega_old.db"
         downloaded = False
-        if not os.path.exists(self.dbpath):
+        if not os.path.exists(self.dbpath) or not skip_update:
             downloaded = self._download_omegadb(force_update)
-        elif not OmegaDB.initialised and not skip_update:
-            downloaded = self._download_omegadb(force_update)
-            OmegaDB.initialised = True
         super().__init__(rebuild_pkl=rebuild_pkl or downloaded)
 
     def _download_omegadb(self, force_update: bool = False):
