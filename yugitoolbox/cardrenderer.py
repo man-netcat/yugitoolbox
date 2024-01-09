@@ -230,10 +230,10 @@ class Renderer:
             return
 
         if card.has_type(Type.Link):
-            Renderer.layers.append("Text/Link-.png")
+            Renderer.layers.append("Text/LINK-.png")
         else:
-            Renderer.layers.append("Text/Def__Bar.png")
-        Renderer.layers.append("Text/Atk__Bar.png")
+            Renderer.layers.append("Text/DEF__Bar.png")
+        Renderer.layers.append("Text/ATK__Bar.png")
         Renderer.layers.append("Text/Status_Bar.png")
 
     @staticmethod

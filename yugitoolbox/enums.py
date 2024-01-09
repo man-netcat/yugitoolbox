@@ -9,7 +9,6 @@ class Type(IntFlag):
     Ritual = 0x80
     Tuner = 0x1000
     Pendulum = 0x1000000
-    Effect = 0x20
     TrapMonster = 0x100
     SpSummon = 0x2000000
     Fusion = 0x40
@@ -22,6 +21,7 @@ class Type(IntFlag):
     Gemini = 0x800
     Flip = 0x200000
     Toon = 0x400000
+    Effect = 0x20
     QuickPlay = 0x10000
     Continuous = 0x20000
     Equip = 0x40000

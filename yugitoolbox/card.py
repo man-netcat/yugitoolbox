@@ -96,7 +96,15 @@ class Card:
             return "[Skill]"
 
         # Monster type
-        type_names = [type.name for type in self.type if type not in [Type.SpSummon]]
+        type_names = [
+            type.name
+            for type in self.type
+            if type
+            not in [
+                Type.SpSummon,
+                Type.Monster,
+            ]
+        ]
         if self.has_type(Type.Monster):
             type_string = f"[{split_camel_case(self.race.name)}"
             type_string += f"/{'/'.join(type_names)}]"
