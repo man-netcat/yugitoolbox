@@ -30,7 +30,7 @@ class Card:
     _def: int = 0
     _tcgdate: int = 0
     _ocgdate: int = 0
-    ot: int = 0
+    status: int = 0
     _archcode: int = 0
     _supportcode: int = 0
     alias: int = 0
@@ -41,7 +41,7 @@ class Card:
         return hash(self.name)
 
     def __str__(self) -> str:
-        if self.has_cardtype(CardType.Monster):
+        if self.has_type(Type.Monster):
             return f"{self.name} ({self.id}): {self.attribute.name} {self.level_str} {self.type_str}"
         else:
             return f"{self.name} ({self.id}): {self.type_str}"
@@ -67,9 +67,9 @@ class Card:
             "Level -"
             if self.is_dark_synchro
             else "Rank "
-            if self.has_edtype(EDType.Xyz)
+            if self.has_type(Type.Xyz)
             else "Link "
-            if self.has_edtype(EDType.Link)
+            if self.has_type(Type.Link)
             else "Level "
         )
 
@@ -96,17 +96,12 @@ class Card:
             return "[Skill]"
 
         # Monster type
-        if self.has_cardtype(CardType.Monster):
-            type_names = [
-                type.name for type in self.type if type not in [Type.SpSummon]
-            ]
+        type_names = [type.name for type in self.type if type not in [Type.SpSummon]]
+        if self.has_type(Type.Monster):
             type_string = f"[{split_camel_case(self.race.name)}"
-            type_string += f"/{self.ability.name}" if self.has_ability() else ""
-            type_string += f"/{self.edtype.name}" if self.has_edtype() else ""
             type_string += f"/{'/'.join(type_names)}]"
         elif self.is_spelltrap and not self.is_legendary_dragon:
-            # Spell or Trap type
-            type_string = f"[{self.property_.name} {'Spell' if self.has_cardtype(CardType.Spell) else 'Trap'}]"
+            type_string = f"[{'/'.join(type_names)} {'Spell' if self.has_type(Type.Spell) else 'Trap'}]"
         else:
             type_string = ""
 
@@ -188,22 +183,6 @@ class Card:
             self._level = new
 
     @property
-    def rank(self) -> int:
-        return self.level
-
-    @rank.setter
-    def rank(self, new: int):
-        self.level = new
-
-    @property
-    def linkrating(self) -> int:
-        return self.level
-
-    @linkrating.setter
-    def linkrating(self, new: int):
-        self.level = new
-
-    @property
     def scale(self) -> int:
         if self.has_type(Type.Pendulum):
             return self._level >> 24
@@ -216,24 +195,24 @@ class Card:
 
     @property
     def def_(self) -> int:
-        if self.has_edtype(EDType.Link):
+        if self.has_type(Type.Link):
             return 0
         return self._def
 
     @def_.setter
     def def_(self, new: int):
-        if not self.has_edtype(EDType.Link):
+        if not self.has_type(Type.Link):
             self._def = new
 
     @property
     def linkmarkers(self) -> list[LinkMarker]:
-        if self.has_edtype(EDType.Link):
+        if self.has_type(Type.Link):
             return self._enum_values(self._def, LinkMarker)
         return []
 
     @linkmarkers.setter
     def linkmarkers(self, new: LinkMarker | list[LinkMarker]) -> None:
-        if not self.has_edtype(EDType.Link):
+        if not self.has_type(Type.Link):
             return
         if isinstance(new, LinkMarker):
             self._def = new
@@ -243,13 +222,13 @@ class Card:
             raise ValueError("Invalid type assignment")
 
     def append_linkmarker(self, marker: LinkMarker) -> None:
-        if not self.has_edtype(EDType.Link):
+        if not self.has_type(Type.Link):
             return
 
         self._def |= marker
 
     def remove_linkmarker(self, marker: LinkMarker) -> None:
-        if not self.has_edtype(EDType.Link):
+        if not self.has_type(Type.Link):
             return
 
         self._def &= ~marker
@@ -261,62 +240,6 @@ class Card:
     @race.setter
     def race(self, new: int | Race):
         self._race = new
-
-    @property
-    def cardtype(self):
-        try:
-            return CardType(self._enum_values(self._type, CardType)[0])
-        except:
-            return CardType.NoType
-
-    @cardtype.setter
-    def cardtype(self, new: int | CardType):
-        if not self.has_cardtype(CardType.Monster):
-            return
-        self._turn_off_flags(CardType)
-        self._type |= new
-
-    @property
-    def edtype(self):
-        try:
-            return EDType(self._enum_values(self._type, EDType)[0])
-        except:
-            return EDType.MainDeck
-
-    @edtype.setter
-    def edtype(self, new: int | EDType):
-        if not self.has_cardtype(CardType.Monster):
-            return
-        self._turn_off_flags(EDType)
-        self._type |= new
-
-    @property
-    def property_(self):
-        try:
-            return Property(self._enum_values(self._type, Property)[0])
-        except:
-            return Property.Normal
-
-    @property_.setter
-    def property_(self, new: int | Property):
-        if not self.is_spelltrap:
-            return
-        self._turn_off_flags(Property)
-        self._type |= new
-
-    @property
-    def ability(self):
-        try:
-            return Ability(self._enum_values(self._type, Ability)[0])
-        except:
-            return Ability.NoAbility
-
-    @ability.setter
-    def ability(self, new: int | Ability):
-        if not self.has_cardtype(CardType.Monster):
-            return
-        self._turn_off_flags(Ability)
-        self._type |= new
 
     @property
     def attribute(self) -> Attribute:
@@ -379,22 +302,8 @@ class Card:
     def _enum_values(self, value: int, enum_class) -> list:
         return [enum_member for enum_member in enum_class if value & enum_member]
 
-    def has_cardtype(self, type: CardType) -> bool:
-        return bool(self._type & type)
-
-    def has_any_cardtype(self, types: list[CardType]) -> bool:
-        return any(self.has_cardtype(type) for type in types)
-
     def has_type(self, type: Type) -> bool:
-        if not self.has_cardtype(CardType.Monster):
-            return False
-        if type == None:
-            # Return true if card has a type at all
-            return self.type != Type.NoType
-        if type == Type.NoType:
-            return not any([self._type & a for a in Ability])
-        else:
-            return bool(self._type & type)
+        return bool(self._type & type)
 
     def has_any_type(self, types: list[Type]) -> bool:
         return any(self.has_type(type) for type in types)
@@ -421,58 +330,19 @@ class Card:
         return all(self.has_genre(genre) for genre in genres)
 
     def has_linkmarker(self, linkmarker: LinkMarker) -> bool:
-        if self.has_edtype(EDType.Link):
+        if self.has_type(Type.Link):
             return bool(self._def & linkmarker)
         return False
 
     def has_any_linkmarkers(self, linkmarkers: list[LinkMarker]) -> bool:
-        if self.has_edtype(EDType.Link):
+        if self.has_type(Type.Link):
             return any(self.has_linkmarker(linkmarker) for linkmarker in linkmarkers)
         return False
 
     def has_all_linkmarkers(self, linkmarkers: list[LinkMarker]) -> bool:
-        if self.has_edtype(EDType.Link):
+        if self.has_type(Type.Link):
             return all(self.has_linkmarker(linkmarker) for linkmarker in linkmarkers)
         return False
-
-    def has_property(self, property: Property) -> bool:
-        if not self.is_spelltrap:
-            return False
-        if property == Property.Normal:
-            return not any([self._type & p for p in Property])
-        else:
-            return bool(self._type & property)
-
-    def has_any_property(self, properties: list[Property]) -> bool:
-        return any(self.has_property(property) for property in properties)
-
-    def has_ability(self, ability: Optional[Ability] = None) -> bool:
-        if not self.has_cardtype(CardType.Monster):
-            return False
-        if ability == None:
-            # Return true if card has an ability at all
-            return self.ability != Ability.NoAbility
-        if ability == Ability.NoAbility:
-            return not any([self._type & a for a in Ability])
-        else:
-            return bool(self._type & ability)
-
-    def has_any_ability(self, abilities: list[Ability]) -> bool:
-        return any(self.has_ability(ability) for ability in abilities)
-
-    def has_edtype(self, edtype: Optional[EDType] = None) -> bool:
-        if not self.has_cardtype(CardType.Monster):
-            return False
-        if edtype == None:
-            # Return true if card has an edtype at all
-            return self.edtype != EDType.MainDeck
-        if edtype == EDType.MainDeck:
-            return not any([self._type & a for a in EDType])
-        else:
-            return bool(self._type & edtype)
-
-    def has_any_edtype(self, edtypes: list[EDType]) -> bool:
-        return any(self.has_edtype(edtype) for edtype in edtypes)
 
     @staticmethod
     def _split_chunks(n: int, nchunks: int):
@@ -520,24 +390,63 @@ class Card:
         )
 
     @property
+    def has_ability(self) -> bool:
+        return any(
+            self._type & ability
+            for ability in [
+                Type.Toon,
+                Type.Spirit,
+                Type.Union,
+                Type.Gemini,
+                Type.Spirit,
+            ]
+        )
+
+    @property
+    def has_edtype(self) -> bool:
+        return any(
+            self._type & edtype
+            for edtype in [
+                Type.Fusion,
+                Type.Synchro,
+                Type.Xyz,
+                Type.Link,
+            ]
+        )
+
+    @property
+    def has_property(self) -> bool:
+        return any(
+            self._type & property
+            for property in [
+                Type.Ritual,
+                Type.QuickPlay,
+                Type.Continuous,
+                Type.Equip,
+                Type.Field,
+                Type.Counter,
+            ]
+        )
+
+    @property
     def has_atk_equ_def(self) -> bool:
-        return self.has_cardtype(CardType.Monster) and self.atk == self._def
+        return self.has_type(Type.Monster) and self.atk == self._def
 
     @property
     def is_token(self) -> bool:
-        return bool(self._type & EDType.Token)
+        return bool(self._type & Type.Token)
 
     @property
     def is_spelltrap(self) -> bool:
-        return self.has_any_cardtype([CardType.Spell, CardType.Trap])
+        return self.has_any_type([Type.Spell, Type.Trap])
 
     @property
     def is_trap_monster(self) -> bool:
-        return self.has_cardtype(CardType.Trap) and self.level != 0
+        return self.has_type(Type.Trap) and self.level != 0
 
     @property
     def is_dark_synchro(self) -> bool:
-        return self.has_category(Category.DarkCard) and self.has_edtype(EDType.Synchro)
+        return self.has_category(Category.DarkCard) and self.has_type(Type.Synchro)
 
     @property
     def is_legendary_dragon(self) -> bool:

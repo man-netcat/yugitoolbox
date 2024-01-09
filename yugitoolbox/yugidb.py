@@ -1,48 +1,27 @@
 from __future__ import annotations
 
-import os
-import pickle
-import sqlite3
-from abc import abstractmethod
-from collections import Counter
-from typing import Callable, ItemsView, Optional, ValuesView
+from typing import Callable
+
+from sqlalchemy import Column, Integer, String, create_engine, func
+from sqlalchemy.orm import class_mapper, sessionmaker
 
 from .archetype import Archetype
 from .card import Card
-from .enums import OT, CardType, Type
 from .set import Set
+from .sqlclasses import *
 
 
 class YugiDB:
-    _card_data: dict[int, Card]
-    _arch_data: dict[int, Archetype]
-    _set_data: dict[int, Set]
-    name: str
-    dbpath: str
+    __tablename__ = "yugidb"
 
-    def __init__(self, rebuild_pkl=False):
-        if type(self) == YugiDB:
-            return
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
 
-        self.dbdir = os.path.dirname(self.dbpath)
-        self.cardpkl = os.path.join(self.dbdir, "cards.pkl")
-        self.setspkl = os.path.join(self.dbdir, "sets.pkl")
-        self.archpkl = os.path.join(self.dbdir, "archetypes.pkl")
+    def __init__(self, connection_string: str):
+        self.engine = create_engine(connection_string)
 
-        if not os.path.exists(self.dbdir):
-            os.makedirs(self.dbdir)
-
-        if rebuild_pkl or not all(
-            os.path.exists(file)
-            for file in [
-                self.cardpkl,
-                self.setspkl,
-                self.archpkl,
-            ]
-        ):
-            self._build_objects()
-        else:
-            self._load_objects()
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
 
     def __enter__(self):
         return self
@@ -50,220 +29,183 @@ class YugiDB:
     def __exit__(self, exc_type, exc_value, traceback):
         pass
 
-    def _build_objects(self):
-        with sqlite3.connect(self.dbpath) as con:
-            print(f"Building card db for {self.name}...")
-            self._build_card_db(con)
-            print(f"Building archetype db for {self.name}...")
-            self._build_archetype_db(con)
-            print(f"Building set db for {self.name}...")
-            self._build_set_db(con)
-        self.save_pickles()
-
-    def _load_objects(self):
-        with open(self.cardpkl, "rb") as file:
-            self._card_data = pickle.load(file)
-        with open(self.archpkl, "rb") as file:
-            self._arch_data = pickle.load(file)
-        with open(self.setspkl, "rb") as file:
-            self._set_data = pickle.load(file)
-
-    def save_pickles(self):
-        print(f"Pickling pickles for {self.name}...")
-        with open(self.cardpkl, "wb") as file:
-            pickle.dump(self._card_data, file)
-        with open(self.archpkl, "wb") as file:
-            pickle.dump(self._arch_data, file)
-        with open(self.setspkl, "wb") as file:
-            pickle.dump(self._set_data, file)
+    @property
+    def card_query(self):
+        return (
+            self.session.query(
+                Data.id,
+                Text.name,
+                Text.text,
+                Data._type,
+                Data._race,
+                Data._attribute,
+                Data._category,
+                Data._genre,
+                Data._level,
+                Data.atk,
+                Data._def,
+                Data._tcgdate,
+                Data._ocgdate,
+                Data.status,
+                Data._archcode,
+                Data._supportcode,
+                Data.alias,
+                Koid._koid,
+                Data._script,
+            )
+            .join(Text, Data.id == Text.id)
+            .join(Koid, Data.id == Koid.id)
+        )
 
     @property
-    def cards(self) -> ValuesView[Card]:
-        return self._card_data.values()
+    def cards(self):
+        return self._make_cards_list(self.card_query.all())
 
-    @property
-    def archetypes(self) -> ValuesView[Archetype]:
-        return self._arch_data.values()
+    def _make_cards_list(self, results):
+        return [Card(*row) for row in results]
 
-    @property
-    def sets(self) -> ValuesView[Set]:
-        return self._set_data.values()
-
-    def get_card_by_id(self, id: int) -> Card:
-        return self._card_data[id]
+    def get_card_by_id(self, id) -> Card:
+        return self.get_cards_by_ids([id])[0]
 
     def get_cards_by_ids(self, ids: list[int]) -> list[Card]:
-        return [self.get_card_by_id(id) for id in ids if id in self._card_data]
+        query = self.card_query.filter(Data.id.in_(ids))
+        result = self.session.execute(query.statement).fetchall()
+        return [Card(*row) for row in result]
 
     def get_cards_by_value(self, by: str, value: str | int) -> list[Card]:
+        if not hasattr(Card, by):
+            raise ValueError(f"Attribute '{by}' does not exist in the Card class.")
+
+        attribute_type = class_mapper(Card).columns[by].type.python_type
+
+        if attribute_type == str:
+            query = self.card_query.filter(getattr(Card, by) == value)
+        elif attribute_type == int:
+            query = self.card_query.filter(getattr(Card, by) == int(value))
+        else:
+            raise ValueError(f"Unsupported attribute type for '{by}'.")
+
+        matching_cards = query.all()
+        return matching_cards
+
+    def get_cards_by_values(self, search_values: dict) -> list[Card]:
+        for attribute in search_values.keys():
+            if not hasattr(Card, attribute):
+                raise ValueError(
+                    f"Attribute '{attribute}' does not exist in the Card class."
+                )
+
+        query = self.card_query.filter(
+            *[
+                getattr(Card, attribute) == int(value)
+                if isinstance(value, int)
+                else getattr(Card, attribute) == value
+                for attribute, value in search_values.items()
+            ]
+        )
+
+        matching_cards = query.all()
+        return matching_cards
+
+    def get_cards_by_query(self, query: Callable[[Card], bool]) -> list[Card]:
+        return [card for card in self.card_query.all() if query(card)]
+
+    @property
+    def arch_query(self):
+        return self.session.query(
+            SetCode.name,
+            func.coalesce(SetCode.officialcode, SetCode.betacode).label("id"),
+        )
+
+    def _make_arch_list(self, results):
         return [
-            c
-            for c in self.cards
-            if isinstance(getattr(c, by), int)
-            and getattr(c, by) == value
-            or value in getattr(c, by)
+            Archetype(
+                id=row.id,
+                name=row.name,
+                members=[
+                    card_id
+                    for card_id, *_ in self.session.execute(
+                        self.card_query.filter(Data._archcode == row.id).statement
+                    ).fetchall()
+                ],
+            )
+            for row in results
         ]
 
-    def get_cards_by_values(
-        self, by: str, values: list[int] | list[str]
-    ) -> list[list[Card]]:
-        return [self.get_cards_by_value(by, value) for value in values]
-
-    def get_cards_by_query(self, query: Callable[[Card], bool]):
-        return [card for card in self.cards if query(card)]
-
-    def get_cards_fuzzy(self, fuzzy_string: str) -> list[tuple[Card, float]]:
-        from jaro import jaro_winkler_metric
-
-        return sorted(
-            [
-                (card, jaro_winkler_metric(card.name, fuzzy_string))
-                for card in self.cards
-            ],
-            key=lambda x: x[1],
-            reverse=True,
-        )[:20]
-
-    def get_set_by_id(self, id: int) -> Set:
-        return self._set_data[id]
-
-    def get_sets_by_ids(self, ids: list[int]) -> list[Set]:
-        return [self.get_set_by_id(id) for id in ids if id in self._set_data]
-
-    def get_sets_by_value(self, by: str, value: str | int) -> list[Set]:
-        return [
-            s
-            for s in self.sets
-            if isinstance(getattr(s, by), int)
-            and getattr(s, by) == value
-            or value in getattr(s, by)
-        ]
-
-    def get_sets_by_values(
-        self, by: str, values: list[int] | list[str]
-    ) -> list[list[Set]]:
-        return [self.get_sets_by_value(by, value) for value in values]
+    @property
+    def archetypes(self):
+        return self._make_arch_list(self.arch_query.all())
 
     def get_archetype_by_id(self, id: int) -> Archetype:
-        return self._arch_data[id]
+        return self.get_archetypes_by_ids([id])[0]
 
     def get_archetypes_by_ids(self, ids: list[int]) -> list[Archetype]:
-        return [self.get_archetype_by_id(id) for id in ids if id in self._arch_data]
+        query = self.arch_query.filter(
+            func.coalesce(SetCode.officialcode, SetCode.betacode).in_(ids),
+        )
 
-    def get_archetypes_by_value(self, by: str, value: str | int) -> list[Archetype]:
-        return [
-            a
-            for a in self.archetypes
-            if isinstance(getattr(a, by), int)
-            and getattr(a, by) == value
-            or value in getattr(a, by)
-        ]
+        results = self.session.execute(query.statement).fetchall()
+        return self._make_arch_list(results)
 
-    def get_archetypes_by_values(
-        self, by: str, values: list[int] | list[str]
-    ) -> list[list[Archetype]]:
-        return [self.get_archetypes_by_value(by, value) for value in values]
+    def get_archetype_by_name(self, name: str) -> Archetype:
+        return self.get_archetypes_by_names([name])[0]
 
-    def get_related_cards(
-        self, given_archetypes: list[str], given_cards: list[str] = []
-    ) -> list[Card]:
-        return [
-            card
-            for card in self.cards
-            if any(card_name in card._text for card_name in given_cards)
-            or any(
-                arch_name
-                in [
-                    arch.name
-                    for arch in self.get_archetypes_by_ids(card.combined_archetypes)
-                ]
-                for arch_name in given_archetypes
+    def get_archetypes_by_names(self, names: list[str]) -> list[Archetype]:
+        query = self.arch_query.filter(SetCode.name.in_(names))
+        results = self.session.execute(query.statement).fetchall()
+        return self._make_arch_list(results)
+
+    @property
+    def set_query(self):
+        return (
+            self.session.query(
+                Pack.id,
+                Pack.abbr,
+                Pack.name,
+                Pack.ocgdate.label("_ocgdate"),
+                Pack.tcgdate.label("_tcgdate"),
+                func.group_concat(Relation.cardid).label("cardids"),
             )
-        ]
+            .join(Relation, Pack.id == Relation.packid)
+            .group_by(Pack.name)
+        )
 
-    def get_unscripted(self, include_skillcards: bool = False) -> list[Card]:
+    @property
+    def sets(self):
+        return self._make_set_list(self.set_query.all())
+
+    def _make_set_list(self, results):
         return [
-            card
-            for card in self.cards
-            if not card.id == 111004001
-            and (card._script != 1.0 or card._script == None)
-            and (
-                any(
-                    card.has_cardtype(type)
-                    for type in [
-                        CardType.Spell,
-                        CardType.Trap,
-                    ]
-                )
-                or card.has_type(Type.Effect)
+            Set(
+                id=row.id,
+                abbr=row.abbr,
+                name=row.name,
+                _ocgdate=row._ocgdate,
+                _tcgdate=row._tcgdate,
+                contents=[int(card_id) for card_id in row.cardids.split(",")],
             )
-            and not card.alias
-            and (not card.ot == OT.Illegal or (include_skillcards and card.is_skill))
+            for row in results
         ]
 
-    def get_card_archetypes(self, card: Card) -> list[Archetype]:
-        return [self.get_archetype_by_id(id) for id in card.archetypes]
+    def get_set_by_id(self, id: int) -> Set:
+        return self.get_sets_by_ids([id])[0]
 
-    def get_card_support(self, card: Card) -> list[Archetype]:
-        return [self.get_archetype_by_id(id) for id in card.support]
+    def get_sets_by_ids(self, ids: list[int]) -> list[Set]:
+        self.set_query
+        query = self.set_query.filter(Pack.id.in_(ids))
+        results = self.session.execute(query.statement).fetchall()
+        return self._make_set_list(results)
 
-    def get_card_related(self, card: Card) -> list[Archetype]:
-        return [self.get_archetype_by_id(id) for id in card.related]
+    def get_set_by_name(self, name: str) -> Set:
+        return self.get_sets_by_names([name])[0]
+
+    def get_sets_by_names(self, names: list[str]) -> list[Set]:
+        self.set_query
+        query = self.set_query.filter(Pack.name.in_(names))
+        results = self.session.execute(query.statement).fetchall()
+        return self._make_set_list(results)
 
     def get_card_sets(self, card: Card) -> list[Set]:
-        return [self.get_set_by_id(set.id) for set in self.sets if card.id in set]
-
-    def get_archetype_cards(self, arch: Archetype) -> list[Card]:
-        return [self.get_card_by_id(id) for id in arch.members]
-
-    def get_archetype_support(self, arch: Archetype) -> list[Card]:
-        return [self.get_card_by_id(id) for id in arch.support]
-
-    def get_archetype_related(self, arch: Archetype) -> list[Card]:
-        return [self.get_card_by_id(id) for id in arch.related]
-
-    def get_set_cards(self, set: Set) -> list[Card]:
-        return [self.get_card_by_id(id) for id in set.contents]
-
-    def get_set_archetype_counts(self, s: Set) -> ItemsView[Archetype, int]:
-        return Counter(
-            self.get_archetype_by_id(archid)
-            for card in self.get_cards_by_ids(s.contents)
-            for archid in set(card.archetypes + card.support)
-            if card is not None
-        ).items()
-
-    def get_set_archetype_ratios(self, s: Set) -> list[tuple[Archetype, float]]:
-        return [
-            (archid, count / s.set_total * 100)
-            for archid, count in self.get_set_archetype_counts(s)
-        ]
-
-    def clean_dir(self):
-        for file_name in os.listdir(self.dbdir):
-            file_path = os.path.join(self.dbdir, file_name)
-            file_path = file_path.replace("\\", "/")
-            if file_path != self.dbpath:
-                os.remove(file_path)
-
-    @staticmethod
-    def merge(db1: YugiDB, db2: YugiDB, new_name: str, db_path: str):
-        new = YugiDB()
-        new.name = new_name
-        new.dbpath = db_path
-        new._card_data = db1._card_data | db2._card_data
-        new._arch_data = db1._arch_data | db2._arch_data
-        new._set_data = db1._set_data | db2._set_data
-        return new
-
-    @abstractmethod
-    def _build_card_db(self, con):
-        pass
-
-    @abstractmethod
-    def _build_archetype_db(self, con):
-        pass
-
-    @abstractmethod
-    def _build_set_db(self, con):
-        pass
+        query = self.set_query.filter(Relation.cardid == card.id)
+        results = self.session.execute(query.statement).fetchall()
+        return self._make_set_list(results)

@@ -27,9 +27,9 @@ class Renderer:
         frame = ""
         if card.has_category(Category.SkillCard):
             frame = "Frames/Skill.png"
-        elif card.has_cardtype(CardType.Trap):
+        elif card.has_type(Type.Trap):
             frame = "Frames/Trap.png"
-        elif card.has_cardtype(CardType.Spell):
+        elif card.has_type(Type.Spell):
             frame = "Frames/Spell.png"
         elif card.has_category(Category.RedGod):
             frame = "Frames/Slifer.png"
@@ -41,15 +41,15 @@ class Renderer:
             frame = "Frames/Dark_Synchro.png"
         elif card.is_legendary_dragon:
             frame = "Frames/Legendary_Dragon.png"
-        elif card.has_edtype(EDType.Fusion):
+        elif card.has_type(Type.Fusion):
             frame = "Frames/Fusion.png"
         elif card.has_type(Type.Ritual):
             frame = "Frames/Ritual.png"
-        elif card.has_edtype(EDType.Synchro):
+        elif card.has_type(Type.Synchro):
             frame = "Frames/Synchro.png"
-        elif card.has_edtype(EDType.Xyz):
+        elif card.has_type(Type.Xyz):
             frame = "Frames/Xyz.png"
-        elif card.has_edtype(EDType.Link):
+        elif card.has_type(Type.Link):
             frame = "Frames/Link.png"
         elif card.is_token:
             frame = "Frames/Token.png"
@@ -66,23 +66,23 @@ class Renderer:
         if card.has_type(Type.Pendulum):
             Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Effect_Bar.png")
             Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Box_Medium.png")
-        elif card.has_edtype(EDType.Xyz):
+        elif card.has_type(Type.Xyz):
             Renderer.layers.append("Common/Artwork_Box_Xyz.png")
         elif card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Artwork_Box_Skill.png")
-        elif card.has_edtype(EDType.Link):
+        elif card.has_type(Type.Link):
             Renderer.layers.append("Common/Artwork_Box_LNKD.png")
         else:
             Renderer.layers.append("Common/Artwork_Box.png")
 
-        if card.has_edtype(EDType.Xyz):
+        if card.has_type(Type.Xyz):
             Renderer.layers.append("Common/Card_Frame_Bevel_Xyz.png")
         elif card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Card_Frame_Bevel_Skill.png")
         else:
             Renderer.layers.append("Common/Card_Frame_Bevel.png")
 
-        if card.has_edtype(EDType.Xyz):
+        if card.has_type(Type.Xyz):
             Renderer.layers.append("Common/Name_Box_Xyz.png")
         elif card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Name_Box_Skill.png")
@@ -98,7 +98,7 @@ class Renderer:
         import random
 
         Renderer.layers.append(f"Stickers/Holo_Sticker_{random.randint(1, 4)}.png")
-        if (card.has_edtype(EDType.Xyz) or card.is_dark_synchro) and not card.has_type(
+        if (card.has_type(Type.Xyz) or card.is_dark_synchro) and not card.has_type(
             Type.Pendulum
         ):
             Renderer.layers.append("Text/Limitation/White/Creator.png")
@@ -110,11 +110,11 @@ class Renderer:
         if card.is_skill:
             return
         attr = ""
-        if card.has_cardtype(CardType.Spell) and card.has_category(Category.SkillCard):
+        if card.has_type(Type.Spell) and card.has_category(Category.SkillCard):
             attr = "Attributes/SPELL.png"
-        elif card.has_cardtype(CardType.Trap):
+        elif card.has_type(Type.Trap):
             attr = "Attributes/TRAP.png"
-        elif card.attribute != Attribute.NoAttribute:
+        elif card.attribute:
             attr = f"Attributes/{card.attribute.name}.png"
         else:
             return
@@ -166,8 +166,8 @@ class Renderer:
 
     @staticmethod
     def _get_rank(card: Card):
-        if card.rank > 0:
-            rank = f"Rank/Rank_{card.rank}.png"
+        if card.level > 0:
+            rank = f"Rank/Rank_{card.level}.png"
             Renderer.layers.append(rank)
 
     @staticmethod
@@ -194,17 +194,17 @@ class Renderer:
     @staticmethod
     def _get_property(card: Card):
         icon = None
-        if card.has_property(Property.Continuous):
+        if card.has_type(Type.Continuous):
             icon = "Property/Continuous.png"
-        elif card.has_property(Property.Counter):
+        elif card.has_type(Type.Counter):
             icon = "Property/Counter.png"
-        elif card.has_property(Property.QuickPlay):
+        elif card.has_type(Type.QuickPlay):
             icon = "Property/QuickPlay.png"
-        elif card.has_property(Property.Field):
+        elif card.has_type(Type.Field):
             icon = "Property/Field.png"
-        elif card.has_property(Property.QuickPlay):
+        elif card.has_type(Type.QuickPlay):
             icon = "Property/QuickPlay.png"
-        elif card.has_property(Property.Ritual):
+        elif card.has_type(Type.Ritual):
             icon = "Property/Ritual.png"
 
         if card.has_category(Category.SkillCard):
@@ -213,12 +213,12 @@ class Renderer:
         text = None
         if icon:
             Renderer.layers.append(icon)
-            if card.has_cardtype(CardType.Spell):
+            if card.has_type(Type.Spell):
                 text = "Text/Spell_Card_w_Icon.png"
             else:
                 text = "Text/Trap_Card_w_Icon.png"
         else:
-            if card.has_cardtype(CardType.Spell):
+            if card.has_type(Type.Spell):
                 text = "Text/Spell_Card.png"
             else:
                 text = "Text/Trap_Card.png"
@@ -226,10 +226,10 @@ class Renderer:
 
     @staticmethod
     def _get_atk_def_link(card: Card):
-        if not card.has_cardtype(CardType.Monster):
+        if not card.has_type(Type.Monster):
             return
 
-        if card.has_edtype(EDType.Link):
+        if card.has_type(Type.Link):
             Renderer.layers.append("Text/Link-.png")
         else:
             Renderer.layers.append("Text/Def__Bar.png")
@@ -249,9 +249,9 @@ class Renderer:
             Renderer._get_property(card)
         elif card.is_dark_synchro:
             Renderer._get_neg_level(card)
-        elif card.has_edtype(EDType.Xyz):
+        elif card.has_type(Type.Xyz):
             Renderer._get_rank(card)
-        elif card.has_edtype(EDType.Link):
+        elif card.has_type(Type.Link):
             Renderer._get_linkmarkers(card)
         else:
             Renderer._get_level(card)
@@ -280,7 +280,7 @@ class Renderer:
 
         if (
             card.is_spelltrap
-            or card.has_any_edtype([EDType.Xyz, EDType.Link])
+            or card.has_any_type([Type.Xyz, Type.Link])
             or card.is_dark_synchro
         ):
             text_color = "#FFF"
@@ -345,10 +345,10 @@ class Renderer:
             (511, 1077),
             "#000",
         )
-        if card.has_edtype(EDType.Link):
+        if card.has_type(Type.Link):
             # Rating
             Renderer._draw_text_segment(
-                str(card.linkrating),
+                str(card.level),
                 os.path.join(ASSET_DIR, "Fonts/RoGSanSrfStd-Bd.otf"),
                 24,
                 (722, 1083),
@@ -426,7 +426,7 @@ class Renderer:
             )
         else:
             font_path = os.path.join(ASSET_DIR, "Fonts/Yu-Gi-Oh! Matrix Book.ttf")
-        if card.has_cardtype(CardType.Monster):
+        if card.has_type(Type.Monster):
             bbox = (65, 925)
         else:
             bbox = (65, 895)

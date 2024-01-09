@@ -75,12 +75,12 @@ class Deck:
         main = [
             (card_id, count)
             for card_id, count in main_extra
-            if not db.get_card_by_id(card_id).has_edtype()
+            if not db.get_card_by_id(card_id).has_edtype
         ]
         extra = [
             (card_id, count)
             for card_id, count in main_extra
-            if db.get_card_by_id(card_id).has_edtype()
+            if db.get_card_by_id(card_id).has_edtype
         ]
 
         cover_offset = 2 + 4 * main_size + 4 * side_size
@@ -141,7 +141,7 @@ class Deck:
         md_cards = [
             card_id
             for card_id, _ in self.main + self.side
-            if db.get_card_by_id(card_id).has_edtype(EDType.MainDeck)
+            if not db.get_card_by_id(card_id).has_edtype
         ]
 
         valids = [
