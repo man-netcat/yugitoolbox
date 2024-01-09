@@ -102,7 +102,7 @@ class Deck:
                     for card_id, count in self.main + self.extra + self.side
                 )
                 + self.cover_card.to_bytes(4, byteorder="little"),
-                wbits=-15, # type: ignore
+                wbits=-15,
             )
         ).decode()
 

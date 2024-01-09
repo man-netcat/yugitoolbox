@@ -9,7 +9,7 @@ from typing import Callable, ItemsView, Optional, ValuesView
 
 from .archetype import Archetype
 from .card import Card
-from .enums import OT, CardType, MDType
+from .enums import OT, CardType, Type
 from .set import Set
 
 
@@ -195,7 +195,7 @@ class YugiDB:
                         CardType.Trap,
                     ]
                 )
-                or card.has_mdtype(MDType.Effect)
+                or card.has_type(Type.Effect)
             )
             and not card.alias
             and (not card.ot == OT.Illegal or (include_skillcards and card.is_skill))

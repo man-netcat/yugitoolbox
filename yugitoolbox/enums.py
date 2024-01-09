@@ -8,7 +8,7 @@ class CardType(IntFlag):
     Trap = 0x4
 
 
-class MDType(IntFlag):
+class Type(IntFlag):
     NoType = 0x0
     Normal = 0x10
     Ritual = 0x80

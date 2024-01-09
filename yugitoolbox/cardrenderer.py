@@ -43,7 +43,7 @@ class Renderer:
             frame = "Frames/Legendary_Dragon.png"
         elif card.has_edtype(EDType.Fusion):
             frame = "Frames/Fusion.png"
-        elif card.has_mdtype(MDType.Ritual):
+        elif card.has_type(Type.Ritual):
             frame = "Frames/Ritual.png"
         elif card.has_edtype(EDType.Synchro):
             frame = "Frames/Synchro.png"
@@ -53,17 +53,17 @@ class Renderer:
             frame = "Frames/Link.png"
         elif card.is_token:
             frame = "Frames/Token.png"
-        elif card.has_mdtype(MDType.Normal):
+        elif card.has_type(Type.Normal):
             frame = "Frames/Normal.png"
-        elif card.has_mdtype(MDType.Effect):
+        elif card.has_type(Type.Effect):
             frame = "Frames/Effect.png"
         Renderer.layers.append(frame)
-        if card.has_mdtype(MDType.Pendulum):
+        if card.has_type(Type.Pendulum):
             Renderer.layers.append("Frames/Pendulum.png")
 
     @staticmethod
     def _get_common(card: Card):
-        if card.has_mdtype(MDType.Pendulum):
+        if card.has_type(Type.Pendulum):
             Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Effect_Bar.png")
             Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Box_Medium.png")
         elif card.has_edtype(EDType.Xyz):
@@ -91,16 +91,16 @@ class Renderer:
 
         if card.has_category(Category.SkillCard):
             Renderer.layers.append("Common/Effect_Box_Skill.png")
-        elif not card.has_mdtype(MDType.Pendulum):
+        elif not card.has_type(Type.Pendulum):
             Renderer.layers.append("Common/Effect_Box.png")
 
         Renderer.layers.append("Common/Border.png")
         import random
 
         Renderer.layers.append(f"Stickers/Holo_Sticker_{random.randint(1, 4)}.png")
-        if (
-            card.has_edtype(EDType.Xyz) or card.is_dark_synchro
-        ) and not card.has_mdtype(MDType.Pendulum):
+        if (card.has_edtype(EDType.Xyz) or card.is_dark_synchro) and not card.has_type(
+            Type.Pendulum
+        ):
             Renderer.layers.append("Text/Limitation/White/Creator.png")
         else:
             Renderer.layers.append("Text/Limitation/Black/Creator.png")
@@ -139,7 +139,7 @@ class Renderer:
                     return
             art_img = Image.open(BytesIO(response.content)).convert("RGBA")
         card_size = CARD_SIZE
-        if card.has_mdtype(MDType.Pendulum):
+        if card.has_type(Type.Pendulum):
             bbox = (55, 212, 759, 739)
             new_width = 704
             aspect_ratio = art_img.width / art_img.height
@@ -255,7 +255,7 @@ class Renderer:
             Renderer._get_linkmarkers(card)
         else:
             Renderer._get_level(card)
-        if card.has_mdtype(MDType.Pendulum):
+        if card.has_type(Type.Pendulum):
             Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Scales.png")
         Renderer._get_atk_def_link(card)
 
@@ -368,7 +368,7 @@ class Renderer:
                 "#000",
             )
 
-        if card.has_mdtype(MDType.Pendulum):
+        if card.has_type(Type.Pendulum):
             for x in [72, 718]:
                 Renderer._draw_text_segment(
                     str(card.scale),
@@ -420,7 +420,7 @@ class Renderer:
             case 5:
                 _, pendtext, _, mats, text = sections
 
-        if card.has_mdtype(MDType.Normal) and not card.is_token:
+        if card.has_type(Type.Normal) and not card.is_token:
             font_path = os.path.join(
                 ASSET_DIR, "Fonts/Yu-Gi-Oh! ITC Stone Serif LT Italic.ttf"
             )
@@ -431,7 +431,7 @@ class Renderer:
         else:
             bbox = (65, 895)
         Renderer._draw_effect(text, 78, mats, font_path, 19, bbox)
-        if card.has_mdtype(MDType.Pendulum):
+        if card.has_type(Type.Pendulum):
             Renderer._draw_effect(pendtext, 62, None, font_path, 19, (128, 751))
 
     @staticmethod

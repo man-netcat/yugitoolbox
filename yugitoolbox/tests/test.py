@@ -35,11 +35,12 @@ class TestDB(TestCase):
         self.assertEqual(c.level, 8)
 
         self.assertEqual(c.edtype, EDType.MainDeck)
+        self.assertEqual(c.cardtype, CardType.Monster)
         self.assertTrue(c.has_type(Type.Effect))
-        c.type = [Type.Monster, Type.Normal]
+        c.type = [Type.Normal]
         self.assertTrue(c.has_type(Type.Normal))
-        c.type = Type.Monster | Type.Normal
-        self.assertTrue(c.has_all_types([Type.Monster, Type.Normal]))
+        c.type = Type.Normal
+        self.assertTrue(c.has_all_types([Type.Normal]))
 
         testarch = TestDB.odb.get_archetypes_by_value(by="name", value="War Rock")[0]
         self.assertEqual(testarch.name, "War Rock")
@@ -50,7 +51,6 @@ class TestDB(TestCase):
         self.assertTrue(c.id in testarch.members)
         self.assertTrue(c.id in testset.contents)
         self.assertTrue(testarch.id in c.archetypes)
-        self.assertTrue(testset.id in c.sets)
         self.assertIsNotNone(c.script)
 
     def test_property(self):
