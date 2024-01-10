@@ -12,9 +12,15 @@ OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 
 
 class OmegaDB(YugiDB):
-    def __init__(self, force_update: bool = False, skip_update: bool = False):
+    def __init__(
+        self,
+        always_update: bool = False,
+        force_update: bool = False,
+        skip_update: bool = False,
+    ):
         self.dbpath = "db/omega/omega.db"
         self.dbpath_old = "db/omega/omega_old.db"
+        self.always_update = always_update
         self.force_update = force_update
         self.skip_update = skip_update
         self.download()
@@ -59,7 +65,7 @@ class OmegaDB(YugiDB):
 
             if old_hash == new_hash:
                 return False
-            else:
+            elif not self.always_update:
                 print("A new version of the Omega database is available.")
                 user_response = input(
                     "Do you want to update the database? (y/n): "
