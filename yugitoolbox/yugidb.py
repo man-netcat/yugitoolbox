@@ -118,20 +118,7 @@ class YugiDB:
         )
 
     def _make_arch_list(self, results):
-        return [
-            Archetype(
-                id=row.id,
-                name=row.name,
-                members=[
-                    card_id
-                    for card_id, *_ in self.session.execute(
-                        self.card_query.filter(Data._archcode == row.id).statement
-                    ).fetchall()
-                ],
-            )
-            for row in results
-            if row.id != 0
-        ]
+        return [Archetype(id=row.id, name=row.name) for row in results if row.id != 0]
 
     @property
     def archetypes(self):

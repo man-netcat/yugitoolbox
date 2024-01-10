@@ -2,6 +2,7 @@ from enum import IntEnum, IntFlag
 
 
 class Type(IntFlag):
+    # NOTE: DO NOT CHANGE THIS ORDER
     Monster = 0x1
     Spell = 0x2
     Trap = 0x4
