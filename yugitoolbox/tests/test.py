@@ -26,9 +26,9 @@ class TestDB(TestCase):
         c.attribute = Attribute.DARK
         self.assertEqual(c.attribute, Attribute.DARK)
 
-        self.assertEqual(c.atk, 2600)
-        c.atk = 2800
-        self.assertEqual(c.atk, 2800)
+        self.assertEqual(c._atkdata, 2600)
+        c._atkdata = 2800
+        self.assertEqual(c._atkdata, 2800)
 
         self.assertEqual(c.def_, 2600)
         c.def_ = 2700

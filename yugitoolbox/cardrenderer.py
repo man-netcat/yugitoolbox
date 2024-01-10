@@ -336,7 +336,7 @@ class Renderer:
         )
         # ATK
         Renderer._draw_text_segment(
-            str(card.atk) if card.atk >= 0 else "?",
+            str(card._atkdata) if card._atkdata >= 0 else "?",
             os.path.join(
                 ASSET_DIR,
                 "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
