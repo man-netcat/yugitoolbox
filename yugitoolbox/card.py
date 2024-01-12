@@ -28,8 +28,8 @@ class Card:
     _tcgdatedata: int = 0
     _ocgdatedata: int = 0
     status: int = 0
-    _archetypedata: int = 0
-    _supportdata: int = 0
+    _archcode: int = 0
+    _supportcode: int = 0
     alias: int = 0
     _koiddata: int = 0
     _scriptdata: str = ""
@@ -56,7 +56,7 @@ class Card:
                 if isinstance(value, list)
                 else value
             )
-        
+
         fields = {
             field: convert_enum(getattr(self, field))
             for field in self.__dataclass_fields__
@@ -386,7 +386,7 @@ class Card:
 
     @property
     def archetypes(self) -> list[int]:
-        return Card._split_chunks(self._archetypedata, 4)
+        return Card._split_chunks(self._archcode, 4)
 
     @archetypes.setter
     def archetypes(self, values: list[int]):
@@ -395,11 +395,11 @@ class Card:
                 values.append(0)
         else:
             raise ValueError("Card can not have more than 4 member archetypes.")
-        self._archetypedata = sum((value << (16 * i)) for i, value in enumerate(values))
+        self._archcode = sum((value << (16 * i)) for i, value in enumerate(values))
 
     @property
     def support(self) -> list[int]:
-        return Card._split_chunks(self._supportdata, 2)
+        return Card._split_chunks(self._supportcode, 2)
 
     @support.setter
     def support(self, values: list[int]):
@@ -408,11 +408,11 @@ class Card:
                 values.append(0)
         else:
             raise ValueError("Card can not have more than 2 support archetypes.")
-        self._supportdata = sum((value << (16 * i)) for i, value in enumerate(values))
+        self._supportcode = sum((value << (16 * i)) for i, value in enumerate(values))
 
     @property
     def related(self) -> list[int]:
-        return Card._split_chunks(self._supportdata >> 32, 2)
+        return Card._split_chunks(self._supportcode >> 32, 2)
 
     @related.setter
     def related(self, values: list[int]):
@@ -421,7 +421,7 @@ class Card:
                 values.append(0)
         else:
             raise ValueError("Card can not have more than 2 related archetypes.")
-        self._supportdata = (self._supportdata & 0xFFFFFFFF) | (
+        self._supportcode = (self._supportcode & 0xFFFFFFFF) | (
             sum((value << (16 * i)) for i, value in enumerate(values)) << 32
         )
 

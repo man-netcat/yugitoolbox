@@ -1,10 +1,11 @@
 from __future__ import annotations
-from enum import IntFlag
 
+from enum import IntFlag
+from operator import or_
 from typing import Callable
 
-from sqlalchemy import Column, Integer, String, create_engine, func
-from sqlalchemy.orm import aliased, class_mapper, sessionmaker
+from sqlalchemy import create_engine, func
+from sqlalchemy.orm import sessionmaker
 
 from .archetype import Archetype
 from .card import Card
@@ -13,20 +14,11 @@ from .sqlclasses import *
 
 
 class YugiDB:
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-
     def __init__(self, connection_string: str):
         self.engine = create_engine(connection_string)
 
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
 
     ################# Card Functions #################
 
@@ -34,28 +26,28 @@ class YugiDB:
     def card_query(self):
         return (
             self.session.query(
-                Data.id.label("id"),
-                Text.name.label("name"),
-                Text.text.label("text"),
-                Data.type.label("type"),
-                Data.race.label("race"),
-                Data.attribute.label("attribute"),
-                Data.category.label("category"),
-                Data.genre.label("genre"),
-                Data.level.label("level"),
-                Data.atk.label("atk"),
-                Data.def_.label("def"),
-                Data.tcgdate.label("tcgdate"),
-                Data.ocgdate.label("ocgdate"),
-                Data.status.label("status"),
-                Data.archcode.label("archcode"),
-                Data.supportcode.label("supportcode"),
-                Data.alias.label("alias"),
-                Koid.koid.label("koid"),
-                Data.script.label("script"),
+                Datas.id.label("id"),
+                Texts.name.label("name"),
+                Texts.desc.label("text"),
+                Datas.type.label("type"),
+                Datas.race.label("race"),
+                Datas.attribute.label("attribute"),
+                Datas.category.label("category"),
+                Datas.genre.label("genre"),
+                Datas.level.label("level"),
+                Datas.atk.label("atk"),
+                Datas.def_.label("def"),
+                Datas.tcgdate.label("tcgdate"),
+                Datas.ocgdate.label("ocgdate"),
+                Datas.ot.label("status"),
+                Datas.setcode.label("archcode"),
+                Datas.support.label("supportcode"),
+                Datas.alias.label("alias"),
+                Koids.koid.label("koid"),
+                Datas.script.label("script"),
             )
-            .join(Text, Data.id == Text.id)
-            .join(Koid, Data.id == Koid.id)
+            .join(Texts, Datas.id == Texts.id)
+            .join(Koids, Datas.id == Koids.id)
         )
 
     @property
@@ -67,16 +59,6 @@ class YugiDB:
 
     def _make_cards_list(self, results) -> list[Card]:
         return [self._make_card(result) for result in results]
-
-    def get_card_by_id(self, id) -> Card:
-        query = self.card_query.filter(Data.id == id)
-        result = self.session.execute(query.statement).fetchone()
-        return self._make_card(result)
-
-    def get_cards_by_ids(self, ids: list[int]) -> list[Card]:
-        query = self.card_query.filter(Data.id.in_(ids))
-        results = self.session.execute(query.statement).fetchall()
-        return self._make_cards_list(results)
 
     def get_cards_by_values(self, search_values: dict) -> list[Card]:
         return [
@@ -99,42 +81,34 @@ class YugiDB:
     @property
     def arch_query(self):
         return self.session.query(
-            SetCode.name,
-            func.coalesce(SetCode.officialcode, SetCode.betacode).label("id"),
+            Setcodes.name,
+            Setcodes.id,
         )
 
     def _make_arch_list(self, results) -> list[Archetype]:
-        return [self._make_archetype(result) for result in results if result.id != 0]
+        return [self._make_archetype(result) for result in results]
 
     def _make_archetype(self, result) -> Archetype:
-        return Archetype(id=result.id, name=result.name)
+        return Archetype(
+            id=result.id,
+            name=result.name,
+            members=[c.id for c in self.cards if result.id in c.archetypes],
+            support=[c.id for c in self.cards if result.id in c.support],
+            related=[c.id for c in self.cards if result.id in c.related],
+        )
 
     @property
     def archetypes(self) -> list[Archetype]:
         return self._make_arch_list(self.arch_query.all())
 
-    def get_archetype_by_id(self, id: int) -> Archetype:
-        query = self.arch_query.filter(
-            func.coalesce(SetCode.officialcode, SetCode.betacode) == id,
-        )
+    def get_archetypes_by_values(self, search_values: dict) -> list[Archetype]:
+        filters = {
+            "name": Setcodes.name == search_values.get("name"),
+            "id": Setcodes.id == int(search_values.get("id", 0)),
+        }
 
-        result = self.session.execute(query.statement).fetchone()
-        return Archetype(id=result.id, name=result.name)
-
-    def get_archetypes_by_ids(self, ids: list[int]) -> list[Archetype]:
-        query = self.arch_query.filter(
-            func.coalesce(SetCode.officialcode, SetCode.betacode).in_(ids),
-        )
-
-        results = self.session.execute(query.statement).fetchall()
-        return self._make_arch_list(results)
-
-    def get_archetype_by_name(self, name: str) -> Archetype:
-        return self.get_archetypes_by_names([name])[0]
-
-    def get_archetypes_by_names(self, names: list[str]) -> list[Archetype]:
-        query = self.arch_query.filter(SetCode.name.in_(names))
-        results = self.session.execute(query.statement).fetchall()
+        query = self.arch_query.filter(*(f for f in filters.values() if f is not None))
+        results = self.session.execute(query).fetchall()
         return self._make_arch_list(results)
 
     ################# Set Functions #################
@@ -143,15 +117,15 @@ class YugiDB:
     def set_query(self):
         return (
             self.session.query(
-                Pack.id,
-                Pack.abbr,
-                Pack.name,
-                Pack.ocgdate.label("_ocgdate"),
-                Pack.tcgdate.label("_tcgdate"),
-                func.group_concat(Relation.cardid).label("cardids"),
+                Packs.id,
+                Packs.abbr,
+                Packs.name,
+                Packs.ocgdate,
+                Packs.tcgdate,
+                func.group_concat(Relations.cardid).label("cardids"),
             )
-            .join(Relation, Pack.id == Relation.packid)
-            .group_by(Pack.name)
+            .join(Relations, Packs.id == Relations.packid)
+            .group_by(Packs.name)
         )
 
     @property
@@ -166,57 +140,39 @@ class YugiDB:
             id=result.id,
             abbr=result.abbr,
             name=result.name,
-            _ocgdate=result._ocgdate,
-            _tcgdate=result._tcgdate,
+            _ocgdate=result.ocgdate,
+            _tcgdate=result.tcgdate,
             contents=[int(card_id) for card_id in result.cardids.split(",")],
         )
-
-    def get_set_by_id(self, id: int) -> Set:
-        query = self.set_query.filter(Pack.id == id)
-        result = self.session.execute(query.statement).fetchone()
-        return Set(
-            id=result.id,
-            abbr=result.abbr,
-            name=result.name,
-            _ocgdate=result._ocgdate,
-            _tcgdate=result._tcgdate,
-            contents=[int(card_id) for card_id in result.cardids.split(",")],
-        )
-
-    def get_sets_by_ids(self, ids: list[int]) -> list[Set]:
-        query = self.set_query.filter(Pack.id.in_(ids))
-        results = self.session.execute(query.statement).fetchall()
-        return self._make_set_list(results)
-
-    def get_set_by_name(self, name: str) -> Set:
-        self.set_query
-        query = self.set_query.filter(Pack.name == name)
-        result = self.session.execute(query.statement).fetchone()
-        return self._make_set(result)
-
-    def get_sets_by_names(self, names: list[str]) -> list[Set]:
-        self.set_query
-        query = self.set_query.filter(Pack.name.in_(names))
-        results = self.session.execute(query.statement).fetchall()
-        return self._make_set_list(results)
 
     def get_card_sets(self, card: Card) -> list[Set]:
-        query = self.set_query.filter(Relation.cardid == card.id)
-        results = self.session.execute(query.statement).fetchall()
+        query = self.set_query.filter(Relations.cardid == card.id)
+        results = self.session.execute(query).fetchall()
+        return self._make_set_list(results)
+
+    def get_sets_by_values(self, search_values: dict) -> list[Set]:
+        filters = {
+            "name": Packs.name == search_values.get("name"),
+            "abbr": Packs.abbr == search_values.get("abbr"),
+            "id": Packs.id == int(search_values.get("id", 0)),
+        }
+
+        query = self.set_query.filter(*(f for f in filters.values() if f is not None))
+        results = self.session.execute(query).fetchall()
         return self._make_set_list(results)
 
     ################# Name/id Map Functions #################
 
     def get_card_name_id_map(self) -> dict[str, int]:
-        results = self.session.execute(self.card_query.statement).fetchall()
+        results = self.session.execute(self.card_query).fetchall()
         return {card.name: card.id for card in results}
 
     def get_archetype_name_id_map(self) -> dict[str, int]:
-        results = self.session.execute(self.arch_query.statement).fetchall()
+        results = self.session.execute(self.arch_query).fetchall()
         return {
             archetype.name: archetype.id for archetype in results if archetype.id != 0
         }
 
     def get_set_name_id_map(self) -> dict[str, int]:
-        results = self.session.execute(self.set_query.statement).fetchall()
+        results = self.session.execute(self.set_query).fetchall()
         return {set.name: set.id for set in results}

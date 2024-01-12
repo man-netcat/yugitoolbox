@@ -1,73 +1,81 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import BLOB, Column, ForeignKey, Integer, Text, func
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.hybrid import hybrid_property
 
 Base = declarative_base()
 
 
-class Data(Base):
+class Datas(Base):
     __tablename__ = "datas"
 
-    id = Column(Integer, primary_key=True)
-    status = Column(Integer, name="ot")
-    alias = Column(Integer)
-    archcode = Column(Integer, name="setcode")
-    type = Column(Integer)
-    atk = Column(Integer)
-    def_ = Column(Integer, name="def")
-    level = Column(Integer)
-    race = Column(Integer)
-    attribute = Column(Integer)
-    category = Column(Integer)
-    genre = Column(Integer)
-    script = Column(Integer)
-    supportcode = Column(Integer, name="support")
-    ocgdate = Column(Integer)
-    tcgdate = Column(Integer)
-
-    relations = relationship("Relation", back_populates="card")
+    id = Column(Integer, primary_key=True, nullable=False, default=0)
+    ot = Column(Integer, nullable=False, default=0)
+    alias = Column(Integer, nullable=False, default=0)
+    setcode = Column(Integer, nullable=False, default=0)
+    type = Column(Integer, nullable=False, default=0)
+    atk = Column(Integer, nullable=False, default=0)
+    def_ = Column("def", Integer, nullable=False, default=0)
+    level = Column(Integer, nullable=False, default=0)
+    race = Column(Integer, nullable=False, default=0)
+    attribute = Column(Integer, nullable=False, default=0)
+    category = Column(Integer, nullable=False, default=0)
+    genre = Column(Integer, nullable=False, default=0)
+    script = Column(BLOB)
+    support = Column(Integer, nullable=False, default=0)
+    ocgdate = Column(Integer, nullable=False, default=253402207200)
+    tcgdate = Column(Integer, nullable=False, default=253402207200)
 
 
-class Text(Base):
+class Texts(Base):
     __tablename__ = "texts"
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    text = Column(String, name="desc")
+    id = Column(Integer, primary_key=True, nullable=False, default=0)
+    name = Column(Text, nullable=False, default="")
+    desc = Column(Text, nullable=False, default="")
 
 
-class Koid(Base):
+class Koids(Base):
     __tablename__ = "koids"
 
-    id = Column(Integer, primary_key=True)
-    koid = Column(Integer, name="koid")
+    id = Column(Integer, primary_key=True, unique=True, nullable=False)
+    koid = Column(Integer, nullable=False, default=0)
 
 
-class SetCode(Base):
+class Setcodes(Base):
     __tablename__ = "setcodes"
 
-    name = Column(String)
-    officialcode = Column(Integer, primary_key=True)
-    betacode = Column(Integer, primary_key=True)
+    officialcode = Column(Integer, nullable=False, primary_key=True)
+    betacode = Column(Integer, nullable=False, primary_key=True)
+    name = Column(Text, unique=True, nullable=False)
+    cardid = Column(Integer, nullable=False, default=0)
+
+    @hybrid_property
+    def id(self):
+        return func.coalesce(self.officialcode, self.betacode)
 
 
-class Pack(Base):
+class Packs(Base):
     __tablename__ = "packs"
 
-    id = Column(Integer, primary_key=True)
-    abbr = Column(String)
-    name = Column(String)
-    ocgdate = Column(Integer)
-    tcgdate = Column(Integer)
-
-    relations = relationship("Relation", back_populates="pack")
+    id = Column(Integer, primary_key=True, nullable=False)
+    abbr = Column(Text)
+    name = Column(Text)
+    ocgdate = Column(Integer, nullable=False, default=253402214400)
+    tcgdate = Column(Integer, nullable=False, default=253402214400)
 
 
-class Relation(Base):
+class Relations(Base):
     __tablename__ = "relations"
 
-    id = Column(Integer, primary_key=True)
-    cardid = Column(Integer, ForeignKey("datas.id"))
-    packid = Column(Integer, ForeignKey("packs.id"))
-
-    card = relationship("Data", back_populates="relations")
-    pack = relationship("Pack", back_populates="relations")
+    cardid = Column(
+        Integer,
+        ForeignKey("datas.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    packid = Column(
+        Integer,
+        ForeignKey("packs.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )

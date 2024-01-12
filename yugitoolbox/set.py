@@ -24,6 +24,14 @@ class Set:
     def __contains__(self, card_id: int) -> bool:
         return card_id in self.contents
 
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "abbr": self.abbr,
+            "contents": self.contents,
+        }
+
     @property
     def ocgdate(self) -> Optional[datetime]:
         try:
