@@ -56,17 +56,21 @@ class Card:
                 if isinstance(value, list)
                 else value
             )
-
-        return {
+        
+        fields = {
             field: convert_enum(getattr(self, field))
             for field in self.__dataclass_fields__
             if not field.startswith("_")
-        } | {
+        }
+
+        properties = {
             prop: convert_enum(getattr(self, prop))
             for prop in self.__class__.__dict__
             if isinstance(getattr(self.__class__, prop), property)
             and prop not in ["tcgdate", "ocgdate"]
         }
+
+        return fields | properties
 
     @property
     def text(self) -> str:
@@ -216,6 +220,14 @@ class Card:
     def scale(self, new: int):
         if self.has_type(Type.Pendulum):
             self._leveldata = new << 24 | new << 16 | self.level
+
+    @property
+    def atk(self) -> int:
+        return self._atkdata
+
+    @atk.setter
+    def atk(self, new: int):
+        self._atkdata = new
 
     @property
     def def_(self) -> int:
