@@ -208,7 +208,7 @@ class YugiDB:
     ################# Name/id Map Functions #################
 
     def get_card_name_id_map(self) -> dict[str, int]:
-        results = self.session.execute(self.set_query.statement).fetchall()
+        results = self.session.execute(self.card_query.statement).fetchall()
         return {card.name: card.id for card in results}
 
     def get_archetype_name_id_map(self) -> dict[str, int]:
