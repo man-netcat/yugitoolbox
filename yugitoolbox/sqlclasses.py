@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -10,19 +10,19 @@ class Data(Base):
     id = Column(Integer, primary_key=True)
     status = Column(Integer, name="ot")
     alias = Column(Integer)
-    _archcode = Column(Integer, name="setcode")
-    _type = Column(Integer, name="type")
+    archcode = Column(Integer, name="setcode")
+    type = Column(Integer)
     atk = Column(Integer)
-    _def = Column(Integer, name="def")
-    _level = Column(Integer, name="level")
-    _race = Column(Integer, name="race")
-    _attribute = Column(Integer, name="attribute")
-    _category = Column(Integer, name="category")
-    _genre = Column(Integer, name="genre")
-    _script = Column(Integer, name="script")
-    _supportcode = Column(Integer, name="support")
-    _ocgdate = Column(Integer, name="ocgdate")
-    _tcgdate = Column(Integer, name="tcgdate")
+    def_ = Column(Integer, name="def")
+    level = Column(Integer)
+    race = Column(Integer)
+    attribute = Column(Integer)
+    category = Column(Integer)
+    genre = Column(Integer)
+    script = Column(Integer)
+    supportcode = Column(Integer, name="support")
+    ocgdate = Column(Integer)
+    tcgdate = Column(Integer)
 
     relations = relationship("Relation", back_populates="card")
 
@@ -39,7 +39,7 @@ class Koid(Base):
     __tablename__ = "koids"
 
     id = Column(Integer, primary_key=True)
-    _koid = Column(Integer, name="koid")
+    koid = Column(Integer, name="koid")
 
 
 class SetCode(Base):
