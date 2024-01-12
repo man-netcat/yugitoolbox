@@ -1,10 +1,7 @@
-from __future__ import annotations
-
 from enum import IntFlag
-from operator import or_
 from typing import Callable
 
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine, false, func, inspect
 from sqlalchemy.orm import sessionmaker
 
 from .archetype import Archetype
@@ -19,36 +16,39 @@ class YugiDB:
 
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
+        self.has_koids = inspect(self.engine).has_table("koids")
+        self.has_packs = inspect(self.engine).has_table("packs")
 
     ################# Card Functions #################
 
     @property
     def card_query(self):
-        return (
-            self.session.query(
-                Datas.id.label("id"),
-                Texts.name.label("name"),
-                Texts.desc.label("text"),
-                Datas.type.label("type"),
-                Datas.race.label("race"),
-                Datas.attribute.label("attribute"),
-                Datas.category.label("category"),
-                Datas.genre.label("genre"),
-                Datas.level.label("level"),
-                Datas.atk.label("atk"),
-                Datas.def_.label("def"),
-                Datas.tcgdate.label("tcgdate"),
-                Datas.ocgdate.label("ocgdate"),
-                Datas.ot.label("status"),
-                Datas.setcode.label("archcode"),
-                Datas.support.label("supportcode"),
-                Datas.alias.label("alias"),
-                Koids.koid.label("koid"),
-                Datas.script.label("script"),
-            )
-            .join(Texts, Datas.id == Texts.id)
-            .join(Koids, Datas.id == Koids.id)
-        )
+        items = [
+            Datas.id.label("id"),
+            Texts.name.label("name"),
+            Texts.desc.label("text"),
+            Datas.type.label("type"),
+            Datas.race.label("race"),
+            Datas.attribute.label("attribute"),
+            Datas.category.label("category"),
+            Datas.genre.label("genre"),
+            Datas.level.label("level"),
+            Datas.atk.label("atk"),
+            Datas.def_.label("def"),
+            Datas.tcgdate.label("tcgdate"),
+            Datas.ocgdate.label("ocgdate"),
+            Datas.ot.label("status"),
+            Datas.setcode.label("archcode"),
+            Datas.support.label("supportcode"),
+            Datas.alias.label("alias"),
+            Datas.script.label("script"),
+        ]
+        if self.has_koids:
+            items.append(Koids.koid.label("koid"))
+        query = self.session.query(*items).join(Texts, Datas.id == Texts.id)
+        if self.has_koids:
+            query = query.join(Koids, Datas.id == Koids.id)
+        return query
 
     @property
     def cards(self) -> list[Card]:
@@ -115,18 +115,22 @@ class YugiDB:
 
     @property
     def set_query(self):
-        return (
-            self.session.query(
-                Packs.id,
-                Packs.abbr,
-                Packs.name,
-                Packs.ocgdate,
-                Packs.tcgdate,
-                func.group_concat(Relations.cardid).label("cardids"),
+        if self.has_packs:
+            query = (
+                self.session.query(
+                    Packs.id,
+                    Packs.abbr,
+                    Packs.name,
+                    Packs.ocgdate,
+                    Packs.tcgdate,
+                    func.group_concat(Relations.cardid).label("cardids"),
+                )
+                .join(Relations, Packs.id == Relations.packid)
+                .group_by(Packs.name)
             )
-            .join(Relations, Packs.id == Relations.packid)
-            .group_by(Packs.name)
-        )
+        else:
+            query = self.session.query(false())
+        return query
 
     @property
     def sets(self) -> list[Set]:
@@ -174,5 +178,7 @@ class YugiDB:
         }
 
     def get_set_name_id_map(self) -> dict[str, int]:
+        if not self.has_packs:
+            return {}
         results = self.session.execute(self.set_query).fetchall()
         return {set.name: set.id for set in results}

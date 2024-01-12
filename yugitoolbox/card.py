@@ -31,8 +31,8 @@ class Card:
     _archcode: int = 0
     _supportcode: int = 0
     alias: int = 0
-    _koiddata: int = 0
     _scriptdata: str = ""
+    _koiddata: int = 0
 
     def __hash__(self):
         return hash(self.name)
