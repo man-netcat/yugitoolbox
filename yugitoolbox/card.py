@@ -38,10 +38,13 @@ class Card:
         return hash(self.name)
 
     def __str__(self) -> str:
-        if self.has_type(Type.Monster):
-            return f"{self.name} ({self.id}): {self.attribute.name} {self.level_str} {self.type_str}"
-        else:
-            return f"{self.name} ({self.id}): {self.type_str}"
+        try:
+            if self.has_type(Type.Monster):
+                return f"{self.name} ({self.id}): {self.attribute.name} {self.level_str} {self.type_str}"
+            else:
+                return f"{self.name} ({self.id}): {self.type_str}"
+        except:
+            return "None"
 
     def __repr__(self) -> str:
         return self.name
@@ -109,7 +112,10 @@ class Card:
         def split_camel_case(s: str) -> str:
             import re
 
-            return " ".join(re.findall(r"[A-Z][a-z]*", s))
+            try:
+                return " ".join(re.findall(r"[A-Z][a-z]*", s))
+            except:
+                return "None"
 
         # Skill type
         if self.is_skill:
@@ -119,17 +125,14 @@ class Card:
         type_names = [
             type.name
             for type in self.type
-            if type
-            not in [
-                Type.SpSummon,
-                Type.Monster,
-            ]
+            if type not in [Type.SpSummon, Type.Monster, Type.Trap, Type.Spell]
         ]
         if self.has_type(Type.Monster):
             type_string = f"[{split_camel_case(self.race.name)}"
             type_string += f"/{'/'.join(type_names)}]"
         elif self.is_spelltrap and not self.is_legendary_dragon:
-            type_string = f"[{'/'.join(type_names)} {'Spell' if self.has_type(Type.Spell) else 'Trap'}]"
+            type_string = f"[{type_names[0] if len(type_names) > 0 else 'Normal'}"
+            type_string += f" {'Spell' if self.has_type(Type.Spell) else 'Trap'}]"
         else:
             type_string = ""
 
@@ -199,27 +202,19 @@ class Card:
 
     @property
     def level(self) -> int:
-        if self.has_type(Type.Pendulum):
-            return self._leveldata & 0x0000FFFF
-        return self._leveldata
+        return self._leveldata & 0x0000FFFF
 
     @level.setter
     def level(self, new: int):
-        if self.has_type(Type.Pendulum):
-            self._leveldata = self.scale << 24 | self.scale << 16 | new
-        else:
-            self._leveldata = new
+        self._leveldata = self.scale << 24 | self.scale << 16 | new
 
     @property
     def scale(self) -> int:
-        if self.has_type(Type.Pendulum):
-            return self._leveldata >> 24
-        return -1
+        return self._leveldata >> 24
 
     @scale.setter
     def scale(self, new: int):
-        if self.has_type(Type.Pendulum):
-            self._leveldata = new << 24 | new << 16 | self.level
+        self._leveldata = new << 24 | new << 16 | self.level
 
     @property
     def atk(self) -> int:
@@ -231,14 +226,11 @@ class Card:
 
     @property
     def def_(self) -> int:
-        if self.has_type(Type.Link):
-            return 0
         return self._defdata
 
     @def_.setter
     def def_(self, new: int):
-        if not self.has_type(Type.Link):
-            self._defdata = new
+        self._defdata = new
 
     @property
     def linkmarkers(self) -> list[LinkMarker]:
@@ -542,6 +534,11 @@ class Card:
             for card1, card2 in pairwise([handcard, deckcard, addcard])
         )
 
+    def render(self, dir="out"):
+        from .cardrenderer import Renderer
+
+        return Renderer.render_card(self, dir)
+
     # NOTE: experimental stuff
     # @property
     # def script(self) -> Optional[str]:
@@ -571,8 +568,3 @@ class Card:
     #         div_element.extract()
 
     #     return res.text if res else None
-
-    # def render(self, dir="out"):
-    #     from .cardrenderer import Renderer
-
-    #     Renderer.render_card(self, dir)

@@ -1,11 +1,11 @@
-from enum import IntFlag
 from typing import Callable
 
-from sqlalchemy import create_engine, false, func, inspect
+from sqlalchemy import and_, create_engine, false, func, inspect, or_
 from sqlalchemy.orm import sessionmaker
 
 from .archetype import Archetype
 from .card import Card
+from .enums import *
 from .set import Set
 from .sqlclasses import *
 
@@ -61,17 +61,29 @@ class YugiDB:
         return self._make_cards_list(self.card_query.all())
 
     def get_cards_by_values(self, search_values: dict) -> list[Card]:
-        return [
-            c
-            for key, value in search_values.items()
-            for c in self.cards
-            if hasattr(c, key)
-            and (
-                isinstance(getattr(c, key), IntFlag)
-                and getattr(c, key).name.lower() == str(value).lower()
-            )
-            or str(getattr(c, key)).lower() == str(value).lower()
+        filters = {
+            "name": lambda x: Texts.name == x,
+            "id": lambda x: Datas.id == int(x),
+            "race": lambda x: Datas.race == Race[x].value,
+            "attribute": lambda x: Datas.attribute == Attribute[x].value,
+            "atk": lambda x: Datas.atk == int(x),
+            "def": lambda x: Datas.def_ == int(x),
+            "level": lambda x: Datas.level.op("&")(0x0000FFFF) == int(x),
+        }
+
+        query_filters = [
+            filter_func(search_values[key])
+            for key, filter_func in filters.items()
+            if key in search_values
         ]
+
+        if query_filters:
+            query = self.card_query.filter(*query_filters)
+            print(query)
+            results = self.session.execute(query).fetchall()
+            return self._make_cards_list(results)
+        else:
+            return self._make_cards_list(self.card_query.all())
 
     def get_cards_by_query(self, query: Callable[[Card], bool]) -> list[Card]:
         return [card for card in self.cards if query(card)]
@@ -101,15 +113,24 @@ class YugiDB:
     def archetypes(self) -> list[Archetype]:
         return self._make_arch_list(self.arch_query.all())
 
-    def get_archetypes_by_values(self, search_values: dict) -> list[Archetype]:
+    def get_archetypes_by_values(self, search_values: dict) -> list[Card]:
         filters = {
-            "name": Setcodes.name == search_values.get("name"),
-            "id": Setcodes.id == int(search_values.get("id", 0)),
+            "name": lambda x: Setcodes.name == x,
+            "id": lambda x: Setcodes.id == x,
         }
 
-        query = self.arch_query.filter(*(f for f in filters.values() if f is not None))
-        results = self.session.execute(query).fetchall()
-        return self._make_arch_list(results)
+        query_filters = [
+            filter_func(search_values[key])
+            for key, filter_func in filters.items()
+            if key in search_values
+        ]
+
+        if query_filters:
+            query = self.arch_query.filter(*query_filters)
+            results = self.session.execute(query).fetchall()
+            return self._make_cards_list(results)
+        else:
+            return self._make_cards_list(self.card_query.all())
 
     ################# Set Functions #################
 

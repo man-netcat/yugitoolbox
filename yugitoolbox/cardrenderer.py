@@ -446,10 +446,11 @@ class Renderer:
         Renderer._process_layers(card)
 
         if not os.path.isdir(dir):
-            os.makedirs(dir)
+            os.makedirs(dir, exist_ok=True)
 
         Renderer.image = Renderer._build_template()
         Renderer._render_text(card)
 
         out_path = os.path.join(dir, f"{card.id}.png")
         Renderer.image.save(out_path, "PNG")
+        return out_path
