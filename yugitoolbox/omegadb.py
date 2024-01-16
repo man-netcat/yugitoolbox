@@ -12,19 +12,13 @@ OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 
 
 class OmegaDB(YugiDB):
-    def __init__(
-        self,
-        always_update: bool = False,
-        force_update: bool = False,
-        skip_update: bool = False,
-    ):
+    def __init__(self, update=None):
         self.dbpath = "db/omega/omega.db"
         self.dbpath_old = "db/omega/omega_old.db"
-        self.always_update = always_update
-        self.force_update = force_update
-        self.skip_update = skip_update
+        self.update = update
         self.download()
-        super().__init__("sqlite:///db/omega/omega.db")
+        self.connection_string = f"sqlite:///{self.dbpath}"
+        super().__init__(self.connection_string)
 
     def download(self):
         def download(url: str, path: str):
@@ -42,10 +36,10 @@ class OmegaDB(YugiDB):
         if not os.path.exists(self.dbdir):
             os.makedirs(self.dbdir)
 
-        if os.path.exists(self.dbpath) and self.skip_update:
+        if os.path.exists(self.dbpath) and self.update == "skip":
             return
 
-        if os.path.exists(self.dbpath) and not self.force_update:
+        if os.path.exists(self.dbpath) and self.update != "force":
             shutil.copy(self.dbpath, self.dbpath_old)
             if os.path.exists(hashpath):
                 shutil.copy(hashpath, hashpath_old)
@@ -65,7 +59,7 @@ class OmegaDB(YugiDB):
 
             if old_hash == new_hash:
                 return False
-            elif not self.always_update:
+            elif self.update != "auto":
                 print("A new version of the Omega database is available.")
                 user_response = input(
                     "Do you want to update the database? (y/n): "

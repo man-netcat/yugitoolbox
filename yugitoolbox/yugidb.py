@@ -50,15 +50,15 @@ class YugiDB:
             query = query.join(Koids, Datas.id == Koids.id)
         return query
 
-    @property
-    def cards(self) -> list[Card]:
-        return self._make_cards_list(self.card_query.all())
-
     def _make_card(self, result) -> Card:
         return Card(*result)
 
     def _make_cards_list(self, results) -> list[Card]:
         return [self._make_card(result) for result in results]
+
+    @property
+    def cards(self) -> list[Card]:
+        return self._make_cards_list(self.card_query.all())
 
     def get_cards_by_values(self, search_values: dict) -> list[Card]:
         return [
@@ -132,10 +132,6 @@ class YugiDB:
             query = self.session.query(false())
         return query
 
-    @property
-    def sets(self) -> list[Set]:
-        return self._make_set_list(self.set_query.all())
-
     def _make_set_list(self, results) -> list[Set]:
         return [self._make_set(result) for result in results]
 
@@ -148,6 +144,10 @@ class YugiDB:
             _tcgdate=result.tcgdate,
             contents=[int(card_id) for card_id in result.cardids.split(",")],
         )
+
+    @property
+    def sets(self) -> list[Set]:
+        return self._make_set_list(self.set_query.all())
 
     def get_card_sets(self, card: Card) -> list[Set]:
         query = self.set_query.filter(Relations.cardid == card.id)
