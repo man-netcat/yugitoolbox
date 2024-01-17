@@ -104,19 +104,19 @@ class YugiDB:
             ),
             build_filter(
                 "attribute",
-                Datas.attribute,
+                Datas.attribute.op("=="),
                 params.get("attribute", "_"),
                 type_modifier=lambda x: Attribute[x].value,
             ),
             build_filter(
                 "atk",
-                Datas.atk,
+                Datas.atk.op("=="),
                 params.get("atk", 0),
                 type_modifier=int,
             ),
             build_filter(
                 "def",
-                Datas.def_,
+                Datas.def_.op("=="),
                 params.get("def", 0),
                 type_modifier=int,
             ),
