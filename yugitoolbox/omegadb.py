@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 import sqlite3
+from typing import Literal
 
 import pandas as pd
 import requests
@@ -12,13 +13,13 @@ OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 
 
 class OmegaDB(YugiDB):
-    def __init__(self, update=None):
+    def __init__(self, update: Literal["skip", "force", "auto"] = None, debug=False):
         self.dbpath = "db/omega/omega.db"
         self.dbpath_old = "db/omega/omega_old.db"
         self.update = update
         self.download()
         self.connection_string = f"sqlite:///{self.dbpath}"
-        super().__init__(self.connection_string)
+        super().__init__(self.connection_string, debug=debug)
 
     def download(self):
         def download(url: str, path: str):

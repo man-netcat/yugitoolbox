@@ -11,13 +11,18 @@ from .sqlclasses import *
 
 
 class YugiDB:
-    def __init__(self, connection_string: str):
-        self.engine = create_engine(connection_string)
+    def __init__(self, connection_string: str, debug=False):
+        self.engine = create_engine(connection_string, echo=debug)
 
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
         self.has_koids = inspect(self.engine).has_table("koids")
         self.has_packs = inspect(self.engine).has_table("packs")
+
+    def _filter_query_builder(self, base_query, filters):
+        query = base_query.filter(*filters)
+        results = self.session.execute(query).fetchall()
+        return self._make_cards_list(results)
 
     ################# Card Functions #################
 
@@ -60,30 +65,116 @@ class YugiDB:
     def cards(self) -> list[Card]:
         return self._make_cards_list(self.card_query.all())
 
-    def get_cards_by_values(self, search_values: dict) -> list[Card]:
-        filters = {
-            "name": lambda x: Texts.name == x,
-            "id": lambda x: Datas.id == int(x),
-            "race": lambda x: Datas.race == Race[x].value,
-            "attribute": lambda x: Datas.attribute == Attribute[x].value,
-            "atk": lambda x: Datas.atk == int(x),
-            "def": lambda x: Datas.def_ == int(x),
-            "level": lambda x: Datas.level.op("&")(0x0000FFFF) == int(x),
-        }
-
-        query_filters = [
-            filter_func(search_values[key])
-            for key, filter_func in filters.items()
-            if key in search_values
+    def get_cards_by_values(self, params: dict) -> list[Card]:
+        filters = [
+            filter
+            for key, filter in [
+                ("name", Texts.name == params.get("name")),
+                ("id", Datas.id == int(params.get("id", 0))),
+                (
+                    "race",
+                    Datas.race == Race[params.get("race", "_")].value,
+                ),
+                (
+                    "attribute",
+                    Datas.attribute == Attribute[params.get("attribute", "_")].value,
+                ),
+                ("atk", Datas.atk == int(params.get("atk", 0))),
+                ("def", Datas.def_ == int(params.get("def", 0))),
+                (
+                    "level",
+                    Datas.level.op("&")(0x0000FFFF) == int(params.get("level", 0)),
+                ),
+                (
+                    "scale",
+                    and_(
+                        Datas.type.op("&")(Type.Pendulum.value),
+                        Datas.level.op(">>")(24) == int(params.get("scale", 0)),
+                    ),
+                ),
+                ("koid", Koids.koid == int(params.get("koid", 0))),
+                (
+                    "alltype",
+                    and_(
+                        *[
+                            Datas.type.op("&")(Type[t].value)
+                            for t in params.get("alltype", "_").split(",")
+                        ]
+                    ),
+                ),
+                (
+                    "anytype",
+                    or_(
+                        *[
+                            Datas.type.op("&")(Type[t].value)
+                            for t in params.get("anytype", "_").split(",")
+                        ]
+                    ),
+                ),
+                (
+                    "allcategory",
+                    and_(
+                        *[
+                            Datas.category.op("&")(Category[c].value)
+                            for c in params.get("allcategory", "_").split(",")
+                        ]
+                    ),
+                ),
+                (
+                    "anycategory",
+                    or_(
+                        *[
+                            Datas.category.op("&")(Category[c].value)
+                            for c in params.get("anycategory", "_").split(",")
+                        ]
+                    ),
+                ),
+                (
+                    "allgenre",
+                    and_(
+                        *[
+                            Datas.genre.op("&")(Genre[g].value)
+                            for g in params.get("allgenre", "_").split(",")
+                        ]
+                    ),
+                ),
+                (
+                    "anygenre",
+                    or_(
+                        *[
+                            Datas.genre.op("&")(Genre[g].value)
+                            for g in params.get("anygenre", "_").split(",")
+                        ]
+                    ),
+                ),
+                (
+                    "alllinkmarker",
+                    and_(
+                        Datas.type.op("&")(Type.Link.value),
+                        and_(
+                            *[
+                                Datas.def_.op("&")(LinkMarker[l].value)
+                                for l in params.get("alllinkmarker", "_").split(",")
+                            ]
+                        ),
+                    ),
+                ),
+                (
+                    "anylinkmarker",
+                    and_(
+                        Datas.type.op("&")(Type.Link.value),
+                        or_(
+                            *[
+                                Datas.def_.op("&")(LinkMarker[l].value)
+                                for l in params.get("anylinkmarker", "_").split(",")
+                            ]
+                        ),
+                    ),
+                ),
+            ]
+            if key in params
         ]
-
-        if query_filters:
-            query = self.card_query.filter(*query_filters)
-            print(query)
-            results = self.session.execute(query).fetchall()
-            return self._make_cards_list(results)
-        else:
-            return self._make_cards_list(self.card_query.all())
+        return self._filter_query_builder(self.card_query, filters)
 
     def get_cards_by_query(self, query: Callable[[Card], bool]) -> list[Card]:
         return [card for card in self.cards if query(card)]
@@ -113,24 +204,16 @@ class YugiDB:
     def archetypes(self) -> list[Archetype]:
         return self._make_arch_list(self.arch_query.all())
 
-    def get_archetypes_by_values(self, search_values: dict) -> list[Card]:
-        filters = {
-            "name": lambda x: Setcodes.name == x,
-            "id": lambda x: Setcodes.id == x,
-        }
-
-        query_filters = [
-            filter_func(search_values[key])
-            for key, filter_func in filters.items()
-            if key in search_values
+    def get_archetypes_by_values(self, params: dict) -> list[Archetype]:
+        filters = [
+            filter
+            for key, filter in [
+                ("name", Setcodes.name == params.get("name")),
+                ("id", Setcodes.id == params.get("id")),
+            ]
+            if key in params
         ]
-
-        if query_filters:
-            query = self.arch_query.filter(*query_filters)
-            results = self.session.execute(query).fetchall()
-            return self._make_cards_list(results)
-        else:
-            return self._make_cards_list(self.card_query.all())
+        return self._filter_query_builder(self.arch_query, filters)
 
     ################# Set Functions #################
 
@@ -175,16 +258,18 @@ class YugiDB:
         results = self.session.execute(query).fetchall()
         return self._make_set_list(results)
 
-    def get_sets_by_values(self, search_values: dict) -> list[Set]:
-        filters = {
-            "name": Packs.name == search_values.get("name"),
-            "abbr": Packs.abbr == search_values.get("abbr"),
-            "id": Packs.id == int(search_values.get("id", 0)),
-        }
+    def get_sets_by_values(self, params: dict) -> list[Set]:
+        filters = [
+            filter
+            for key, filter in [
+                ("name", Packs.name == params.get("name")),
+                ("abbr", Packs.abbr == params.get("abbr")),
+                ("id", Packs.id == int(params.get("id"))),
+            ]
+            if key in params
+        ]
 
-        query = self.set_query.filter(*(f for f in filters.values() if f is not None))
-        results = self.session.execute(query).fetchall()
-        return self._make_set_list(results)
+        return self._filter_query_builder(self.set_query, filters)
 
     ################# Name/id Map Functions #################
 

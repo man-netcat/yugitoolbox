@@ -3,6 +3,7 @@ from enum import IntEnum, IntFlag
 
 class Type(IntFlag):
     # NOTE: DO NOT CHANGE THIS ORDER
+    _ = 0x0
     Monster = 0x1
     Spell = 0x2
     Trap = 0x4
@@ -31,6 +32,7 @@ class Type(IntFlag):
 
 
 class LinkMarker(IntFlag):
+    _ = 0x0
     BottomLeft = 0x01
     Bottom = 0x02
     BottomRight = 0x04
@@ -43,6 +45,7 @@ class LinkMarker(IntFlag):
 
 
 class Race(IntFlag):
+    _ = 0x0
     Warrior = 0x1
     Spellcaster = 0x2
     Fairy = 0x4
@@ -78,6 +81,7 @@ class Race(IntFlag):
 
 
 class Attribute(IntFlag):
+    _ = 0x00
     EARTH = 0x01
     WATER = 0x02
     FIRE = 0x04
@@ -88,6 +92,7 @@ class Attribute(IntFlag):
 
 
 class Category(IntFlag):
+    _ = 0x0
     SkillCard = 0x1
     SpeedSpellCard = 0x2
     BossCard = 0x4
@@ -114,6 +119,7 @@ class Category(IntFlag):
 
 
 class Genre(IntFlag):
+    _ = 0x0
     STDestroy = 0x1
     DestroyMonster = 0x2
     Banish = 0x4
