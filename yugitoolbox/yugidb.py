@@ -66,12 +66,18 @@ class YugiDB:
         return self._make_cards_list(self.card_query.all())
 
     def get_cards_by_values(self, params: dict) -> list[Card]:
-        def build_filter(key, column, values, condition=None, type_modifier=None):
+        def build_filter(
+            key,
+            column,
+            values,
+            type_modifier=lambda x: x,
+            condition=None,
+        ):
             if key not in params:
                 return None
 
             def apply_modifier(value):
-                return column(type_modifier(value)) if type_modifier else column(value)
+                return column(type_modifier(value))
 
             if "," in values:
                 values_list = values.split(",")
@@ -130,8 +136,8 @@ class YugiDB:
                 "scale",
                 Datas.level.op(">>")(24).op("=="),
                 params.get("scale", 0),
-                condition=Datas.type.op("&")(Type.Pendulum.value),
                 type_modifier=int,
+                condition=Datas.type.op("&")(Type.Pendulum.value),
             ),
             build_filter(
                 "koid",
@@ -161,8 +167,8 @@ class YugiDB:
                 "linkmarker",
                 Datas.def_.op("&"),
                 params.get("linkmarker", "_"),
-                condition=Datas.type.op("&")(Type.Link.value),
                 type_modifier=lambda x: LinkMarker[x].value,
+                condition=Datas.type.op("&")(Type.Link.value),
             ),
         ]
         return self._filter_query_builder(
