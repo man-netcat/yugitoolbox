@@ -1,10 +1,7 @@
-import json
 import os
 import shutil
-import sqlite3
 from typing import Literal
 
-import pandas as pd
 import requests
 
 from .yugidb import YugiDB
@@ -71,48 +68,7 @@ class OmegaDB(YugiDB):
         print("Downloading up-to-date db...")
         download(db_url, self.dbpath)
         download(hash_url, hashpath)
-        if os.path.exists(self.dbpath_old):
-            self.write_changes()
         return True
-
-    def write_changes(self):
-        print("Generating changelog...")
-        tables = ["datas", "texts", "koids", "setcodes", "packs", "relations"]
-        changes = {}
-
-        for table in tables:
-            with sqlite3.connect(self.dbpath_old) as con:
-                rows_before = pd.read_sql_query(
-                    f"SELECT * FROM {table}",
-                    con,
-                )
-
-            with sqlite3.connect(self.dbpath) as con:
-                rows_after = pd.read_sql_query(
-                    f"SELECT * FROM {table}",
-                    con,
-                )
-
-            merged = pd.merge(rows_before, rows_after, how="outer", indicator=True)
-            removed = (
-                merged[merged["_merge"] == "left_only"]
-                .drop("_merge", axis=1)
-                .to_dict(orient="records")
-            )
-            added = (
-                merged[merged["_merge"] == "right_only"]
-                .drop("_merge", axis=1)
-                .to_dict(orient="records")
-            )
-            changes[table] = {"removed": removed, "added": added}
-
-        from datetime import datetime
-
-        current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        changelog = f"changelog_{current_time}.json"
-
-        with open(os.path.join(self.dbdir, changelog), "w") as f:
-            json.dump(changes, f, indent=2)
 
 
 if __name__ == "__main__":
