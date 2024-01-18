@@ -1,3 +1,4 @@
+import os
 from typing import Callable
 
 from sqlalchemy import and_, create_engine, false, func, inspect, or_, true
@@ -12,6 +13,7 @@ from .sqlclasses import *
 
 class YugiDB:
     def __init__(self, connection_string: str, debug=False):
+        self.name = os.path.basename(connection_string)
         self.engine = create_engine(connection_string, echo=debug)
 
         Session = sessionmaker(bind=self.engine)
@@ -230,6 +232,11 @@ class YugiDB:
         return self._filter_query_builder(
             self.card_query, [filter for filter in filters if filter is not None]
         )
+
+    def get_card_by_id(self, card_id):
+        query = self.card_query.filter(Datas.id == card_id)
+        result = self.session.execute(query).fetchone()
+        return self._make_card(result)
 
     def get_cards_by_query(self, query: Callable[[Card], bool]) -> list[Card]:
         return [card for card in self.cards if query(card)]
