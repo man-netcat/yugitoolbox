@@ -17,7 +17,9 @@ class YugiDB:
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
         self.has_koids = inspect(self.engine).has_table("koids")
-        self.has_packs = inspect(self.engine).has_table("packs")
+        self.has_packs = all(
+            inspect(self.engine).has_table(x) for x in ["packs", "relations"]
+        )
 
     def _filter_query_builder(self, base_query, filters):
         query = base_query.filter(*filters)
@@ -52,21 +54,28 @@ class YugiDB:
         if self.has_koids:
             items.append(Koids.koid.label("koid"))
 
-        subquery = (
-            self.session.query(
-                Relations.cardid, func.group_concat(Packs.id).label("sets")
+        if self.has_packs:
+            subquery = (
+                self.session.query(
+                    Relations.cardid, func.group_concat(Packs.id).label("sets")
+                )
+                .join(Packs, Relations.packid == Packs.id)
+                .group_by(Relations.cardid)
+                .subquery()
             )
-            .join(Packs, Relations.packid == Packs.id)
-            .group_by(Relations.cardid)
-            .subquery()
-        )
 
-        query = (
-            self.session.query(*items, subquery.c.sets)
-            .join(Texts, Datas.id == Texts.id)
-            .outerjoin(subquery, Datas.id == subquery.c.cardid)
-            .group_by(Datas.id, Texts.name)
-        )
+            query = (
+                self.session.query(*items, subquery.c.sets)
+                .join(Texts, Datas.id == Texts.id)
+                .outerjoin(subquery, Datas.id == subquery.c.cardid)
+                .group_by(Datas.id, Texts.name)
+            )
+        else:
+            query = (
+                self.session.query(*items)
+                .join(Texts, Datas.id == Texts.id)
+                .group_by(Datas.id, Texts.name)
+            )
 
         if self.has_koids:
             query = query.outerjoin(Koids, Datas.id == Koids.id)
@@ -94,7 +103,7 @@ class YugiDB:
             alias=result.alias,
             _scriptdata=result.script,
             sets=[int(set_id) for set_id in result.sets.split(",")]
-            if result.sets is not None
+            if self.has_packs and result.sets is not None
             else [],
             _koiddata=result.koid if self.has_koids else 0,
         )
