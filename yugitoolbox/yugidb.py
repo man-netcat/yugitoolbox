@@ -122,14 +122,12 @@ class YugiDB:
             def apply_modifier(value):
                 return column(type_modifier(value))
 
-            if "," in values:
-                values_list = values.split(",")
-                query = and_(*map(apply_modifier, values_list))
-            elif "|" in values:
-                values_list = values.split("|")
-                query = or_(*map(apply_modifier, values_list))
-            else:
-                query = apply_modifier(values)
+            query = or_(
+                *[
+                    and_(*[apply_modifier(value) for value in value_or.split(",")])
+                    for value_or in values.split("|")
+                ]
+            )
 
             return and_(condition, query) if condition is not None else query
 
