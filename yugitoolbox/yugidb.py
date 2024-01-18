@@ -1,6 +1,6 @@
 from typing import Callable
 
-from sqlalchemy import and_, create_engine, false, func, inspect, or_
+from sqlalchemy import and_, create_engine, false, func, inspect, or_, true
 from sqlalchemy.orm import sessionmaker
 
 from .archetype import Archetype
@@ -114,7 +114,7 @@ class YugiDB:
             column,
             values,
             type_modifier=str,
-            condition=None,
+            condition=true(),
         ):
             if key not in params:
                 return None
@@ -129,7 +129,7 @@ class YugiDB:
                 ]
             )
 
-            return and_(condition, query) if condition is not None else query
+            return and_(condition, query)
 
         def type_modifier(type):
             def lambdafunc(x):
