@@ -113,7 +113,7 @@ class YugiDB:
             key,
             column,
             values,
-            type_modifier=lambda x: x,
+            type_modifier=str,
             condition=None,
         ):
             if key not in params:
@@ -133,6 +133,12 @@ class YugiDB:
 
             return and_(condition, query) if condition is not None else query
 
+        def type_modifier(type):
+            def lambdafunc(x):
+                return getattr(type, x, type._).value
+
+            return lambdafunc
+
         filters = [
             build_filter(
                 "name",
@@ -149,13 +155,13 @@ class YugiDB:
                 "race",
                 Datas.race.op("=="),
                 params.get("race", "_"),
-                type_modifier=lambda x: Race[x].value,
+                type_modifier=type_modifier(Race),
             ),
             build_filter(
                 "attribute",
                 Datas.attribute.op("=="),
                 params.get("attribute", "_"),
-                type_modifier=lambda x: Attribute[x].value,
+                type_modifier=type_modifier(Attribute),
             ),
             build_filter(
                 "atk",
@@ -192,25 +198,25 @@ class YugiDB:
                 "type",
                 Datas.type.op("&"),
                 params.get("type", "_"),
-                type_modifier=lambda x: Type[x].value,
+                type_modifier=type_modifier(Type),
             ),
             build_filter(
                 "category",
                 Datas.category.op("&"),
                 params.get("category", "_"),
-                type_modifier=lambda x: Category[x].value,
+                type_modifier=type_modifier(Category),
             ),
             build_filter(
                 "genre",
                 Datas.genre.op("&"),
                 params.get("genre", "_"),
-                type_modifier=lambda x: Genre[x].value,
+                type_modifier=type_modifier(Genre),
             ),
             build_filter(
                 "linkmarker",
                 Datas.def_.op("&"),
                 params.get("linkmarker", "_"),
-                type_modifier=lambda x: LinkMarker[x].value,
+                type_modifier=type_modifier(LinkMarker),
                 condition=Datas.type.op("&")(Type.Link.value),
             ),
         ]
