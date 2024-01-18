@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from functools import reduce
 from math import isnan
@@ -33,6 +33,7 @@ class Card:
     alias: int = 0
     _scriptdata: str = ""
     _koiddata: int = 0
+    sets: list = field(default_factory=[])
 
     def __hash__(self):
         return hash(self.name)
@@ -278,10 +279,10 @@ class Card:
         self._attributedata = new
 
     @property
-    def koid(self) -> int:
-        if not isnan(self._koiddata):
+    def koid(self):
+        if self._koiddata is not None and not isnan(self._koiddata):
             return int(self._koiddata)
-        return -1
+        return None
 
     @koid.setter
     def koid(self, new: int):

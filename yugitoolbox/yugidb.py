@@ -29,34 +29,77 @@ class YugiDB:
     @property
     def card_query(self):
         items = [
-            Datas.id.label("id"),
-            Texts.name.label("name"),
-            Texts.desc.label("text"),
-            Datas.type.label("type"),
-            Datas.race.label("race"),
-            Datas.attribute.label("attribute"),
-            Datas.category.label("category"),
-            Datas.genre.label("genre"),
-            Datas.level.label("level"),
-            Datas.atk.label("atk"),
-            Datas.def_.label("def"),
-            Datas.tcgdate.label("tcgdate"),
-            Datas.ocgdate.label("ocgdate"),
-            Datas.ot.label("status"),
-            Datas.setcode.label("archcode"),
-            Datas.support.label("supportcode"),
-            Datas.alias.label("alias"),
-            Datas.script.label("script"),
+            Datas.id,
+            Texts.name,
+            Texts.desc,
+            Datas.type,
+            Datas.race,
+            Datas.attribute,
+            Datas.category,
+            Datas.genre,
+            Datas.level,
+            Datas.atk,
+            Datas.def_,
+            Datas.tcgdate,
+            Datas.ocgdate,
+            Datas.ot,
+            Datas.setcode,
+            Datas.support,
+            Datas.alias,
+            Datas.script,
         ]
+
         if self.has_koids:
             items.append(Koids.koid.label("koid"))
-        query = self.session.query(*items).join(Texts, Datas.id == Texts.id)
+
+        subquery = (
+            self.session.query(
+                Relations.cardid, func.group_concat(Packs.id).label("sets")
+            )
+            .join(Packs, Relations.packid == Packs.id)
+            .group_by(Relations.cardid)
+            .subquery()
+        )
+
+        query = (
+            self.session.query(*items, subquery.c.sets)
+            .join(Texts, Datas.id == Texts.id)
+            .outerjoin(subquery, Datas.id == subquery.c.cardid)
+            .group_by(Datas.id, Texts.name)
+        )
+
         if self.has_koids:
-            query = query.join(Koids, Datas.id == Koids.id)
+            query = query.outerjoin(Koids, Datas.id == Koids.id)
+
         return query
 
     def _make_card(self, result) -> Card:
-        return Card(*result)
+        card = Card(
+            id=result.id,
+            name=result.name,
+            _textdata=result.desc,
+            _typedata=result.type,
+            _racedata=result.race,
+            _attributedata=result.attribute,
+            _categorydata=result.category,
+            _genredata=result.genre,
+            _leveldata=result.level,
+            _atkdata=result.atk,
+            _defdata=result.def_,
+            _tcgdatedata=result.tcgdate,
+            _ocgdatedata=result.ocgdate,
+            status=result.ot,
+            _archcode=result.setcode,
+            _supportcode=result.support,
+            alias=result.alias,
+            _scriptdata=result.script,
+            sets=[int(set_id) for set_id in result.sets.split(",")]
+            if result.sets is not None
+            else [],
+            _koiddata=result.koid if self.has_koids else 0,
+        )
+
+        return card
 
     def _make_cards_list(self, results) -> list[Card]:
         return [self._make_card(result) for result in results]
@@ -88,7 +131,7 @@ class YugiDB:
             else:
                 query = apply_modifier(values)
 
-            return and_(condition, query) if condition else query
+            return and_(condition, query) if condition is not None else query
 
         filters = [
             build_filter(
