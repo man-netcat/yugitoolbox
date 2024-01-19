@@ -23,11 +23,6 @@ class YugiDB:
             inspect(self.engine).has_table(x) for x in ["packs", "relations"]
         )
 
-    def _filter_query_builder(self, base_query, filters):
-        query = base_query.filter(*filters)
-        results = self.session.execute(query).fetchall()
-        return self._make_cards_list(results)
-
     ################# Card Functions #################
 
     @property
@@ -229,9 +224,12 @@ class YugiDB:
                 condition=Datas.type.op("&")(Type.Link.value),
             ),
         ]
-        return self._filter_query_builder(
-            self.card_query, [filter for filter in filters if filter is not None]
+
+        query = self.card_query.filter(
+            *[filter for filter in filters if filter is not None]
         )
+        results = self.session.execute(query).fetchall()
+        return self._make_cards_list(results)
 
     def get_card_by_id(self, card_id):
         query = self.card_query.filter(Datas.id == card_id)
@@ -254,12 +252,13 @@ class YugiDB:
         return [self._make_archetype(result) for result in results]
 
     def _make_archetype(self, result) -> Archetype:
+        # TODO: Add members
         return Archetype(
             id=result.id,
             name=result.name,
-            members=[c.id for c in self.cards if result.id in c.archetypes],
-            support=[c.id for c in self.cards if result.id in c.support],
-            related=[c.id for c in self.cards if result.id in c.related],
+            members=[],
+            support=[],
+            related=[],
         )
 
     @property
@@ -271,11 +270,13 @@ class YugiDB:
             filter
             for key, filter in [
                 ("name", Setcodes.name == params.get("name")),
-                ("id", Setcodes.id == params.get("id")),
+                ("id", Setcodes.id == int(params.get("id"))),
             ]
             if key in params
         ]
-        return self._filter_query_builder(self.arch_query, filters)
+        query = self.arch_query.filter(*filters)
+        results = self.session.execute(query).fetchall()
+        return self._make_arch_list(results)
 
     def get_archetype_by_id(self, arch_id):
         query = self.arch_query.filter(Setcodes.id == arch_id)
@@ -307,13 +308,14 @@ class YugiDB:
         return [self._make_set(result) for result in results]
 
     def _make_set(self, result) -> Set:
+        cardids = getattr(result, "cardids", "").split(",") if self.has_packs else []
         return Set(
             id=result.id,
             abbr=result.abbr,
             name=result.name,
             _ocgdate=result.ocgdate,
             _tcgdate=result.tcgdate,
-            contents=[int(card_id) for card_id in result.cardids.split(",")],
+            contents=[int(card_id) for card_id in cardids],
         )
 
     @property
@@ -336,7 +338,9 @@ class YugiDB:
             if key in params
         ]
 
-        return self._filter_query_builder(self.set_query, filters)
+        query = self.set_query.filter(*filters)
+        results = self.session.execute(query).fetchall()
+        return self._make_set_list(results)
 
     def get_set_by_id(self, set_id):
         query = self.set_query.filter(Packs.id == set_id)
@@ -345,17 +349,20 @@ class YugiDB:
 
     ################# Name/id Map Functions #################
 
-    def get_card_name_id_map(self) -> dict[str, int]:
+    @property
+    def card_name_id_map(self) -> dict[str, int]:
         results = self.session.execute(self.card_query).fetchall()
         return {card.name: card.id for card in results}
 
-    def get_archetype_name_id_map(self) -> dict[str, int]:
+    @property
+    def archetype_name_id_map(self) -> dict[str, int]:
         results = self.session.execute(self.arch_query).fetchall()
         return {
             archetype.name: archetype.id for archetype in results if archetype.id != 0
         }
 
-    def get_set_name_id_map(self) -> dict[str, int]:
+    @property
+    def set_name_id_map(self) -> dict[str, int]:
         if not self.has_packs:
             return {}
         results = self.session.execute(self.set_query).fetchall()
