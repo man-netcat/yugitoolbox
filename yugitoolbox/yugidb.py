@@ -277,6 +277,11 @@ class YugiDB:
         ]
         return self._filter_query_builder(self.arch_query, filters)
 
+    def get_archetype_by_id(self, arch_id):
+        query = self.arch_query.filter(Setcodes.id == arch_id)
+        result = self.session.execute(query).fetchone()
+        return self._make_archetype(result)
+
     ################# Set Functions #################
 
     @property
@@ -332,6 +337,11 @@ class YugiDB:
         ]
 
         return self._filter_query_builder(self.set_query, filters)
+
+    def get_set_by_id(self, set_id):
+        query = self.set_query.filter(Packs.id == set_id)
+        result = self.session.execute(query).fetchone()
+        return self._make_set(result)
 
     ################# Name/id Map Functions #################
 
