@@ -198,69 +198,34 @@ class YugiDB:
 
     @property
     def arch_query(self):
-        items = [
-            Setcodes.name,
-            Setcodes.id,
-        ]
+        def setcode_subquery(label, column, shift_vals=None):
+            shifts_conditions = (
+                column.op(">>")(shift).op("&")(0xFFFF) == Setcodes.id
+                for shift in shift_vals
+            )
 
-        members = (
-            self.session.query(
-                func.group_concat(Datas.id, ",").label("member_ids"),
-                Datas.setcode,
-                Setcodes.id,
-            )
-            .filter(
-                or_(
-                    (Datas.setcode.op("&")(0xFFFF) == Setcodes.id),
-                    (Datas.setcode.op(">>")(16).op("&")(0xFFFF) == Setcodes.id),
-                    (Datas.setcode.op(">>")(32).op("&")(0xFFFF) == Setcodes.id),
-                    (Datas.setcode.op(">>")(48) == Setcodes.id),
+            return (
+                self.session.query(
+                    func.group_concat(Datas.id, ",").label(f"{label}_ids"),
+                    column,
+                    Setcodes.id,
                 )
-                & (Setcodes.id != 0)
+                .filter(and_(or_(*shifts_conditions), Setcodes.id != 0))
+                .group_by(Setcodes.id)
+                .subquery()
             )
-            .group_by(Setcodes.id)
-            .subquery()
-        )
 
-        support = (
-            self.session.query(
-                func.group_concat(Datas.id, ",").label("support_ids"),
-                Datas.support,
-                Setcodes.id,
-            )
-            .filter(
-                or_(
-                    (Datas.support.op("&")(0xFFFF) == Setcodes.id),
-                    (Datas.support.op(">>")(16).op("&")(0xFFFF) == Setcodes.id),
-                )
-                & (Setcodes.id != 0)
-            )
-            .group_by(Setcodes.id)
-            .subquery()
-        )
+        items = [Setcodes.name, Setcodes.id]
 
-        related = (
-            self.session.query(
-                func.group_concat(Datas.id, ",").label("related_ids"),
-                Datas.support,
-                Setcodes.id,
-            )
-            .filter(
-                or_(
-                    (Datas.support.op(">>")(32).op("&")(0xFFFF) == Setcodes.id),
-                    (Datas.support.op(">>")(48) == Setcodes.id),
-                )
-                & (Setcodes.id != 0)
-            )
-            .group_by(Setcodes.id)
-            .subquery()
-        )
+        members = setcode_subquery("member", Datas.setcode, [0, 16, 32, 48])
+        support = setcode_subquery("support", Datas.support, [0, 16])
+        related = setcode_subquery("related", Datas.support, [32, 48])
 
         setcode_alias = aliased(Setcodes, members)
         support_alias = aliased(Setcodes, support)
         related_alias = aliased(Setcodes, related)
 
-        query = (
+        return (
             self.session.query(
                 *items,
                 members.c.member_ids,
@@ -271,7 +236,6 @@ class YugiDB:
             .outerjoin(support_alias, support_alias.id == support.c.id)
             .outerjoin(related_alias, related_alias.id == related.c.id)
         )
-        return query
 
     def _make_arch_list(self, results) -> list[Archetype]:
         return [self._make_archetype(result) for result in results]
