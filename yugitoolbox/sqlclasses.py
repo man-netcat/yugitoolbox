@@ -30,6 +30,18 @@ class Datas(Base):
     ocgdate = Column(Integer, nullable=False, default=253402207200)
     tcgdate = Column(Integer, nullable=False, default=253402207200)
 
+    @hybrid_property
+    def archetypes(self):
+        return [self.setcode.op(">>")(x).op("&")(0xFFFF) for x in [0, 16, 32, 48]]
+
+    @hybrid_property
+    def support(self):
+        return [self.support.op(">>")(x).op("&")(0xFFFF) for x in [0, 16]]
+
+    @hybrid_property
+    def related(self):
+        return [self.support.op(">>")(x).op("&")(0xFFFF) for x in [36, 48]]
+
 
 class Texts(Base):
     __tablename__ = "texts"

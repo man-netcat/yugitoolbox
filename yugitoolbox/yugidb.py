@@ -198,28 +198,25 @@ class YugiDB:
 
     @property
     def arch_query(self):
-        def setcode_subquery(label, column, shift_vals=None):
-            shifts_conditions = (
-                column.op(">>")(shift).op("&")(0xFFFF) == Setcodes.id
-                for shift in shift_vals
-            )
-
+        def setcode_subquery(label, col, archs):
             return (
                 self.session.query(
                     func.group_concat(Datas.id, ",").label(f"{label}_ids"),
-                    column,
+                    col,
                     Setcodes.id,
                 )
-                .filter(and_(or_(*shifts_conditions), Setcodes.id != 0))
+                .filter(
+                    and_(or_(arch == Setcodes.id for arch in archs), Setcodes.id != 0)
+                )
                 .group_by(Setcodes.id)
                 .subquery()
             )
 
         items = [Setcodes.name, Setcodes.id]
 
-        members = setcode_subquery("member", Datas.setcode, [0, 16, 32, 48])
-        support = setcode_subquery("support", Datas.support, [0, 16])
-        related = setcode_subquery("related", Datas.support, [32, 48])
+        members = setcode_subquery("member", Datas.setcode, Datas.archetypes)
+        support = setcode_subquery("support", Datas.support, Datas.support)
+        related = setcode_subquery("related", Datas.support, Datas.related)
 
         setcode_alias = aliased(Setcodes, members)
         support_alias = aliased(Setcodes, support)
