@@ -16,10 +16,19 @@ class Archetype:
         return self.name
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name}\nMembers: {self.members}\nSupport: {self.support}\nRelated: {self.related}"
 
     def __contains__(self, card_id: int) -> bool:
         return card_id in self.combined_cards
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "members": self.members,
+            "support": self.support,
+            "related": self.related,
+        }
 
     @property
     def combined_cards(self) -> list[int]:

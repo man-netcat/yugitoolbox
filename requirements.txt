@@ -1,9 +1,5 @@
-beautifulsoup4==4.12.2
 fake_useragent==1.4.0
-Flask==3.0.0
-flask_restful==0.3.10
-jaro_winkler==2.0.3
-pandas==2.1.4
 Pillow==10.2.0
 Requests==2.31.0
 setuptools==65.5.0
+SQLAlchemy==2.0.25

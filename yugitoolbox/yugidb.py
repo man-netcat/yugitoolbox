@@ -1,269 +1,370 @@
-from __future__ import annotations
-
 import os
-import pickle
-import sqlite3
-from abc import abstractmethod
-from collections import Counter
-from typing import Callable, ItemsView, Optional, ValuesView
+from typing import Callable
+
+from sqlalchemy import and_, create_engine, false, func, inspect, or_
+from sqlalchemy.orm import aliased, sessionmaker
 
 from .archetype import Archetype
 from .card import Card
-from .enums import OT, CardType, Type
+from .enums import *
 from .set import Set
+from .sqlclasses import *
 
 
 class YugiDB:
-    _card_data: dict[int, Card]
-    _arch_data: dict[int, Archetype]
-    _set_data: dict[int, Set]
-    name: str
-    dbpath: str
+    def __init__(self, connection_string: str, debug=False):
+        self.name = os.path.basename(connection_string)
+        self.engine = create_engine(connection_string, echo=debug)
 
-    def __init__(self, rebuild_pkl=False):
-        if type(self) == YugiDB:
-            return
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
+        self.has_koids = inspect(self.engine).has_table("koids")
+        self.has_packs = all(
+            inspect(self.engine).has_table(x) for x in ["packs", "relations"]
+        )
 
-        self.dbdir = os.path.dirname(self.dbpath)
-        self.cardpkl = os.path.join(self.dbdir, "cards.pkl")
-        self.setspkl = os.path.join(self.dbdir, "sets.pkl")
-        self.archpkl = os.path.join(self.dbdir, "archetypes.pkl")
+    def _build_filter(self, params, key, column, valuetype=str, condition=True):
+        values = params.get(key)
 
-        if not os.path.exists(self.dbdir):
-            os.makedirs(self.dbdir)
+        if not values:
+            return None
 
-        if rebuild_pkl or not all(
-            os.path.exists(file)
-            for file in [
-                self.cardpkl,
-                self.setspkl,
-                self.archpkl,
-            ]
-        ):
-            self._build_objects()
+        if issubclass(valuetype, IntFlag):
+            mapping = {k.casefold(): v for k, v in valuetype.__members__.items()}
+            type_modifier = (
+                lambda x: y.value if (y := mapping.get(x.casefold())) else None
+            )
         else:
-            self._load_objects()
+            type_modifier = lambda x: valuetype(x)
 
-    def __enter__(self):
-        return self
+        def apply_modifier(value):
+            return column(type_modifier(value))
 
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
+        query = or_(
+            *[
+                and_(*[apply_modifier(value) for value in value_or.split(",")])
+                for value_or in values.split("|")
+            ]
+        )
 
-    def _build_objects(self):
-        with sqlite3.connect(self.dbpath) as con:
-            print(f"Building card db for {self.name}...")
-            self._build_card_db(con)
-            print(f"Building archetype db for {self.name}...")
-            self._build_archetype_db(con)
-            print(f"Building set db for {self.name}...")
-            self._build_set_db(con)
-        self.save_pickles()
+        return and_(condition, query)
 
-    def _load_objects(self):
-        with open(self.cardpkl, "rb") as file:
-            self._card_data = pickle.load(file)
-        with open(self.archpkl, "rb") as file:
-            self._arch_data = pickle.load(file)
-        with open(self.setspkl, "rb") as file:
-            self._set_data = pickle.load(file)
-
-    def save_pickles(self):
-        print(f"Pickling pickles for {self.name}...")
-        with open(self.cardpkl, "wb") as file:
-            pickle.dump(self._card_data, file)
-        with open(self.archpkl, "wb") as file:
-            pickle.dump(self._arch_data, file)
-        with open(self.setspkl, "wb") as file:
-            pickle.dump(self._set_data, file)
+    ################# Card Functions #################
 
     @property
-    def cards(self) -> ValuesView[Card]:
-        return self._card_data.values()
-
-    @property
-    def archetypes(self) -> ValuesView[Archetype]:
-        return self._arch_data.values()
-
-    @property
-    def sets(self) -> ValuesView[Set]:
-        return self._set_data.values()
-
-    def get_card_by_id(self, id: int) -> Card:
-        return self._card_data[id]
-
-    def get_cards_by_ids(self, ids: list[int]) -> list[Card]:
-        return [self.get_card_by_id(id) for id in ids if id in self._card_data]
-
-    def get_cards_by_value(self, by: str, value: str | int) -> list[Card]:
-        return [
-            c
-            for c in self.cards
-            if isinstance(getattr(c, by), int)
-            and getattr(c, by) == value
-            or value in getattr(c, by)
+    def card_query(self):
+        items = [
+            Datas.id,
+            Texts.name,
+            Texts.desc,
+            Datas.type,
+            Datas.race,
+            Datas.attribute,
+            Datas.category,
+            Datas.genre,
+            Datas.level,
+            Datas.atk,
+            Datas.def_,
+            Datas.tcgdate,
+            Datas.ocgdate,
+            Datas.ot,
+            Datas.setcode,
+            Datas.support,
+            Datas.alias,
+            Datas.script,
         ]
 
-    def get_cards_by_values(
-        self, by: str, values: list[int] | list[str]
-    ) -> list[list[Card]]:
-        return [self.get_cards_by_value(by, value) for value in values]
+        if self.has_koids:
+            items.append(Koids.koid.label("koid"))
 
-    def get_cards_by_query(self, query: Callable[[Card], bool]):
+        if self.has_packs:
+            subquery = (
+                self.session.query(
+                    Relations.cardid, func.group_concat(Packs.id).label("sets")
+                )
+                .join(Packs, Relations.packid == Packs.id)
+                .group_by(Relations.cardid)
+                .subquery()
+            )
+
+            query = (
+                self.session.query(*items, subquery.c.sets)
+                .join(Texts, Datas.id == Texts.id)
+                .outerjoin(subquery, Datas.id == subquery.c.cardid)
+                .group_by(Datas.id, Texts.name)
+            )
+        else:
+            query = (
+                self.session.query(*items)
+                .join(Texts, Datas.id == Texts.id)
+                .group_by(Datas.id, Texts.name)
+            )
+
+        if self.has_koids:
+            query = query.outerjoin(Koids, Datas.id == Koids.id)
+
+        return query
+
+    def _make_card(self, result) -> Card:
+        card = Card(
+            id=result.id,
+            name=result.name,
+            _textdata=result.desc,
+            _typedata=result.type,
+            _racedata=result.race,
+            _attributedata=result.attribute,
+            _categorydata=result.category,
+            _genredata=result.genre,
+            _leveldata=result.level,
+            _atkdata=result.atk,
+            _defdata=result.def_,
+            _tcgdatedata=result.tcgdate,
+            _ocgdatedata=result.ocgdate,
+            status=result.ot,
+            _archcode=result.setcode,
+            _supportcode=result.support,
+            alias=result.alias,
+            _scriptdata=result.script,
+            sets=[int(set_id) for set_id in result.sets.split(",")]
+            if self.has_packs and result.sets is not None
+            else [],
+            _koiddata=result.koid if self.has_koids else 0,
+        )
+
+        return card
+
+    def _make_cards_list(self, results) -> list[Card]:
+        return [self._make_card(result) for result in results]
+
+    @property
+    def cards(self) -> list[Card]:
+        return self._make_cards_list(self.card_query.all())
+
+    def get_cards_by_values(self, params: dict) -> list[Card]:
+        filters = [
+            self._build_filter(params, "name", Texts.name.op("==")),
+            self._build_filter(params, "id", Datas.id.op("=="), valuetype=int),
+            self._build_filter(params, "race", Datas.race.op("=="), valuetype=Race),
+            self._build_filter(
+                params, "attribute", Datas.attribute.op("=="), valuetype=Attribute
+            ),
+            self._build_filter(params, "atk", Datas.atk.op("=="), valuetype=int),
+            self._build_filter(params, "def", Datas.def_.op("=="), valuetype=int),
+            self._build_filter(
+                params, "level", Datas.level.op("&")(0x0000FFFF).op("=="), valuetype=int
+            ),
+            self._build_filter(
+                params,
+                "scale",
+                Datas.level.op(">>")(24).op("=="),
+                valuetype=int,
+                condition=Datas.type.op("&")(Type.Pendulum.value),
+            ),
+            self._build_filter(params, "koid", Koids.koid.op("=="), valuetype=int),
+            self._build_filter(params, "type", Datas.type.op("&"), valuetype=Type),
+            self._build_filter(
+                params, "category", Datas.category.op("&"), valuetype=Category
+            ),
+            self._build_filter(params, "genre", Datas.genre.op("&"), valuetype=Genre),
+            self._build_filter(
+                params,
+                "linkmarker",
+                Datas.def_.op("&"),
+                valuetype=LinkMarker,
+                condition=Datas.type.op("&")(Type.Link.value),
+            ),
+        ]
+
+        query = self.card_query.filter(
+            *[filter for filter in filters if filter is not None]
+        )
+        results = self.session.execute(query).fetchall()
+        return self._make_cards_list(results)
+
+    def get_card_by_id(self, card_id):
+        query = self.card_query.filter(Datas.id == int(card_id))
+        result = self.session.execute(query.statement).fetchone()
+        return self._make_card(result)
+
+    def get_card_by_name(self, card_name):
+        query = self.card_query.filter(Texts.name == card_name)
+        result = self.session.execute(query.statement).fetchone()
+        return self._make_card(result)
+
+    def get_cards_by_query(self, query: Callable[[Card], bool]) -> list[Card]:
         return [card for card in self.cards if query(card)]
 
-    def get_cards_fuzzy(self, fuzzy_string: str) -> list[tuple[Card, float]]:
-        from jaro import jaro_winkler_metric
+    ################# Archetype Functions #################
 
-        return sorted(
-            [
-                (card, jaro_winkler_metric(card.name, fuzzy_string))
-                for card in self.cards
-            ],
-            key=lambda x: x[1],
-            reverse=True,
-        )[:20]
-
-    def get_set_by_id(self, id: int) -> Set:
-        return self._set_data[id]
-
-    def get_sets_by_ids(self, ids: list[int]) -> list[Set]:
-        return [self.get_set_by_id(id) for id in ids if id in self._set_data]
-
-    def get_sets_by_value(self, by: str, value: str | int) -> list[Set]:
-        return [
-            s
-            for s in self.sets
-            if isinstance(getattr(s, by), int)
-            and getattr(s, by) == value
-            or value in getattr(s, by)
-        ]
-
-    def get_sets_by_values(
-        self, by: str, values: list[int] | list[str]
-    ) -> list[list[Set]]:
-        return [self.get_sets_by_value(by, value) for value in values]
-
-    def get_archetype_by_id(self, id: int) -> Archetype:
-        return self._arch_data[id]
-
-    def get_archetypes_by_ids(self, ids: list[int]) -> list[Archetype]:
-        return [self.get_archetype_by_id(id) for id in ids if id in self._arch_data]
-
-    def get_archetypes_by_value(self, by: str, value: str | int) -> list[Archetype]:
-        return [
-            a
-            for a in self.archetypes
-            if isinstance(getattr(a, by), int)
-            and getattr(a, by) == value
-            or value in getattr(a, by)
-        ]
-
-    def get_archetypes_by_values(
-        self, by: str, values: list[int] | list[str]
-    ) -> list[list[Archetype]]:
-        return [self.get_archetypes_by_value(by, value) for value in values]
-
-    def get_related_cards(
-        self, given_archetypes: list[str], given_cards: list[str] = []
-    ) -> list[Card]:
-        return [
-            card
-            for card in self.cards
-            if any(card_name in card._text for card_name in given_cards)
-            or any(
-                arch_name
-                in [
-                    arch.name
-                    for arch in self.get_archetypes_by_ids(card.combined_archetypes)
-                ]
-                for arch_name in given_archetypes
-            )
-        ]
-
-    def get_unscripted(self, include_skillcards: bool = False) -> list[Card]:
-        return [
-            card
-            for card in self.cards
-            if not card.id == 111004001
-            and (card._script != 1.0 or card._script == None)
-            and (
-                any(
-                    card.has_cardtype(type)
-                    for type in [
-                        CardType.Spell,
-                        CardType.Trap,
-                    ]
+    @property
+    def arch_query(self):
+        def setcode_subquery(label, col, archs):
+            return (
+                self.session.query(
+                    func.group_concat(Datas.id, ",").label(f"{label}_ids"),
+                    col,
+                    Setcodes.id,
                 )
-                or card.has_type(Type.Effect)
+                .filter(
+                    and_(or_(arch == Setcodes.id for arch in archs), Setcodes.id != 0)
+                )
+                .group_by(Setcodes.id)
+                .subquery()
             )
-            and not card.alias
-            and (not card.ot == OT.Illegal or (include_skillcards and card.is_skill))
+
+        items = [Setcodes.name, Setcodes.id]
+
+        members = setcode_subquery("member", Datas.setcode, Datas.archetypes)
+        support = setcode_subquery("support", Datas.support, Datas.support)
+        related = setcode_subquery("related", Datas.support, Datas.related)
+
+        setcode_alias = aliased(Setcodes, members)
+        support_alias = aliased(Setcodes, support)
+        related_alias = aliased(Setcodes, related)
+
+        return (
+            self.session.query(
+                *items,
+                members.c.member_ids,
+                support.c.support_ids,
+                related.c.related_ids,
+            )
+            .outerjoin(setcode_alias, setcode_alias.id == members.c.id)
+            .outerjoin(support_alias, support_alias.id == support.c.id)
+            .outerjoin(related_alias, related_alias.id == related.c.id)
+        )
+
+    def _make_arch_list(self, results) -> list[Archetype]:
+        return [self._make_archetype(result) for result in results]
+
+    def _make_archetype(self, result) -> Archetype:
+        return Archetype(
+            id=result.id,
+            name=result.name,
+            members=result.member_ids.split(",")
+            if result.member_ids is not None
+            else [],
+            support=result.support_ids.split(",")
+            if result.support_ids is not None
+            else [],
+            related=result.related_ids.split(",")
+            if result.related_ids is not None
+            else [],
+        )
+
+    @property
+    def archetypes(self) -> list[Archetype]:
+        return self._make_arch_list(self.arch_query.all())
+
+    def get_archetypes_by_values(self, params: dict) -> list[Archetype]:
+        filters = [
+            self._build_filter(params, "name", Setcodes.name.op("==")),
+            self._build_filter(params, "id", Setcodes.id.op("=="), valuetype=int),
         ]
 
-    def get_card_archetypes(self, card: Card) -> list[Archetype]:
-        return [self.get_archetype_by_id(id) for id in card.archetypes]
+        query = self.arch_query.filter(
+            *[filter for filter in filters if filter is not None]
+        )
+        results = self.session.execute(query).fetchall()
+        return self._make_arch_list(results)
 
-    def get_card_support(self, card: Card) -> list[Archetype]:
-        return [self.get_archetype_by_id(id) for id in card.support]
+    def get_archetype_by_id(self, arch_id):
+        query = self.arch_query.filter(Setcodes.id == int(arch_id))
+        result = self.session.execute(query.statement).fetchone()
+        return self._make_archetype(result)
 
-    def get_card_related(self, card: Card) -> list[Archetype]:
-        return [self.get_archetype_by_id(id) for id in card.related]
+    def get_archetype_by_name(self, arch_name):
+        query = self.arch_query.filter(Setcodes.name == arch_name)
+        result = self.session.execute(query.statement).fetchone()
+        return self._make_archetype(result)
+
+    ################# Set Functions #################
+
+    @property
+    def set_query(self):
+        if self.has_packs:
+            query = (
+                self.session.query(
+                    Packs.id,
+                    Packs.abbr,
+                    Packs.name,
+                    Packs.ocgdate,
+                    Packs.tcgdate,
+                    func.group_concat(Relations.cardid).label("cardids"),
+                )
+                .join(Relations, Packs.id == Relations.packid)
+                .group_by(Packs.name)
+            )
+        else:
+            query = self.session.query(false())
+        return query
+
+    def _make_set_list(self, results) -> list[Set]:
+        return [self._make_set(result) for result in results]
+
+    def _make_set(self, result) -> Set:
+        cardids = getattr(result, "cardids", "").split(",") if self.has_packs else []
+        return Set(
+            id=result.id,
+            abbr=result.abbr,
+            name=result.name,
+            _ocgdate=result.ocgdate,
+            _tcgdate=result.tcgdate,
+            contents=[int(card_id) for card_id in cardids],
+        )
+
+    @property
+    def sets(self) -> list[Set]:
+        return self._make_set_list(self.set_query.all())
 
     def get_card_sets(self, card: Card) -> list[Set]:
-        return [self.get_set_by_id(set.id) for set in self.sets if card.id in set]
+        query = self.set_query.filter(Relations.cardid == card.id)
+        results = self.session.execute(query).fetchall()
+        return self._make_set_list(results)
 
-    def get_archetype_cards(self, arch: Archetype) -> list[Card]:
-        return [self.get_card_by_id(id) for id in arch.members]
-
-    def get_archetype_support(self, arch: Archetype) -> list[Card]:
-        return [self.get_card_by_id(id) for id in arch.support]
-
-    def get_archetype_related(self, arch: Archetype) -> list[Card]:
-        return [self.get_card_by_id(id) for id in arch.related]
-
-    def get_set_cards(self, set: Set) -> list[Card]:
-        return [self.get_card_by_id(id) for id in set.contents]
-
-    def get_set_archetype_counts(self, s: Set) -> ItemsView[Archetype, int]:
-        return Counter(
-            self.get_archetype_by_id(archid)
-            for card in self.get_cards_by_ids(s.contents)
-            for archid in set(card.archetypes + card.support)
-            if card is not None
-        ).items()
-
-    def get_set_archetype_ratios(self, s: Set) -> list[tuple[Archetype, float]]:
-        return [
-            (archid, count / s.set_total * 100)
-            for archid, count in self.get_set_archetype_counts(s)
+    def get_sets_by_values(self, params: dict) -> list[Set]:
+        filters = [
+            self._build_filter(params, "name", Packs.name.op("==")),
+            self._build_filter(params, "abbr", Packs.name.op("==")),
+            self._build_filter(params, "id", Packs.id.op("=="), valuetype=int),
         ]
 
-    def clean_dir(self):
-        for file_name in os.listdir(self.dbdir):
-            file_path = os.path.join(self.dbdir, file_name)
-            file_path = file_path.replace("\\", "/")
-            if file_path != self.dbpath:
-                os.remove(file_path)
+        query = self.set_query.filter(
+            *[filter for filter in filters if filter is not None]
+        )
+        results = self.session.execute(query).fetchall()
+        return self._make_set_list(results)
 
-    @staticmethod
-    def merge(db1: YugiDB, db2: YugiDB, new_name: str, db_path: str):
-        new = YugiDB()
-        new.name = new_name
-        new.dbpath = db_path
-        new._card_data = db1._card_data | db2._card_data
-        new._arch_data = db1._arch_data | db2._arch_data
-        new._set_data = db1._set_data | db2._set_data
-        return new
+    def get_set_by_id(self, set_id):
+        query = self.set_query.filter(Packs.id == int(set_id))
+        result = self.session.execute(query).fetchone()
+        return self._make_set(result)
 
-    @abstractmethod
-    def _build_card_db(self, con):
-        pass
+    def get_set_by_name(self, set_name):
+        query = self.set_query.filter(Packs.name == set_name)
+        result = self.session.execute(query.statement).fetchone()
+        return self._make_set(result)
 
-    @abstractmethod
-    def _build_archetype_db(self, con):
-        pass
+    ################# Name/id Map Functions #################
 
-    @abstractmethod
-    def _build_set_db(self, con):
-        pass
+    @property
+    def card_name_id_map(self) -> dict[str, int]:
+        query = self.session.query(Datas.id, Texts.name).join(
+            Texts, Datas.id == Texts.id
+        )
+        results = self.session.execute(query).fetchall()
+        return {result.name: result.id for result in results}
+
+    @property
+    def archetype_name_id_map(self) -> dict[str, int]:
+        query = self.session.query(Setcodes.id, Setcodes.name)
+        results = self.session.execute(query).fetchall()
+        return {result.name: result.id for result in results}
+
+    @property
+    def set_name_id_map(self) -> dict[str, int]:
+        if not self.has_packs:
+            return {}
+        query = self.session.query(Packs.id, Packs.name)
+        results = self.session.execute(query).fetchall()
+        return {result.name: result.id for result in results}

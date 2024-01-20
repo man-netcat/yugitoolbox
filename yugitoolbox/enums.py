@@ -1,45 +1,29 @@
 from enum import IntEnum, IntFlag
 
 
-class CardType(IntFlag):
-    NoType = 0x0
+class Type(IntFlag):
+    # NOTE: DO NOT CHANGE THIS ORDER
+    _ = 0x0
     Monster = 0x1
     Spell = 0x2
     Trap = 0x4
-
-
-class Type(IntFlag):
-    NoType = 0x0
     Normal = 0x10
     Ritual = 0x80
     Tuner = 0x1000
     Pendulum = 0x1000000
-    Effect = 0x20
     TrapMonster = 0x100
     SpSummon = 0x2000000
-
-
-class EDType(IntFlag):
-    MainDeck = 0x0
     Fusion = 0x40
     Synchro = 0x2000
     Xyz = 0x800000
     Link = 0x4000000
     Token = 0x4000
-
-
-class Ability(IntFlag):
-    NoAbility = 0x0
     Spirit = 0x200
     Union = 0x400
     Gemini = 0x800
     Flip = 0x200000
     Toon = 0x400000
-
-
-class Property(IntFlag):
-    Normal = 0x0
-    Ritual = 0x80
+    Effect = 0x20
     QuickPlay = 0x10000
     Continuous = 0x20000
     Equip = 0x40000
@@ -48,6 +32,7 @@ class Property(IntFlag):
 
 
 class LinkMarker(IntFlag):
+    _ = 0x0
     BottomLeft = 0x01
     Bottom = 0x02
     BottomRight = 0x04
@@ -60,7 +45,7 @@ class LinkMarker(IntFlag):
 
 
 class Race(IntFlag):
-    NoType = 0x0
+    _ = 0x0
     Warrior = 0x1
     Spellcaster = 0x2
     Fairy = 0x4
@@ -96,7 +81,7 @@ class Race(IntFlag):
 
 
 class Attribute(IntFlag):
-    NoAttribute = 0x00
+    _ = 0x00
     EARTH = 0x01
     WATER = 0x02
     FIRE = 0x04
@@ -107,6 +92,7 @@ class Attribute(IntFlag):
 
 
 class Category(IntFlag):
+    _ = 0x0
     SkillCard = 0x1
     SpeedSpellCard = 0x2
     BossCard = 0x4
@@ -133,6 +119,7 @@ class Category(IntFlag):
 
 
 class Genre(IntFlag):
+    _ = 0x0
     STDestroy = 0x1
     DestroyMonster = 0x2
     Banish = 0x4
@@ -171,7 +158,7 @@ class Genre(IntFlag):
     HandTrap = 0x800000000
 
 
-class OT(IntEnum):
+class Status(IntEnum):
     OCG = 1
     TCG = 2
     Legal = 3
