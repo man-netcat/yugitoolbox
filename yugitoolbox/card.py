@@ -227,10 +227,14 @@ class Card:
 
     @property
     def def_(self) -> int:
+        if self.has_type(Type.Link):
+            return 0
         return self._defdata
 
     @def_.setter
     def def_(self, new: int):
+        if self.has_type(Type.Link):
+            return
         self._defdata = new
 
     @property

@@ -184,7 +184,7 @@ class YugiDB:
 
     def get_card_by_id(self, card_id):
         query = self.card_query.filter(Datas.id == card_id)
-        result = self.session.execute(query).fetchone()
+        result = self.session.execute(query.statement).fetchone()
         return self._make_card(result)
 
     def get_cards_by_query(self, query: Callable[[Card], bool]) -> list[Card]:
@@ -230,7 +230,12 @@ class YugiDB:
 
     def get_archetype_by_id(self, arch_id):
         query = self.arch_query.filter(Setcodes.id == int(arch_id))
-        result = self.session.execute(query).fetchone()
+        result = self.session.execute(query.statement).fetchone()
+        return self._make_archetype(result)
+
+    def get_archetype_by_name(self, arch_name):
+        query = self.arch_query.filter(Setcodes.name == arch_name)
+        result = self.session.execute(query.statement).fetchone()
         return self._make_archetype(result)
 
     ################# Set Functions #################
@@ -291,8 +296,13 @@ class YugiDB:
         return self._make_set_list(results)
 
     def get_set_by_id(self, set_id):
-        query = self.set_query.filter(Packs.id == set_id)
+        query = self.set_query.filter(Packs.id == int(set_id))
         result = self.session.execute(query).fetchone()
+        return self._make_set(result)
+
+    def get_set_by_name(self, set_name):
+        query = self.set_query.filter(Packs.name == set_name)
+        result = self.session.execute(query.statement).fetchone()
         return self._make_set(result)
 
     ################# Name/id Map Functions #################

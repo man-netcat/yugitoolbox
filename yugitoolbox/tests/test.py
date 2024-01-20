@@ -4,7 +4,7 @@ from yugitoolbox import *
 
 
 class TestDB(TestCase):
-    db = OmegaDB(skip_update=True)
+    db = OmegaDB(update="skip")
     maxDiff = None
 
     def test_archetype(self):
