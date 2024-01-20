@@ -31,7 +31,12 @@ class YugiDB:
             return None
 
         if issubclass(valuetype, IntFlag):
-            type_modifier = lambda x: getattr(valuetype, x, valuetype._).value
+            mapping = {k.casefold(): v for k, v in valuetype.__members__.items()}
+            type_modifier = (
+                lambda x: mapping.get(x.casefold()).value
+                if mapping.get(x.casefold())
+                else None
+            )
         else:
             type_modifier = lambda x: valuetype(x)
 
