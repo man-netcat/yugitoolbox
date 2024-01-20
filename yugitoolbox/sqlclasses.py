@@ -35,11 +35,11 @@ class Datas(Base):
         return [self.setcode.op(">>")(x).op("&")(0xFFFF) for x in [0, 16, 32, 48]]
 
     @hybrid_property
-    def support(self):
+    def supportarchs(self):
         return [self.support.op(">>")(x).op("&")(0xFFFF) for x in [0, 16]]
 
     @hybrid_property
-    def related(self):
+    def relatedarchs(self):
         return [self.support.op(">>")(x).op("&")(0xFFFF) for x in [36, 48]]
 
 

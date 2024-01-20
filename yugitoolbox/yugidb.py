@@ -215,8 +215,8 @@ class YugiDB:
         items = [Setcodes.name, Setcodes.id]
 
         members = setcode_subquery("member", Datas.setcode, Datas.archetypes)
-        support = setcode_subquery("support", Datas.support, Datas.support)
-        related = setcode_subquery("related", Datas.support, Datas.related)
+        support = setcode_subquery("support", Datas.support, Datas.supportarchs)
+        related = setcode_subquery("related", Datas.support, Datas.relatedarchs)
 
         setcode_alias = aliased(Setcodes, members)
         support_alias = aliased(Setcodes, support)
