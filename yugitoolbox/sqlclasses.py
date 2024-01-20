@@ -11,7 +11,6 @@ class Datas(Base):
     id = Column(Integer, primary_key=True, nullable=False, default=0)
     ot = Column(Integer, nullable=False, default=0)
     alias = Column(Integer, nullable=False, default=0)
-    setcode = Column(Integer, nullable=False, default=0)
     type = Column(Integer, nullable=False, default=0)
     atk = Column(Integer, nullable=False, default=0)
     def_ = Column("def", Integer, nullable=False, default=0)
@@ -21,6 +20,12 @@ class Datas(Base):
     category = Column(Integer, nullable=False, default=0)
     genre = Column(Integer, nullable=False, default=0)
     script = Column(BLOB)
+    # Datas.setcode is a 64-bit value consisting of 4 16-bit values,
+    # each representing a Setcode.id.
+    setcode = Column(Integer, nullable=False, default=0)
+    # Similarly to Datas.setcode, Datas.support is a 64-bit value consisting of 4 16-bit values,
+    # The first 2 values represent "support", the last two values represent "related".
+    # All of them correspond to Setcode.id
     support = Column(Integer, nullable=False, default=0)
     ocgdate = Column(Integer, nullable=False, default=253402207200)
     tcgdate = Column(Integer, nullable=False, default=253402207200)
@@ -47,6 +52,7 @@ class Setcodes(Base):
     officialcode = Column(Integer, nullable=False, primary_key=True)
     betacode = Column(Integer, nullable=False, primary_key=True)
     name = Column(Text, unique=True, nullable=False)
+    # Setcodes.cardid is the id of the card representing the archetype
     cardid = Column(Integer, nullable=False, default=0)
 
     @hybrid_property

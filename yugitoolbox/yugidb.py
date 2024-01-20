@@ -1,9 +1,8 @@
 import os
-from enum import Enum
 from typing import Callable
 
-from sqlalchemy import and_, create_engine, false, func, inspect, or_, true
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import and_, create_engine, false, func, inspect, or_
+from sqlalchemy.orm import aliased, sessionmaker
 
 from .archetype import Archetype
 from .card import Card
@@ -24,7 +23,7 @@ class YugiDB:
             inspect(self.engine).has_table(x) for x in ["packs", "relations"]
         )
 
-    def _build_filter(self, params, key, column, valuetype=str, condition=true()):
+    def _build_filter(self, params, key, column, valuetype=str, condition=True):
         values = params.get(key)
 
         if not values:
@@ -183,7 +182,12 @@ class YugiDB:
         return self._make_cards_list(results)
 
     def get_card_by_id(self, card_id):
-        query = self.card_query.filter(Datas.id == card_id)
+        query = self.card_query.filter(Datas.id == int(card_id))
+        result = self.session.execute(query.statement).fetchone()
+        return self._make_card(result)
+
+    def get_card_by_name(self, card_name):
+        query = self.card_query.filter(Texts.name == card_name)
         result = self.session.execute(query.statement).fetchone()
         return self._make_card(result)
 
@@ -194,22 +198,97 @@ class YugiDB:
 
     @property
     def arch_query(self):
-        return self.session.query(
+        items = [
             Setcodes.name,
             Setcodes.id,
+        ]
+
+        members = (
+            self.session.query(
+                func.group_concat(Datas.id, ",").label("member_ids"),
+                Datas.setcode,
+                Setcodes.id,
+            )
+            .filter(
+                or_(
+                    (Datas.setcode.op("&")(0xFFFF) == Setcodes.id),
+                    (Datas.setcode.op(">>")(16).op("&")(0xFFFF) == Setcodes.id),
+                    (Datas.setcode.op(">>")(32).op("&")(0xFFFF) == Setcodes.id),
+                    (Datas.setcode.op(">>")(48) == Setcodes.id),
+                )
+                & (Setcodes.id != 0)
+            )
+            .group_by(Setcodes.id)
+            .subquery()
         )
+
+        support = (
+            self.session.query(
+                func.group_concat(Datas.id, ",").label("support_ids"),
+                Datas.support,
+                Setcodes.id,
+            )
+            .filter(
+                or_(
+                    (Datas.support.op("&")(0xFFFF) == Setcodes.id),
+                    (Datas.support.op(">>")(16).op("&")(0xFFFF) == Setcodes.id),
+                )
+                & (Setcodes.id != 0)
+            )
+            .group_by(Setcodes.id)
+            .subquery()
+        )
+
+        related = (
+            self.session.query(
+                func.group_concat(Datas.id, ",").label("related_ids"),
+                Datas.support,
+                Setcodes.id,
+            )
+            .filter(
+                or_(
+                    (Datas.support.op(">>")(32).op("&")(0xFFFF) == Setcodes.id),
+                    (Datas.support.op(">>")(48) == Setcodes.id),
+                )
+                & (Setcodes.id != 0)
+            )
+            .group_by(Setcodes.id)
+            .subquery()
+        )
+
+        setcode_alias = aliased(Setcodes, members)
+        support_alias = aliased(Setcodes, support)
+        related_alias = aliased(Setcodes, related)
+
+        query = (
+            self.session.query(
+                *items,
+                members.c.member_ids,
+                support.c.support_ids,
+                related.c.related_ids,
+            )
+            .outerjoin(setcode_alias, setcode_alias.id == members.c.id)
+            .outerjoin(support_alias, support_alias.id == support.c.id)
+            .outerjoin(related_alias, related_alias.id == related.c.id)
+        )
+        return query
 
     def _make_arch_list(self, results) -> list[Archetype]:
         return [self._make_archetype(result) for result in results]
 
     def _make_archetype(self, result) -> Archetype:
-        # TODO: Add members
         return Archetype(
             id=result.id,
             name=result.name,
-            members=[],
-            support=[],
-            related=[],
+            members=result.member_ids.split(",")
+            if result.member_ids is not None
+            else [],
+            support=result.support_ids.split(",")
+            if result.support_ids is not None
+            else [],
+            related=result.related_ids.split(",")
+            if result.related_ids is not None
+            else [],
         )
 
     @property
