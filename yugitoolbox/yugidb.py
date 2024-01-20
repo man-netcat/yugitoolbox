@@ -349,19 +349,22 @@ class YugiDB:
 
     @property
     def card_name_id_map(self) -> dict[str, int]:
-        results = self.session.execute(self.card_query).fetchall()
-        return {card.name: card.id for card in results}
+        query = self.session.query(Datas.id, Texts.name).join(
+            Texts, Datas.id == Texts.id
+        )
+        results = self.session.execute(query).fetchall()
+        return {result.name: result.id for result in results}
 
     @property
     def archetype_name_id_map(self) -> dict[str, int]:
-        results = self.session.execute(self.arch_query).fetchall()
-        return {
-            archetype.name: archetype.id for archetype in results if archetype.id != 0
-        }
+        query = self.session.query(Setcodes.id, Setcodes.name)
+        results = self.session.execute(query).fetchall()
+        return {result.name: result.id for result in results}
 
     @property
     def set_name_id_map(self) -> dict[str, int]:
         if not self.has_packs:
             return {}
-        results = self.session.execute(self.set_query).fetchall()
-        return {set.name: set.id for set in results}
+        query = self.session.query(Packs.id, Packs.name)
+        results = self.session.execute(query).fetchall()
+        return {result.name: result.id for result in results}
