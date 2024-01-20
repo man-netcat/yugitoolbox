@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 from typing import Callable
 
 from sqlalchemy import and_, create_engine, false, func, inspect, or_, true
@@ -22,6 +23,29 @@ class YugiDB:
         self.has_packs = all(
             inspect(self.engine).has_table(x) for x in ["packs", "relations"]
         )
+
+    def _build_filter(self, params, key, column, valuetype=str, condition=true()):
+        values = params.get(key)
+
+        if not values:
+            return None
+
+        if issubclass(valuetype, IntFlag):
+            type_modifier = lambda x: getattr(valuetype, x, valuetype._).value
+        else:
+            type_modifier = lambda x: valuetype(x)
+
+        def apply_modifier(value):
+            return column(type_modifier(value))
+
+        query = or_(
+            *[
+                and_(*[apply_modifier(value) for value in value_or.split(",")])
+                for value_or in values.split("|")
+            ]
+        )
+
+        return and_(condition, query)
 
     ################# Card Functions #################
 
@@ -115,112 +139,36 @@ class YugiDB:
         return self._make_cards_list(self.card_query.all())
 
     def get_cards_by_values(self, params: dict) -> list[Card]:
-        def build_filter(
-            key,
-            column,
-            values,
-            type_modifier=str,
-            condition=true(),
-        ):
-            if key not in params:
-                return None
-
-            def apply_modifier(value):
-                return column(type_modifier(value))
-
-            query = or_(
-                *[
-                    and_(*[apply_modifier(value) for value in value_or.split(",")])
-                    for value_or in values.split("|")
-                ]
-            )
-
-            return and_(condition, query)
-
-        def type_modifier(type):
-            def lambdafunc(x):
-                return getattr(type, x, type._).value
-
-            return lambdafunc
-
         filters = [
-            build_filter(
-                "name",
-                Texts.name.op("=="),
-                params.get("name"),
+            self._build_filter(params, "name", Texts.name.op("==")),
+            self._build_filter(params, "id", Datas.id.op("=="), valuetype=int),
+            self._build_filter(params, "race", Datas.race.op("=="), valuetype=Race),
+            self._build_filter(
+                params, "attribute", Datas.attribute.op("=="), valuetype=Attribute
             ),
-            build_filter(
-                "id",
-                Datas.id.op("=="),
-                params.get("id", 0),
-                type_modifier=int,
+            self._build_filter(params, "atk", Datas.atk.op("=="), valuetype=int),
+            self._build_filter(params, "def", Datas.def_.op("=="), valuetype=int),
+            self._build_filter(
+                params, "level", Datas.level.op("&")(0x0000FFFF).op("=="), valuetype=int
             ),
-            build_filter(
-                "race",
-                Datas.race.op("=="),
-                params.get("race", "_"),
-                type_modifier=type_modifier(Race),
-            ),
-            build_filter(
-                "attribute",
-                Datas.attribute.op("=="),
-                params.get("attribute", "_"),
-                type_modifier=type_modifier(Attribute),
-            ),
-            build_filter(
-                "atk",
-                Datas.atk.op("=="),
-                params.get("atk", 0),
-                type_modifier=int,
-            ),
-            build_filter(
-                "def",
-                Datas.def_.op("=="),
-                params.get("def", 0),
-                type_modifier=int,
-            ),
-            build_filter(
-                "level",
-                Datas.level.op("&")(0x0000FFFF).op("=="),
-                params.get("level", 0),
-                type_modifier=int,
-            ),
-            build_filter(
+            self._build_filter(
+                params,
                 "scale",
                 Datas.level.op(">>")(24).op("=="),
-                params.get("scale", 0),
-                type_modifier=int,
+                valuetype=int,
                 condition=Datas.type.op("&")(Type.Pendulum.value),
             ),
-            build_filter(
-                "koid",
-                Koids.koid.op("=="),
-                params.get("koid", 0),
-                type_modifier=int,
+            self._build_filter(params, "koid", Koids.koid.op("=="), valuetype=int),
+            self._build_filter(params, "type", Datas.type.op("&"), valuetype=Type),
+            self._build_filter(
+                params, "category", Datas.category.op("&"), valuetype=Category
             ),
-            build_filter(
-                "type",
-                Datas.type.op("&"),
-                params.get("type", "_"),
-                type_modifier=type_modifier(Type),
-            ),
-            build_filter(
-                "category",
-                Datas.category.op("&"),
-                params.get("category", "_"),
-                type_modifier=type_modifier(Category),
-            ),
-            build_filter(
-                "genre",
-                Datas.genre.op("&"),
-                params.get("genre", "_"),
-                type_modifier=type_modifier(Genre),
-            ),
-            build_filter(
+            self._build_filter(params, "genre", Datas.genre.op("&"), valuetype=Genre),
+            self._build_filter(
+                params,
                 "linkmarker",
                 Datas.def_.op("&"),
-                params.get("linkmarker", "_"),
-                type_modifier=type_modifier(LinkMarker),
+                valuetype=LinkMarker,
                 condition=Datas.type.op("&")(Type.Link.value),
             ),
         ]
@@ -267,19 +215,18 @@ class YugiDB:
 
     def get_archetypes_by_values(self, params: dict) -> list[Archetype]:
         filters = [
-            filter
-            for key, filter in [
-                ("name", Setcodes.name == params.get("name")),
-                ("id", Setcodes.id == int(params.get("id"))),
-            ]
-            if key in params
+            self._build_filter(params, "name", Setcodes.name.op("==")),
+            self._build_filter(params, "id", Setcodes.id.op("=="), valuetype=int),
         ]
-        query = self.arch_query.filter(*filters)
+
+        query = self.arch_query.filter(
+            *[filter for filter in filters if filter is not None]
+        )
         results = self.session.execute(query).fetchall()
         return self._make_arch_list(results)
 
     def get_archetype_by_id(self, arch_id):
-        query = self.arch_query.filter(Setcodes.id == arch_id)
+        query = self.arch_query.filter(Setcodes.id == int(arch_id))
         result = self.session.execute(query).fetchone()
         return self._make_archetype(result)
 
@@ -329,16 +276,14 @@ class YugiDB:
 
     def get_sets_by_values(self, params: dict) -> list[Set]:
         filters = [
-            filter
-            for key, filter in [
-                ("name", Packs.name == params.get("name")),
-                ("abbr", Packs.abbr == params.get("abbr")),
-                ("id", Packs.id == int(params.get("id"))),
-            ]
-            if key in params
+            self._build_filter(params, "name", Packs.name.op("==")),
+            self._build_filter(params, "abbr", Packs.name.op("==")),
+            self._build_filter(params, "id", Packs.id.op("=="), valuetype=int),
         ]
 
-        query = self.set_query.filter(*filters)
+        query = self.set_query.filter(
+            *[filter for filter in filters if filter is not None]
+        )
         results = self.session.execute(query).fetchall()
         return self._make_set_list(results)
 
