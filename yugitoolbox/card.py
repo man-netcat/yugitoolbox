@@ -542,7 +542,8 @@ class Card:
     def render(self, dir="out"):
         from .cardrenderer import Renderer
 
-        return Renderer.render_card(self, dir)
+        renderer = Renderer()
+        return renderer.render_card(self, dir)
 
     # NOTE: experimental stuff
     # @property

@@ -19,11 +19,10 @@ ASSET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
 
 class Renderer:
-    layers: list[str] = []
-    image: Image.Image
+    def __init__(self):
+        self.layers: list[str] = []
 
-    @staticmethod
-    def _get_frame(card: Card):
+    def _get_frame(self, card: Card):
         frame = ""
         if card.has_category(Category.SkillCard):
             frame = "Frames/Skill.png"
@@ -57,56 +56,54 @@ class Renderer:
             frame = "Frames/Normal.png"
         elif card.has_type(Type.Effect):
             frame = "Frames/Effect.png"
-        Renderer.layers.append(frame)
+        self.layers.append(frame)
         if card.has_type(Type.Pendulum):
-            Renderer.layers.append("Frames/Pendulum.png")
+            self.layers.append("Frames/Pendulum.png")
 
-    @staticmethod
-    def _get_common(card: Card):
+    def _get_common(self, card: Card):
         if card.has_type(Type.Pendulum):
-            Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Effect_Bar.png")
-            Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Box_Medium.png")
+            self.layers.append("Common/Pendulum_Medium/Pendulum_Effect_Bar.png")
+            self.layers.append("Common/Pendulum_Medium/Pendulum_Box_Medium.png")
         elif card.has_type(Type.Xyz):
-            Renderer.layers.append("Common/Artwork_Box_Xyz.png")
+            self.layers.append("Common/Artwork_Box_Xyz.png")
         elif card.has_category(Category.SkillCard):
-            Renderer.layers.append("Common/Artwork_Box_Skill.png")
+            self.layers.append("Common/Artwork_Box_Skill.png")
         elif card.has_type(Type.Link):
-            Renderer.layers.append("Common/Artwork_Box_LNKD.png")
+            self.layers.append("Common/Artwork_Box_LNKD.png")
         else:
-            Renderer.layers.append("Common/Artwork_Box.png")
+            self.layers.append("Common/Artwork_Box.png")
 
         if card.has_type(Type.Xyz):
-            Renderer.layers.append("Common/Card_Frame_Bevel_Xyz.png")
+            self.layers.append("Common/Card_Frame_Bevel_Xyz.png")
         elif card.has_category(Category.SkillCard):
-            Renderer.layers.append("Common/Card_Frame_Bevel_Skill.png")
+            self.layers.append("Common/Card_Frame_Bevel_Skill.png")
         else:
-            Renderer.layers.append("Common/Card_Frame_Bevel.png")
+            self.layers.append("Common/Card_Frame_Bevel.png")
 
         if card.has_type(Type.Xyz):
-            Renderer.layers.append("Common/Name_Box_Xyz.png")
+            self.layers.append("Common/Name_Box_Xyz.png")
         elif card.has_category(Category.SkillCard):
-            Renderer.layers.append("Common/Name_Box_Skill.png")
+            self.layers.append("Common/Name_Box_Skill.png")
         else:
-            Renderer.layers.append("Common/Name_Box.png")
+            self.layers.append("Common/Name_Box.png")
 
         if card.has_category(Category.SkillCard):
-            Renderer.layers.append("Common/Effect_Box_Skill.png")
+            self.layers.append("Common/Effect_Box_Skill.png")
         elif not card.has_type(Type.Pendulum):
-            Renderer.layers.append("Common/Effect_Box.png")
+            self.layers.append("Common/Effect_Box.png")
 
-        Renderer.layers.append("Common/Border.png")
+        self.layers.append("Common/Border.png")
         import random
 
-        Renderer.layers.append(f"Stickers/Holo_Sticker_{random.randint(1, 4)}.png")
+        self.layers.append(f"Stickers/Holo_Sticker_{random.randint(1, 4)}.png")
         if (card.has_type(Type.Xyz) or card.is_dark_synchro) and not card.has_type(
             Type.Pendulum
         ):
-            Renderer.layers.append("Text/Limitation/White/Creator.png")
+            self.layers.append("Text/Limitation/White/Creator.png")
         else:
-            Renderer.layers.append("Text/Limitation/Black/Creator.png")
+            self.layers.append("Text/Limitation/Black/Creator.png")
 
-    @staticmethod
-    def _get_attribute(card: Card):
+    def _get_attribute(self, card: Card):
         if card.is_skill:
             return
         attr = ""
@@ -118,16 +115,15 @@ class Renderer:
             attr = f"Attributes/{card.attribute.name}.png"
         else:
             return
-        Renderer.layers.append(attr)
+        self.layers.append(attr)
 
-    @staticmethod
-    def _get_art(card: Card):
+    def _get_art(self, card: Card):
         art_url = IMG_BASE_URL % card.id
         alias_url = IMG_BASE_URL % card.alias
         art_path = os.path.join(ASSET_DIR, "Art", f"{card.id}.png")
         custom_art_path = os.path.join(ASSET_DIR, "CustomArt", f"{card.id}.png")
         if os.path.exists(art_path):
-            Renderer.layers.append(f"Art/{card.id}.png")
+            self.layers.append(f"Art/{card.id}.png")
             return
         if os.path.exists(custom_art_path):
             art_img = Image.open(custom_art_path).convert("RGBA")
@@ -157,21 +153,18 @@ class Renderer:
         background = Image.new("RGBA", card_size, (255, 255, 255, 0))
         background.paste(art_img, (bbox[0], bbox[1]))
         background.save(art_path, format="PNG")
-        Renderer.layers.append(f"Art/{card.id}.png")
+        self.layers.append(f"Art/{card.id}.png")
 
-    @staticmethod
-    def _get_neg_level(card: Card):
+    def _get_neg_level(self, card: Card):
         neg_level = f"Negative_Level/Negative_Level_{card.level}.png"
-        Renderer.layers.append(neg_level)
+        self.layers.append(neg_level)
 
-    @staticmethod
-    def _get_rank(card: Card):
+    def _get_rank(self, card: Card):
         if card.level > 0:
             rank = f"Rank/Rank_{card.level}.png"
-            Renderer.layers.append(rank)
+            self.layers.append(rank)
 
-    @staticmethod
-    def _get_linkmarkers(card: Card):
+    def _get_linkmarkers(self, card: Card):
         active = [linkmarker.name for linkmarker in card.linkmarkers]
         inactive = [
             linkmarker.name
@@ -179,20 +172,18 @@ class Renderer:
             if not card.has_linkmarker(linkmarker)
         ]
         for marker in active:
-            Renderer.layers.append(f"Link_Arrows/{marker}Active.png")
-            Renderer.layers.append(f"Link_Arrows/{marker}Glow.png")
+            self.layers.append(f"Link_Arrows/{marker}Active.png")
+            self.layers.append(f"Link_Arrows/{marker}Glow.png")
         for marker in inactive:
-            Renderer.layers.append(f"Link_Arrows/{marker}Normal.png")
-            Renderer.layers.append(f"Link_Arrows/{marker}Shadow.png")
+            self.layers.append(f"Link_Arrows/{marker}Normal.png")
+            self.layers.append(f"Link_Arrows/{marker}Shadow.png")
 
-    @staticmethod
-    def _get_level(card: Card):
+    def _get_level(self, card: Card):
         if card.level > 0:
             level = f"Level/Level_{card.level}.png"
-            Renderer.layers.append(level)
+            self.layers.append(level)
 
-    @staticmethod
-    def _get_property(card: Card):
+    def _get_property(self, card: Card):
         icon = None
         if card.has_type(Type.Continuous):
             icon = "Property/Continuous.png"
@@ -212,7 +203,7 @@ class Renderer:
 
         text = None
         if icon:
-            Renderer.layers.append(icon)
+            self.layers.append(icon)
             if card.has_type(Type.Spell):
                 text = "Text/Spell_Card_w_Icon.png"
             else:
@@ -222,55 +213,53 @@ class Renderer:
                 text = "Text/Spell_Card.png"
             else:
                 text = "Text/Trap_Card.png"
-        Renderer.layers.append(text)
+        self.layers.append(text)
 
-    @staticmethod
-    def _get_atk_def_link(card: Card):
+    def _get_atk_def_link(self, card: Card):
         if not card.has_type(Type.Monster):
             return
 
         if card.has_type(Type.Link):
-            Renderer.layers.append("Text/LINK-.png")
+            self.layers.append("Text/LINK-.png")
         else:
-            Renderer.layers.append("Text/DEF__Bar.png")
-        Renderer.layers.append("Text/ATK__Bar.png")
-        Renderer.layers.append("Text/Status_Bar.png")
+            self.layers.append("Text/DEF__Bar.png")
+        self.layers.append("Text/ATK__Bar.png")
+        self.layers.append("Text/Status_Bar.png")
 
-    @staticmethod
-    def _process_layers(card: Card):
-        Renderer.layers = []
+    def _process_layers(self, card: Card):
+        self.layers = []
 
-        Renderer._get_frame(card)
-        Renderer._get_art(card)
-        Renderer._get_common(card)
-        Renderer._get_attribute(card)
+        self._get_frame(card)
+        self._get_art(card)
+        self._get_common(card)
+        self._get_attribute(card)
 
         if card.is_spelltrap:
-            Renderer._get_property(card)
+            self._get_property(card)
         elif card.is_dark_synchro:
-            Renderer._get_neg_level(card)
+            self._get_neg_level(card)
         elif card.has_type(Type.Xyz):
-            Renderer._get_rank(card)
+            self._get_rank(card)
         elif card.has_type(Type.Link):
-            Renderer._get_linkmarkers(card)
+            self._get_linkmarkers(card)
         else:
-            Renderer._get_level(card)
+            self._get_level(card)
         if card.has_type(Type.Pendulum):
-            Renderer.layers.append("Common/Pendulum_Medium/Pendulum_Scales.png")
-        Renderer._get_atk_def_link(card)
+            self.layers.append("Common/Pendulum_Medium/Pendulum_Scales.png")
+        self._get_atk_def_link(card)
 
-    @staticmethod
-    def _build_template():
-        extended_path = os.path.join(ASSET_DIR, Renderer.layers[0])
+    def _build_template(
+        self,
+    ):
+        extended_path = os.path.join(ASSET_DIR, self.layers[0])
         base_image = Image.open(extended_path).convert("RGBA")
-        for image_path in Renderer.layers[1:]:
+        for image_path in self.layers[1:]:
             extended_path = os.path.join(ASSET_DIR, image_path)
             overlay = Image.open(extended_path).convert("RGBA")
             base_image = Image.alpha_composite(base_image, overlay)
         return base_image
 
-    @staticmethod
-    def _draw_card_name(card: Card):
+    def _draw_card_name(self, card: Card):
         font_path = os.path.join(
             ASSET_DIR,
             "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
@@ -309,22 +298,20 @@ class Renderer:
         )
 
         stretched_text_layer = text_layer.resize(CARD_SIZE, Image.LANCZOS)
-        Renderer.image = Image.alpha_composite(Renderer.image, stretched_text_layer)
+        self.image = Image.alpha_composite(self.image, stretched_text_layer)
 
-    @staticmethod
-    def _draw_text_segment(text, font_path, font_size, bbox, colour):
+    def _draw_text_segment(self, text, font_path, font_size, bbox, colour):
         font = ImageFont.truetype(font=font_path, size=font_size)
         layer = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
         draw_layer = ImageDraw.Draw(layer)
         draw_layer.text(xy=(bbox[0], bbox[1]), text=text, fill=colour, font=font)
-        Renderer.image = Image.alpha_composite(Renderer.image, layer)
+        self.image = Image.alpha_composite(self.image, layer)
 
-    @staticmethod
-    def _draw_segments(card: Card):
+    def _draw_segments(self, card: Card):
         if card.is_spelltrap or card.is_skill:
             return
         # Race/MDType
-        Renderer._draw_text_segment(
+        self._draw_text_segment(
             card.type_str,
             os.path.join(
                 ASSET_DIR,
@@ -335,7 +322,7 @@ class Renderer:
             "#000",
         )
         # ATK
-        Renderer._draw_text_segment(
+        self._draw_text_segment(
             str(card._atkdata) if card._atkdata >= 0 else "?",
             os.path.join(
                 ASSET_DIR,
@@ -347,7 +334,7 @@ class Renderer:
         )
         if card.has_type(Type.Link):
             # Rating
-            Renderer._draw_text_segment(
+            self._draw_text_segment(
                 str(card.level),
                 os.path.join(ASSET_DIR, "Fonts/RoGSanSrfStd-Bd.otf"),
                 24,
@@ -357,7 +344,7 @@ class Renderer:
             pass
         else:
             # DEF
-            Renderer._draw_text_segment(
+            self._draw_text_segment(
                 str(card.def_) if card.def_ >= 0 else "?",
                 os.path.join(
                     ASSET_DIR,
@@ -370,7 +357,7 @@ class Renderer:
 
         if card.has_type(Type.Pendulum):
             for x in [72, 718]:
-                Renderer._draw_text_segment(
+                self._draw_text_segment(
                     str(card.scale),
                     os.path.join(
                         ASSET_DIR,
@@ -381,8 +368,7 @@ class Renderer:
                     "#000",
                 )
 
-    @staticmethod
-    def _draw_effect(text, max_width, mats, font_path, font_size, bbox):
+    def _draw_effect(self, text, max_width, mats, font_path, font_size, bbox):
         wrapped = "\n".join(
             textwrap.wrap(
                 text, max_width, break_long_words=False, break_on_hyphens=False
@@ -400,10 +386,9 @@ class Renderer:
         draw_layer = ImageDraw.Draw(layer)
         draw_layer.text(xy=(bbox[0], bbox[1]), text=wrapped, fill="#000", font=font)
         stretched_layer = layer.resize(CARD_SIZE, Image.LANCZOS)
-        Renderer.image = Image.alpha_composite(Renderer.image, stretched_layer)
+        self.image = Image.alpha_composite(self.image, stretched_layer)
 
-    @staticmethod
-    def _draw_card_text(card: Card):
+    def _draw_card_text(self, card: Card):
         if card.is_skill:
             return
         sections = card.text.split("\n")
@@ -430,27 +415,24 @@ class Renderer:
             bbox = (65, 925)
         else:
             bbox = (65, 895)
-        Renderer._draw_effect(text, 78, mats, font_path, 19, bbox)
+        self._draw_effect(text, 78, mats, font_path, 19, bbox)
         if card.has_type(Type.Pendulum):
-            Renderer._draw_effect(pendtext, 62, None, font_path, 19, (128, 751))
+            self._draw_effect(pendtext, 62, None, font_path, 19, (128, 751))
 
-    @staticmethod
-    def _render_text(card: Card):
-        Renderer._draw_card_name(card)
-        Renderer._draw_segments(card)
-        Renderer._draw_card_text(card)
+    def _render_text(self, card: Card):
+        self._draw_card_name(card)
+        self._draw_segments(card)
+        self._draw_card_text(card)
 
-    @staticmethod
-    def render_card(card: Card, dir: str = "out"):
-        Renderer.layers = []
-        Renderer._process_layers(card)
+    def render_card(self, card: Card, dir: str = "out"):
+        self._process_layers(card)
 
         if not os.path.isdir(dir):
             os.makedirs(dir, exist_ok=True)
 
-        Renderer.image = Renderer._build_template()
-        Renderer._render_text(card)
+        self.image = self._build_template()
+        self._render_text(card)
 
         out_path = os.path.join(dir, f"{card.id}.png")
-        Renderer.image.save(out_path, "PNG")
+        self.image.save(out_path, "PNG")
         return out_path
