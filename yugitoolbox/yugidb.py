@@ -362,13 +362,17 @@ class YugiDB:
             Texts, Datas.id == Texts.id
         )
         results = self.session.execute(query).fetchall()
-        return {result.name: result.id for result in results}
+        return {
+            result.name: result.id for result in results if result.name and result.id
+        }
 
     @property
     def archetype_name_id_map(self) -> dict[str, int]:
         query = self.session.query(Setcodes.id, Setcodes.name)
         results = self.session.execute(query).fetchall()
-        return {result.name: result.id for result in results}
+        return {
+            result.name: result.id for result in results if result.name and result.id
+        }
 
     @property
     def set_name_id_map(self) -> dict[str, int]:
@@ -376,4 +380,6 @@ class YugiDB:
             return {}
         query = self.session.query(Packs.id, Packs.name)
         results = self.session.execute(query).fetchall()
-        return {result.name: result.id for result in results}
+        return {
+            result.name: result.id for result in results if result.name and result.id
+        }
