@@ -238,18 +238,27 @@ class YugiDB:
         return [self._make_archetype(result) for result in results]
 
     def _make_archetype(self, result) -> Archetype:
+        member_ids = (
+            [int(card_id) for card_id in result.member_ids.split(",")]
+            if result.member_ids is not None
+            else []
+        )
+        support_ids = (
+            [int(card_id) for card_id in result.support_ids.split(",")]
+            if result.support_ids is not None
+            else []
+        )
+        related_ids = (
+            [int(card_id) for card_id in result.related_ids.split(",")]
+            if result.related_ids is not None
+            else []
+        )
         return Archetype(
             id=result.id,
             name=result.name,
-            members=result.member_ids.split(",")
-            if result.member_ids is not None
-            else [],
-            support=result.support_ids.split(",")
-            if result.support_ids is not None
-            else [],
-            related=result.related_ids.split(",")
-            if result.related_ids is not None
-            else [],
+            members=member_ids,
+            support=support_ids,
+            related=related_ids,
         )
 
     @property
