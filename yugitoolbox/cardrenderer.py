@@ -369,18 +369,6 @@ class Renderer:
                     "#000",
                 )
 
-        # Cardid
-        self._draw_text_segment(
-            str(card.id),
-            os.path.join(
-                ASSET_DIR,
-                "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
-            ),
-            32,
-            (40, 1128),
-            "#000",
-        )
-
     def _draw_effect(self, text, max_width, mats, font_path, font_size, bbox):
         wrapped = "\n".join(
             textwrap.wrap(
@@ -434,10 +422,23 @@ class Renderer:
         if card.has_type(Type.Pendulum):
             self._draw_effect(pendtext, 62, None, font_path, 19, (128, 751))
 
+    def _draw_card_id(self, card: Card):
+        self._draw_text_segment(
+            str(card.id),
+            os.path.join(
+                ASSET_DIR,
+                "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+            ),
+            32,
+            (40, 1128),
+            "#000",
+        )
+
     def _render_text(self, card: Card):
         self._draw_card_name(card)
         self._draw_segments(card)
         # self._draw_card_text(card)
+        self._draw_card_id(card)
 
     def render_card(self, card: Card, dir: str = "out"):
         self._process_layers(card)
