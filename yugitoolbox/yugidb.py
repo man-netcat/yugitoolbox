@@ -2,7 +2,7 @@ import os
 from typing import Callable
 
 from sqlalchemy import and_, create_engine, false, func, inspect, or_
-from sqlalchemy.orm import aliased, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from .archetype import Archetype
 from .card import Card
@@ -34,8 +34,10 @@ class YugiDB:
             type_modifier = (
                 lambda x: y.value if (y := mapping.get(x.casefold())) else None
             )
-        else:
-            type_modifier = lambda x: valuetype(x)
+        elif valuetype == int:
+            type_modifier = int
+        elif valuetype == str:
+            type_modifier = func.lower
 
         def apply_modifier(value):
             return column(type_modifier(value))
@@ -157,7 +159,7 @@ class YugiDB:
 
     def get_cards_by_values(self, params: dict) -> list[Card]:
         filters = [
-            self._build_filter(params, "name", Texts.name.op("==")),
+            self._build_filter(params, "name", func.lower(Texts.name).op("==")),
             self._build_filter(params, "id", Datas.id.op("=="), valuetype=int),
             self._build_filter(params, "race", Datas.race.op("=="), valuetype=Race),
             self._build_filter(
@@ -260,7 +262,7 @@ class YugiDB:
 
     def get_archetypes_by_values(self, params: dict) -> list[Archetype]:
         filters = [
-            self._build_filter(params, "name", Setcodes.name.op("==")),
+            self._build_filter(params, "name", func.lower(Setcodes.name).op("==")),
             self._build_filter(params, "id", Setcodes.id.op("=="), valuetype=int),
         ]
 
@@ -329,7 +331,7 @@ class YugiDB:
 
     def get_sets_by_values(self, params: dict) -> list[Set]:
         filters = [
-            self._build_filter(params, "name", Packs.name.op("==")),
+            self._build_filter(params, "name", func.lower(Packs.name).op("==")),
             self._build_filter(params, "abbr", Packs.name.op("==")),
             self._build_filter(params, "id", Packs.id.op("=="), valuetype=int),
         ]
