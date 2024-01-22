@@ -133,12 +133,27 @@ class YugiDB:
 
         return card
 
-    def _make_cards_list(self, results) -> list[Card]:
+    def _make_card_list(self, results) -> list[Card]:
         return [self._make_card(result) for result in results]
 
     @property
     def cards(self) -> list[Card]:
-        return self._make_cards_list(self.card_query.all())
+        return self._make_card_list(self.card_query.all())
+
+    def get_archetype_cards(self, arch: Archetype) -> list[Card]:
+        query = self.card_query.filter(or_(val == arch.id for val in Datas.archetypes))
+        results = self.session.execute(query).fetchall()
+        return self._make_card_list(results)
+
+    def get_set_cards(self, set: Set) -> list[Card]:
+        query = self.card_query.join(Relations, Datas.id == Relations.cardid).filter(
+            Relations.packid == set.id
+        )
+        results = self.session.execute(query).fetchall()
+        return self._make_card_list(results)
+
+    def get_cards_by_value(self, key: str, value):
+        return self.get_cards_by_values({key: value})
 
     def get_cards_by_values(self, params: dict) -> list[Card]:
         filters = [
@@ -179,7 +194,7 @@ class YugiDB:
             *[filter for filter in filters if filter is not None]
         )
         results = self.session.execute(query).fetchall()
-        return self._make_cards_list(results)
+        return self._make_card_list(results)
 
     def get_card_by_id(self, card_id):
         query = self.card_query.filter(Datas.id == int(card_id))
@@ -198,72 +213,52 @@ class YugiDB:
 
     @property
     def arch_query(self):
-        def setcode_subquery(label, col, archs):
-            return (
-                self.session.query(
-                    func.group_concat(Datas.id, ",").label(f"{label}_ids"),
-                    col,
-                    Setcodes.id,
-                )
-                .filter(
-                    and_(or_(arch == Setcodes.id for arch in archs), Setcodes.id != 0)
-                )
-                .group_by(Setcodes.id)
-                .subquery()
-            )
-
         items = [Setcodes.name, Setcodes.id]
-
-        members = setcode_subquery("member", Datas.setcode, Datas.archetypes)
-        support = setcode_subquery("support", Datas.support, Datas.supportarchs)
-        related = setcode_subquery("related", Datas.support, Datas.relatedarchs)
-
-        setcode_alias = aliased(Setcodes, members)
-        support_alias = aliased(Setcodes, support)
-        related_alias = aliased(Setcodes, related)
-
-        return (
-            self.session.query(
-                *items,
-                members.c.member_ids,
-                support.c.support_ids,
-                related.c.related_ids,
-            )
-            .outerjoin(setcode_alias, setcode_alias.id == members.c.id)
-            .outerjoin(support_alias, support_alias.id == support.c.id)
-            .outerjoin(related_alias, related_alias.id == related.c.id)
-        )
+        return self.session.query(*items)
 
     def _make_arch_list(self, results) -> list[Archetype]:
         return [self._make_archetype(result) for result in results]
 
     def _make_archetype(self, result) -> Archetype:
-        member_ids = (
-            [int(card_id) for card_id in result.member_ids.split(",")]
-            if result.member_ids is not None
-            else []
-        )
-        support_ids = (
-            [int(card_id) for card_id in result.support_ids.split(",")]
-            if result.support_ids is not None
-            else []
-        )
-        related_ids = (
-            [int(card_id) for card_id in result.related_ids.split(",")]
-            if result.related_ids is not None
-            else []
-        )
+        def _member_subquery(datas_col):
+            return (
+                self.session.query(func.group_concat(Datas.id, ",").label("cardids"))
+                .filter(
+                    and_(
+                        or_(*[result.id == x for x in datas_col]),
+                        Setcodes.id != 0,
+                    )
+                )
+                .group_by(Setcodes.id)
+            )
+
+        members_query = _member_subquery(Datas.archetypes)
+        support_query = _member_subquery(Datas.supportarchs)
+        related_query = _member_subquery(Datas.relatedarchs)
+
+        members = self.session.execute(members_query).fetchone()
+        support = self.session.execute(support_query).fetchone()
+        related = self.session.execute(related_query).fetchone()
+
         return Archetype(
             id=result.id,
             name=result.name,
-            members=member_ids,
-            support=support_ids,
-            related=related_ids,
+            members=[int(x) for x in members[0].split(",")] if members else [],
+            support=[int(x) for x in support[0].split(",")] if support else [],
+            related=[int(x) for x in related[0].split(",")] if related else [],
         )
 
     @property
     def archetypes(self) -> list[Archetype]:
         return self._make_arch_list(self.arch_query.all())
+
+    def get_card_archetypes(self, card: Card) -> list[Archetype]:
+        query = self.arch_query.filter(Setcodes.id.in_(card.archetypes))
+        results = self.session.execute(query).fetchall()
+        return self._make_arch_list(results)
+
+    def get_archetypes_by_value(self, key: str, value):
+        return self.get_archetypes_by_values({key: value})
 
     def get_archetypes_by_values(self, params: dict) -> list[Archetype]:
         filters = [
@@ -330,6 +325,9 @@ class YugiDB:
         query = self.set_query.filter(Relations.cardid == card.id)
         results = self.session.execute(query).fetchall()
         return self._make_set_list(results)
+
+    def get_sets_by_value(self, key: str, value):
+        return self.get_sets_by_values({key: value})
 
     def get_sets_by_values(self, params: dict) -> list[Set]:
         filters = [
