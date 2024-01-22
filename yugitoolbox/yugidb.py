@@ -353,29 +353,21 @@ class YugiDB:
     ################# Name/id Map Functions #################
 
     @property
-    def card_name_id_map(self) -> dict[str, int]:
-        query = self.session.query(Datas.id, Texts.name).join(
-            Texts, Datas.id == Texts.id
-        )
+    def card_names(self) -> list[str]:
+        query = self.session.query(Texts.name)
         results = self.session.execute(query).fetchall()
-        return {
-            result.name: result.id for result in results if result.name and result.id
-        }
+        return list(set([result.name for result in results]))
 
     @property
-    def archetype_name_id_map(self) -> dict[str, int]:
-        query = self.session.query(Setcodes.id, Setcodes.name)
+    def archetype_names(self) -> list[str]:
+        query = self.session.query(Setcodes.name)
         results = self.session.execute(query).fetchall()
-        return {
-            result.name: result.id for result in results if result.name and result.id
-        }
+        return list(set([result.name for result in results]))
 
     @property
-    def set_name_id_map(self) -> dict[str, int]:
+    def set_names(self) -> list[str]:
         if not self.has_packs:
-            return {}
-        query = self.session.query(Packs.id, Packs.name)
+            return []
+        query = self.session.query(Packs.name)
         results = self.session.execute(query).fetchall()
-        return {
-            result.name: result.id for result in results if result.name and result.id
-        }
+        return list(set([result.name for result in results]))
