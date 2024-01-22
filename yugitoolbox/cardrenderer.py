@@ -355,6 +355,7 @@ class Renderer:
                 "#000",
             )
 
+        # Scales
         if card.has_type(Type.Pendulum):
             for x in [72, 718]:
                 self._draw_text_segment(
@@ -367,6 +368,18 @@ class Renderer:
                     (x, 812),
                     "#000",
                 )
+
+        # Cardid
+        self._draw_text_segment(
+            str(card.id),
+            os.path.join(
+                ASSET_DIR,
+                "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+            ),
+            32,
+            (40, 1128),
+            "#000",
+        )
 
     def _draw_effect(self, text, max_width, mats, font_path, font_size, bbox):
         wrapped = "\n".join(
@@ -424,7 +437,7 @@ class Renderer:
     def _render_text(self, card: Card):
         self._draw_card_name(card)
         self._draw_segments(card)
-        self._draw_card_text(card)
+        # self._draw_card_text(card)
 
     def render_card(self, card: Card, dir: str = "out"):
         self._process_layers(card)
