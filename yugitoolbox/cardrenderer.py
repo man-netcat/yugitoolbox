@@ -395,6 +395,8 @@ class Renderer:
         mats = None
         pendtext = None
         text = ""
+
+        # TODO: This is jank, fix this
         match len(sections):
             case 1:
                 text = sections[0]
