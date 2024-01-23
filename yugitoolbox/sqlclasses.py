@@ -14,7 +14,10 @@ class Datas(Base):
     type = Column(Integer, nullable=False, default=0)
     atk = Column(Integer, nullable=False, default=0)
     def_ = Column("def", Integer, nullable=False, default=0)
+    # Datas.def_ contains the linkmarkers in the case of Links
     level = Column(Integer, nullable=False, default=0)
+    # Datas.level doubles as rank and linkrating.
+    # In the case of Pendulums, 0x00FF0000 and 0xFF000000 contain the Pendulum scales
     race = Column(Integer, nullable=False, default=0)
     attribute = Column(Integer, nullable=False, default=0)
     category = Column(Integer, nullable=False, default=0)
