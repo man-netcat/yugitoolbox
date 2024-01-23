@@ -203,6 +203,11 @@ class YugiDB:
         result = self.session.execute(query.statement).fetchone()
         return self._make_card(result)
 
+    def get_cards_by_ids(self, card_ids):
+        query = self.card_query.filter(Datas.id.in_(card_ids))
+        results = self.session.execute(query.statement).fetchall()
+        return self._make_card_list(results)
+
     def get_card_by_name(self, card_name):
         query = self.card_query.filter(Texts.name == card_name)
         result = self.session.execute(query.statement).fetchone()
