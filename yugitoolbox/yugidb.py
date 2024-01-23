@@ -140,18 +140,19 @@ class YugiDB:
 
     @property
     def cards(self) -> list[Card]:
-        return self._make_card_list(self.card_query.all())
+        results = self.card_query.all()
+        return self._make_card_list(results)
 
     def get_archetype_cards(self, arch: Archetype) -> list[Card]:
         query = self.card_query.filter(or_(val == arch.id for val in Datas.archetypes))
-        results = self.session.execute(query).fetchall()
+        results = query.all()
         return self._make_card_list(results)
 
     def get_set_cards(self, set: Set) -> list[Card]:
         query = self.card_query.join(Relations, Datas.id == Relations.cardid).filter(
             Relations.packid == set.id
         )
-        results = self.session.execute(query).fetchall()
+        results = query.all()
         return self._make_card_list(results)
 
     def get_cards_by_value(self, key: str, value):
@@ -195,22 +196,22 @@ class YugiDB:
         query = self.card_query.filter(
             *[filter for filter in filters if filter is not None]
         )
-        results = self.session.execute(query).fetchall()
+        results = query.all()
         return self._make_card_list(results)
 
     def get_card_by_id(self, card_id):
         query = self.card_query.filter(Datas.id == int(card_id))
-        result = self.session.execute(query.statement).fetchone()
+        result = query.one()
         return self._make_card(result)
 
     def get_cards_by_ids(self, card_ids):
         query = self.card_query.filter(Datas.id.in_(card_ids))
-        results = self.session.execute(query.statement).fetchall()
+        results = query.all()
         return self._make_card_list(results)
 
     def get_card_by_name(self, card_name):
         query = self.card_query.filter(Texts.name == card_name)
-        result = self.session.execute(query.statement).fetchone()
+        result = query.one()
         return self._make_card(result)
 
     def get_cards_by_query(self, query: Callable[[Card], bool]) -> list[Card]:
@@ -234,32 +235,38 @@ class YugiDB:
                 .filter(
                     and_(or_(*[x == result.id for x in datas_cols]), Setcodes.id != 0)
                 )
-                .group_by(Setcodes.id)
             )
 
         members_query = _member_subquery(Datas.archetypes)
         support_query = _member_subquery(Datas.supportarchs)
         related_query = _member_subquery(Datas.relatedarchs)
 
-        members = self.session.execute(members_query).fetchone()
-        support = self.session.execute(support_query).fetchone()
-        related = self.session.execute(related_query).fetchone()
+        members_results = members_query.one()
+        support_results = support_query.one()
+        related_results = related_query.one()
 
         return Archetype(
             id=result.id,
             name=result.name,
-            members=[int(x) for x in members[0].split(",")] if members else [],
-            support=[int(x) for x in support[0].split(",")] if support else [],
-            related=[int(x) for x in related[0].split(",")] if related else [],
+            members=members_results.cardids.split(",")
+            if members_results.cardids
+            else [],
+            support=support_results.cardids.split(",")
+            if support_results.cardids
+            else [],
+            related=related_results.cardids.split(",")
+            if related_results.cardids
+            else [],
         )
 
     @property
     def archetypes(self) -> list[Archetype]:
-        return self._make_arch_list(self.arch_query.all())
+        results = self.arch_query.all()
+        return self._make_arch_list(results)
 
     def get_card_archetypes(self, card: Card) -> list[Archetype]:
         query = self.arch_query.filter(Setcodes.id.in_(card.archetypes))
-        results = self.session.execute(query).fetchall()
+        results = query.all()
         return self._make_arch_list(results)
 
     def get_archetypes_by_value(self, key: str, value):
@@ -274,17 +281,17 @@ class YugiDB:
         query = self.arch_query.filter(
             *[filter for filter in filters if filter is not None]
         )
-        results = self.session.execute(query).fetchall()
+        results = query.all()
         return self._make_arch_list(results)
 
     def get_archetype_by_id(self, arch_id):
         query = self.arch_query.filter(Setcodes.id == int(arch_id))
-        result = self.session.execute(query.statement).fetchone()
+        result = query.one()
         return self._make_archetype(result)
 
     def get_archetype_by_name(self, arch_name):
         query = self.arch_query.filter(Setcodes.name == arch_name)
-        result = self.session.execute(query.statement).fetchone()
+        result = query.one()
         return self._make_archetype(result)
 
     ################# Set Functions #################
@@ -324,11 +331,12 @@ class YugiDB:
 
     @property
     def sets(self) -> list[Set]:
-        return self._make_set_list(self.set_query.all())
+        results = self.set_query.all()
+        return self._make_set_list(results)
 
     def get_card_sets(self, card: Card) -> list[Set]:
         query = self.set_query.filter(Relations.cardid == card.id)
-        results = self.session.execute(query).fetchall()
+        results = query.all()
         return self._make_set_list(results)
 
     def get_sets_by_value(self, key: str, value):
@@ -344,17 +352,17 @@ class YugiDB:
         query = self.set_query.filter(
             *[filter for filter in filters if filter is not None]
         )
-        results = self.session.execute(query).fetchall()
+        results = query.all()
         return self._make_set_list(results)
 
     def get_set_by_id(self, set_id):
         query = self.set_query.filter(Packs.id == int(set_id))
-        result = self.session.execute(query).fetchone()
+        result = query.one()
         return self._make_set(result)
 
     def get_set_by_name(self, set_name):
         query = self.set_query.filter(Packs.name == set_name)
-        result = self.session.execute(query.statement).fetchone()
+        result = query.one()
         return self._make_set(result)
 
     ################# Name/id Map Functions #################
@@ -362,13 +370,13 @@ class YugiDB:
     @property
     def card_names(self) -> list[str]:
         query = self.session.query(Texts.name)
-        results = self.session.execute(query).fetchall()
+        results = query.all()
         return list(set([result.name for result in results]))
 
     @property
     def archetype_names(self) -> list[str]:
         query = self.session.query(Setcodes.name)
-        results = self.session.execute(query).fetchall()
+        results = query.all()
         return list(set([result.name for result in results]))
 
     @property
@@ -376,5 +384,5 @@ class YugiDB:
         if not self.has_packs:
             return []
         query = self.session.query(Packs.name)
-        results = self.session.execute(query).fetchall()
+        results = query.all()
         return list(set([result.name for result in results]))

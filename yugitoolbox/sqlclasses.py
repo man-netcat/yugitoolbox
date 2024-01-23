@@ -40,7 +40,7 @@ class Datas(Base):
 
     @hybrid_property
     def relatedarchs(self):
-        return [self.support.op(">>")(x).op("&")(0xFFFF) for x in [36, 48]]
+        return [self.support.op(">>")(x).op("&")(0xFFFF) for x in [32, 48]]
 
 
 class Texts(Base):
