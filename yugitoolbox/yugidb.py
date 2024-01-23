@@ -228,6 +228,9 @@ class YugiDB:
         return [self._make_archetype(result) for result in results]
 
     def _make_archetype(self, result) -> Archetype:
+        if result.id == 0:
+            return Archetype(result.id, result.name)
+
         def _member_subquery(datas_cols):
             return (
                 self.session.query(func.group_concat(Datas.id, ",").label("cardids"))
