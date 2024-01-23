@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 from .archetype import Archetype
 from .card import Card
+from .constants import *
 from .enums import *
 from .set import Set
 from .sqlclasses import *
@@ -160,42 +161,12 @@ class YugiDB:
 
     def get_cards_by_values(self, params: dict) -> list[Card]:
         filters = [
-            self._build_filter(params, "name", func.lower(Texts.name).op("==")),
-            self._build_filter(params, "id", Datas.id.op("=="), valuetype=int),
-            self._build_filter(params, "race", Datas.race.op("=="), valuetype=Race),
-            self._build_filter(
-                params, "attribute", Datas.attribute.op("=="), valuetype=Attribute
-            ),
-            self._build_filter(params, "atk", Datas.atk.op("=="), valuetype=int),
-            self._build_filter(params, "def", Datas.def_.op("=="), valuetype=int),
-            self._build_filter(
-                params, "level", Datas.level.op("&")(0x0000FFFF).op("=="), valuetype=int
-            ),
-            self._build_filter(
-                params,
-                "scale",
-                Datas.level.op(">>")(24).op("=="),
-                valuetype=int,
-                condition=Datas.type.op("&")(Type.Pendulum.value),
-            ),
-            self._build_filter(params, "koid", Koids.koid.op("=="), valuetype=int),
-            self._build_filter(params, "type", Datas.type.op("&"), valuetype=Type),
-            self._build_filter(
-                params, "category", Datas.category.op("&"), valuetype=Category
-            ),
-            self._build_filter(params, "genre", Datas.genre.op("&"), valuetype=Genre),
-            self._build_filter(
-                params,
-                "linkmarker",
-                Datas.def_.op("&"),
-                valuetype=LinkMarker,
-                condition=Datas.type.op("&")(Type.Link.value),
-            ),
+            self._build_filter(params, **filter_param)
+            for filter_param in card_filter_params
+            if filter_param["key"] in params
         ]
 
-        query = self.card_query.filter(
-            *[filter for filter in filters if filter is not None]
-        )
+        query = self.card_query.filter(*filters)
         results = query.all()
         return self._make_card_list(results)
 
@@ -277,13 +248,12 @@ class YugiDB:
 
     def get_archetypes_by_values(self, params: dict) -> list[Archetype]:
         filters = [
-            self._build_filter(params, "name", func.lower(Setcodes.name).op("==")),
-            self._build_filter(params, "id", Setcodes.id.op("=="), valuetype=int),
+            self._build_filter(params, **filter_param)
+            for filter_param in archetype_filter_params
+            if filter_param["key"] in params
         ]
 
-        query = self.arch_query.filter(
-            *[filter for filter in filters if filter is not None]
-        )
+        query = self.arch_query.filter(*filters)
         results = query.all()
         return self._make_arch_list(results)
 
@@ -347,14 +317,12 @@ class YugiDB:
 
     def get_sets_by_values(self, params: dict) -> list[Set]:
         filters = [
-            self._build_filter(params, "name", func.lower(Packs.name).op("==")),
-            self._build_filter(params, "abbr", Packs.name.op("==")),
-            self._build_filter(params, "id", Packs.id.op("=="), valuetype=int),
+            self._build_filter(params, **filter_param)
+            for filter_param in set_filter_params
+            if filter_param["key"] in params
         ]
 
-        query = self.set_query.filter(
-            *[filter for filter in filters if filter is not None]
-        )
+        query = self.set_query.filter(*filters)
         results = query.all()
         return self._make_set_list(results)
 
