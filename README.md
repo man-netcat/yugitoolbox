@@ -8,8 +8,7 @@ Database wrapper and tools for Yu-Gi-Oh! databases.
 ## Features
 - Searching cards, archetypes and sets by several attributes
 - Creating deck objects from Omega code or YDKE
-- Writes data to .pkl files for fast accessing
-- Creating a custom card DB and writing it back to an Sqlite DB for use in simulators
+- Creating a custom card DB
 - Render card images
 
 ## How to use
@@ -36,10 +35,12 @@ War Rock Meteoragon (10497636): EARTH Level 7 [Warrior/Effect]
 
 ### Custom DB
 ```py
->>> from yugitoolbox import CustomDB
->>> customdb = CustomDB("Ancient Warriors DB", "db/ancientwarriors/ancientwarriors.db")
->>> for card in customdb.cards:
-...     print(card)
+>>> from yugitoolbox import YugiDB
+>>> 
+>>> customdb = YugiDB("sqlite:///db/ancientwarriors.db")
+>>> 
+>>> for c in customdb.cards:
+...     print(c)
 ... 
 Ancient Warriors - Heroic Zhao Long (210000229): WIND Level 4 [Beast Warrior/Effect]
 Ancient Warriors - Fabulous Zhang Jun (210708231): FIRE Level 6 [Beast Warrior/Effect]
@@ -48,13 +49,8 @@ Ancient Warriors - Majestic Yuan Ben (212806202): LIGHT Level 8 [Beast Warrior/E
 Ancient Warriors - Talented Cao Zi (212906226): FIRE Level 4 [Beast Warrior/Effect]
 ```
 
-### Writing CustomDB object to Sqlite DB
-```py
->>> customdb.write_to_database()
-```
-
 ### Rendering card images
-Note: this is a work in progress.
+Note: this is a work in progress. Rendering text is currently not fully functional.
 ```py
 >>> for card in customdb.get_cards():
 ...     card.render()
