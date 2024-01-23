@@ -110,27 +110,8 @@ class YugiDB:
 
     def _make_card(self, result) -> Card:
         card = Card(
-            id=result.id,
-            name=result.name,
-            _textdata=result.desc,
-            _typedata=result.type,
-            _racedata=result.race,
-            _attributedata=result.attribute,
-            _categorydata=result.category,
-            _genredata=result.genre,
-            _leveldata=result.level,
-            _atkdata=result.atk,
-            _defdata=result.def_,
-            _tcgdatedata=result.tcgdate,
-            _ocgdatedata=result.ocgdate,
-            status=result.ot,
-            _archcode=result.setcode,
-            _supportcode=result.support,
-            alias=result.alias,
-            _scriptdata=result.script,
-            sets=[int(set_id) for set_id in result.sets.split(",")]
-            if self.has_packs and result.sets is not None
-            else [],
+            *result[:18],
+            _setdata=result.sets if self.has_packs and result.sets is not None else "",
             _koiddata=result.koid if self.has_koids else 0,
         )
 

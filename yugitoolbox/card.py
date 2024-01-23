@@ -32,8 +32,8 @@ class Card:
     _supportcode: int = 0
     alias: int = 0
     _scriptdata: str = ""
+    _setdata: str = ""
     _koiddata: int = 0
-    sets: list = field(default_factory=[])
 
     def __hash__(self):
         return hash(self.name)
@@ -50,7 +50,6 @@ class Card:
     def __repr__(self) -> str:
         return self.name
 
-    # TODO: clean up your mess
     def to_dict(self):
         def convert_enum(value):
             return (
@@ -421,6 +420,16 @@ class Card:
         self._supportcode = (self._supportcode & 0xFFFFFFFF) | (
             sum((value << (16 * i)) for i, value in enumerate(values)) << 32
         )
+
+    @property
+    def sets(self) -> list[int]:
+        if not self._setdata:
+            return []
+        return [int(x) for x in self._setdata.split(",")]
+
+    @sets.setter
+    def sets(self, values: list[int]):
+        self._setdata = ",".join([str(x) for x in values])
 
     @property
     def has_ability(self) -> bool:
