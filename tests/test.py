@@ -1,7 +1,10 @@
 from unittest import TestCase, main
+import sys
 
-from ..omegadb import OmegaDB
-from ..enums import *
+sys.path.append("..")
+
+from omegadb import OmegaDB
+from enums import *
 
 
 class TestDB(TestCase):
