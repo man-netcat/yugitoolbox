@@ -7,7 +7,7 @@ from typing import Optional
 
 from fake_useragent import UserAgent
 
-from yugitoolbox.enums import *
+from .enums import *
 
 ua = UserAgent()
 
@@ -55,9 +55,11 @@ class Card:
             return (
                 value.name
                 if isinstance(value, IntFlag)
-                else [v.name if isinstance(v, IntFlag) else v for v in value]
-                if isinstance(value, list)
-                else value
+                else (
+                    [v.name if isinstance(v, IntFlag) else v for v in value]
+                    if isinstance(value, list)
+                    else value
+                )
             )
 
         fields = {
@@ -89,11 +91,11 @@ class Card:
         level_type = (
             "Level -"
             if self.is_dark_synchro
-            else "Rank "
-            if self.has_type(Type.Xyz)
-            else "Link "
-            if self.has_type(Type.Link)
-            else "Level "
+            else (
+                "Rank "
+                if self.has_type(Type.Xyz)
+                else "Link " if self.has_type(Type.Link) else "Level "
+            )
         )
 
         # Construct the level string

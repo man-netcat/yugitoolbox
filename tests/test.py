@@ -1,7 +1,7 @@
 from unittest import TestCase, main
 
-from yugitoolbox.omegadb import OmegaDB
-from yugitoolbox.enums import *
+from ..omegadb import OmegaDB
+from ..enums import *
 
 
 class TestDB(TestCase):

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 
-from yugitoolbox.enums import *
+from .enums import *
 
 if TYPE_CHECKING:
     from .card import Card

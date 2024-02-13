@@ -5,12 +5,12 @@ from retrying import retry
 from sqlalchemy import and_, create_engine, false, func, inspect, or_
 from sqlalchemy.orm import sessionmaker
 
-from yugitoolbox.archetype import Archetype
-from yugitoolbox.card import Card
-from yugitoolbox.constants import *
-from yugitoolbox.enums import *
-from yugitoolbox.set import Set
-from yugitoolbox.sqlclasses import *
+from .archetype import Archetype
+from .card import Card
+from .constants import *
+from .enums import *
+from .set import Set
+from .sqlclasses import *
 
 
 class YugiDB:

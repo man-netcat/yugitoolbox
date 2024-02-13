@@ -5,4 +5,4 @@ out
 db
 dist
 build
-yugitoolbox.egg-info
+.egg-info
