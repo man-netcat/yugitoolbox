@@ -1,7 +1,7 @@
 from unittest import TestCase, main
 
-from ..omegadb import OmegaDB
-from ..enums import *
+from src.omegadb import OmegaDB
+from src.enums import *
 
 
 class TestDB(TestCase):
