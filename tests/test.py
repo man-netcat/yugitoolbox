@@ -1,10 +1,8 @@
 from unittest import TestCase, main
 import sys
 
-sys.path.append("..")
-
-from omegadb import OmegaDB
-from enums import *
+from yugitoolbox.omegadb import OmegaDB
+from yugitoolbox.enums import *
 
 
 class TestDB(TestCase):
