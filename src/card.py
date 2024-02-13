@@ -385,6 +385,15 @@ class Card:
     def has_all_genres(self, genres: list[Genre]) -> bool:
         return all(self.has_genre(genre) for genre in genres)
 
+    def has_rarity(self, rarity: Rarity) -> bool:
+        return bool(self._raritydata & rarity)
+
+    def has_any_rarity(self, rarities: list[Rarity]) -> bool:
+        return any(self.has_rarity(rarity) for rarity in rarities)
+
+    def has_all_raritys(self, rarities: list[Rarity]) -> bool:
+        return all(self.has_rarity(rarity) for rarity in rarities)
+
     def has_linkmarker(self, linkmarker: LinkMarker) -> bool:
         if self.has_type(Type.Link):
             return bool(self._defdata & linkmarker)
