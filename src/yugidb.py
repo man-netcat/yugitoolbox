@@ -1,7 +1,6 @@
 import os
 from typing import Callable
 
-from retrying import retry
 from sqlalchemy import and_, create_engine, false, func, inspect, or_
 from sqlalchemy.orm import sessionmaker
 
@@ -20,14 +19,10 @@ class YugiDB:
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
-        @retry(wait_exponential_multiplier=1000, wait_exponential_max=10000)
-        def try_connecting():
-            self.has_koids = inspect(self.engine).has_table("koids")
-            self.has_packs = all(
-                inspect(self.engine).has_table(x) for x in ["packs", "relations"]
-            )
-
-        try_connecting()
+        self.has_koids = inspect(self.engine).has_table("koids")
+        self.has_packs = all(
+            inspect(self.engine).has_table(x) for x in ["packs", "relations"]
+        )
 
     def _build_filter(self, params, key, column, valuetype=str, condition=True):
         values = params.get(key)
