@@ -1,6 +1,6 @@
 from unittest import TestCase, main
 
-from yugitoolbox import *
+from .. import *
 
 
 class TestDB(TestCase):
