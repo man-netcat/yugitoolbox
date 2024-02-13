@@ -1,7 +1,7 @@
 from sqlalchemy import func
 
-from .enums import *
-from .sqlclasses import *
+from yugitoolbox.enums import *
+from yugitoolbox.sqlclasses import *
 
 card_filter_params = [
     {"key": "name", "column": func.lower(Texts.name).op("==")},

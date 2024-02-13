@@ -6,7 +6,8 @@ from collections import Counter
 from dataclasses import dataclass
 from itertools import permutations
 from typing import TYPE_CHECKING, ItemsView
-from .enums import *
+
+from yugitoolbox.enums import *
 
 if TYPE_CHECKING:
     from .archetype import Archetype

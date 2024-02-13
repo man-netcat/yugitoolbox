@@ -7,7 +7,7 @@ from typing import Optional
 
 from fake_useragent import UserAgent
 
-from .enums import *
+from yugitoolbox.enums import *
 
 ua = UserAgent()
 

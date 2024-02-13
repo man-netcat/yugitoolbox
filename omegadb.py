@@ -4,7 +4,7 @@ from typing import Literal
 
 import requests
 
-from .yugidb import YugiDB
+from yugitoolbox.yugidb import YugiDB
 
 OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 

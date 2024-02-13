@@ -1,5 +1,4 @@
 from unittest import TestCase, main
-import sys
 
 from yugitoolbox.omegadb import OmegaDB
 from yugitoolbox.enums import *

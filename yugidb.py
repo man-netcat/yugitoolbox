@@ -5,12 +5,12 @@ from retrying import retry
 from sqlalchemy import and_, create_engine, false, func, inspect, or_
 from sqlalchemy.orm import sessionmaker
 
-from .archetype import Archetype
-from .card import Card
-from .constants import *
-from .enums import *
-from .set import Set
-from .sqlclasses import *
+from yugitoolbox.archetype import Archetype
+from yugitoolbox.card import Card
+from yugitoolbox.constants import *
+from yugitoolbox.enums import *
+from yugitoolbox.set import Set
+from yugitoolbox.sqlclasses import *
 
 
 class YugiDB:
@@ -37,8 +37,8 @@ class YugiDB:
 
         if issubclass(valuetype, IntFlag):
             mapping = {k.casefold(): v for k, v in valuetype.__members__.items()}
-            type_modifier = (
-                lambda x: y.value if (y := mapping.get(x.casefold())) else None
+            type_modifier = lambda x: (
+                y.value if (y := mapping.get(x.casefold())) else None
             )
         elif valuetype == int:
             type_modifier = int
@@ -208,15 +208,15 @@ class YugiDB:
         return Archetype(
             id=result.id,
             name=result.name,
-            members=members_results.cardids.split(",")
-            if members_results.cardids
-            else [],
-            support=support_results.cardids.split(",")
-            if support_results.cardids
-            else [],
-            related=related_results.cardids.split(",")
-            if related_results.cardids
-            else [],
+            members=(
+                members_results.cardids.split(",") if members_results.cardids else []
+            ),
+            support=(
+                support_results.cardids.split(",") if support_results.cardids else []
+            ),
+            related=(
+                related_results.cardids.split(",") if related_results.cardids else []
+            ),
         )
 
     @property
