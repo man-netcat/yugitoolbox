@@ -57,7 +57,13 @@ class Texts(Base):
 class Koids(Base):
     __tablename__ = "koids"
 
-    id = Column(Integer, primary_key=True, unique=True, nullable=False)
+    id = Column(
+        Integer,
+        ForeignKey("datas.id", ondelete="CASCADE"),
+        primary_key=True,
+        unique=True,
+        nullable=False,
+    )
     koid = Column(Integer, nullable=False, default=0)
 
 
@@ -98,5 +104,20 @@ class Relations(Base):
         Integer,
         ForeignKey("packs.id", ondelete="CASCADE"),
         primary_key=True,
+        nullable=False,
+    )
+
+
+class Rarities(Base):
+    __tablename__ = "rarities"
+
+    id = Column(
+        Integer,
+        ForeignKey("datas.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    tcgrarity = Column(
+        Integer,
         nullable=False,
     )

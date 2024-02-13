@@ -34,6 +34,7 @@ class Card:
     _scriptdata: str = ""
     _setdata: str = ""
     _koiddata: int = 0
+    _raritydata: int = 0
 
     def __hash__(self):
         return hash(self.name)
@@ -156,7 +157,7 @@ class Card:
         elif isinstance(new, list):
             self._typedata |= reduce(or_, new)
         else:
-            raise ValueError("Invalid mdtype assignment")
+            raise ValueError("Invalid type assignment")
 
     def append_type(self, mdtype: Type) -> None:
         self._typedata |= mdtype
@@ -175,7 +176,7 @@ class Card:
         elif isinstance(new, list):
             self._categorydata = reduce(or_, new)
         else:
-            raise ValueError("Invalid type assignment")
+            raise ValueError("Invalid category assignment")
 
     def append_category(self, category: Category) -> None:
         self._categorydata |= category
@@ -253,7 +254,7 @@ class Card:
         elif isinstance(new, list):
             self._defdata = reduce(or_, new)
         else:
-            raise ValueError("Invalid type assignment")
+            raise ValueError("Invalid linkmarker assignment")
 
     def append_linkmarker(self, marker: LinkMarker) -> None:
         if not self.has_type(Type.Link):
@@ -282,6 +283,27 @@ class Card:
     @attribute.setter
     def attribute(self, new: int | Attribute):
         self._attributedata = new
+
+    @property
+    def tcgrarity(self) -> list[Rarity]:
+        if self._raritydata:
+            return self._enum_values(self._raritydata, Rarity)
+        return []
+
+    @tcgrarity.setter
+    def tcgrarity(self, new: Rarity | list[Rarity]) -> None:
+        if isinstance(new, Rarity):
+            self._rarity = new
+        elif isinstance(new, list):
+            self._rarity = reduce(or_, new)
+        else:
+            raise ValueError("Invalid rarity assignment")
+
+    def append_rarity(self, rarity: Rarity) -> None:
+        self._rarity |= rarity
+
+    def remove_rarity(self, rarity: Rarity) -> None:
+        self._rarity &= ~rarity
 
     @property
     def koid(self):

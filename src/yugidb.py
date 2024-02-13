@@ -23,6 +23,7 @@ class YugiDB:
         self.has_packs = all(
             inspect(self.engine).has_table(x) for x in ["packs", "relations"]
         )
+        self.has_rarities = inspect(self.engine).has_table("rarities")
 
     def _build_filter(self, params, key, column, valuetype=str, condition=True):
         values = params.get(key)
@@ -80,6 +81,9 @@ class YugiDB:
         if self.has_koids:
             items.append(Koids.koid.label("koid"))
 
+        if self.has_rarities:
+            items.append(Rarities.tcgrarity.label("tcgrarity"))
+
         if self.has_packs:
             subquery = (
                 self.session.query(
@@ -106,6 +110,9 @@ class YugiDB:
         if self.has_koids:
             query = query.outerjoin(Koids, Datas.id == Koids.id)
 
+        if self.has_rarities:
+            query = query.outerjoin(Rarities, Datas.id == Rarities.id)
+
         return query
 
     def _make_card(self, result) -> Card:
@@ -113,6 +120,7 @@ class YugiDB:
             *result[:18],
             _setdata=result.sets if self.has_packs and result.sets is not None else "",
             _koiddata=result.koid if self.has_koids else 0,
+            _raritydata=result.tcgrarity if self.has_rarities else 0,
         )
 
         return card

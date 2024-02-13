@@ -157,3 +157,38 @@ class Status(IntEnum):
     TCG = 2
     Legal = 3
     Illegal = 4
+
+
+class Rarity(IntFlag):
+    Common = 0x1
+    ShortPrint = 0x2
+    SuperShortPrint = 0x4
+    Rare = 0x8
+    Super = 0x10
+    GhostGold = 0x20
+    Ultra = 0x40
+    Ultimate = 0x80
+    Secret = 0x100
+    UltraSecret = 0x200
+    GoldSecret = 0x400
+    PrismaticSecret = 0x800
+    Ghost = 0x1000
+    Platinum = 0x2000
+    NormalParallel = 0x4000
+    SuperParallel = 0x8000
+    UltraParallel = 0x10000
+    DuelTerminalNormal = 0x20000
+    DuelTerminalRare = 0x40000
+    DuelTerminalSuper = 0x80000
+    DuelTerminalShatterfoil = 0x100000
+    Starlight = 0x200000
+    Gold = 0x400000
+    PlatinumSecret = 0x800000
+    TenThousandSecret = 0x1000000
+    Mezuki = 0x2000000  # ???
+    Starfoil = 0x4000000
+    Collectors = 0x8000000
+    PremiumGold = 0x10000000
+    Mosaic = 0x20000000
+    Pharaohs = 0x40000000
+    Shatterfoil = 0x80000000
