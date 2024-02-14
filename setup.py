@@ -1,18 +1,14 @@
 from setuptools import find_packages, setup
 
+# Read requirements from requirements.txt file
+with open("requirements.txt") as f:
+    requirements = f.read().splitlines()
+
 setup(
     name="yugitoolbox",
     version="1.0",
     packages=find_packages(),
-    install_requires=[
-        "beautifulsoup4==4.12.2",
-        "fake_useragent==1.4.0",
-        "jaro_winkler==2.0.3",
-        "pandas==2.1.4",
-        "Pillow==10.2.0",
-        "Requests==2.31.0",
-        "setuptools==65.5.1",
-    ],
+    install_requires=requirements,
     package_data={
         "yugitoolbox": [
             "assets/**",

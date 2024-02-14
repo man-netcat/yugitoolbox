@@ -10,6 +10,7 @@ from .constants import *
 from .enums import *
 from .set import Set
 from .sqlclasses import *
+from .tools import handle_no_result
 
 
 class YugiDB:
@@ -159,6 +160,7 @@ class YugiDB:
         results = query.all()
         return self._make_card_list(results)
 
+    @handle_no_result
     def get_card_by_id(self, card_id):
         query = self.card_query.filter(Datas.id == int(card_id))
         result = query.one()
@@ -169,6 +171,7 @@ class YugiDB:
         results = query.all()
         return self._make_card_list(results)
 
+    @handle_no_result
     def get_card_by_name(self, card_name):
         query = self.card_query.filter(Texts.name == card_name)
         result = query.one()
@@ -246,11 +249,13 @@ class YugiDB:
         results = query.all()
         return self._make_arch_list(results)
 
+    @handle_no_result
     def get_archetype_by_id(self, arch_id):
         query = self.arch_query.filter(Setcodes.id == int(arch_id))
         result = query.one()
         return self._make_archetype(result)
 
+    @handle_no_result
     def get_archetype_by_name(self, arch_name):
         query = self.arch_query.filter(Setcodes.name == arch_name)
         result = query.one()
@@ -315,11 +320,13 @@ class YugiDB:
         results = query.all()
         return self._make_set_list(results)
 
+    @handle_no_result
     def get_set_by_id(self, set_id):
         query = self.set_query.filter(Packs.id == int(set_id))
         result = query.one()
         return self._make_set(result)
 
+    @handle_no_result
     def get_set_by_name(self, set_name):
         query = self.set_query.filter(Packs.name == set_name)
         result = query.one()

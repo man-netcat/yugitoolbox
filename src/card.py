@@ -286,9 +286,9 @@ class Card:
 
     @property
     def tcgrarity(self) -> list[Rarity]:
-        if self._raritydata:
-            return self._enum_values(self._raritydata, Rarity)
-        return []
+        if not self._raritydata:
+            return []
+        return self._enum_values(self._raritydata, Rarity)
 
     @tcgrarity.setter
     def tcgrarity(self, new: Rarity | list[Rarity]) -> None:
@@ -386,6 +386,8 @@ class Card:
         return all(self.has_genre(genre) for genre in genres)
 
     def has_rarity(self, rarity: Rarity) -> bool:
+        if not self._raritydata:
+            return False
         return bool(self._raritydata & rarity)
 
     def has_any_rarity(self, rarities: list[Rarity]) -> bool:
@@ -505,7 +507,7 @@ class Card:
 
     @property
     def has_atk_equ_def(self) -> bool:
-        return self.has_type(Type.Monster) and self._atkdata == self._defdata
+        return self.has_type(Type.Monster) and self.atk == self.def_
 
     @property
     def is_token(self) -> bool:
@@ -570,10 +572,10 @@ class Card:
         return all(
             sum(
                 [
-                    card1._attributedata == card2._attributedata,
-                    card1._racedata == card2._racedata,
-                    card1._atkdata == card2._atkdata,
-                    card1._defdata == card2._defdata,
+                    card1.attribute == card2.attribute,
+                    card1.race == card2.race,
+                    card1.atk == card2.atk,
+                    card1.def_ == card2.def_,
                     card1.level == card2.level,
                 ]
             )

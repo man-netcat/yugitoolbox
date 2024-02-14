@@ -5,4 +5,4 @@ out
 db
 dist
 build
-.egg-info
+*.egg-info
