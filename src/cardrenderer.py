@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 IMG_BASE_URL = "https://images.ygoprodeck.com/images/cards_cropped/%s.jpg"
 CARD_SIZE = (813, 1185)
-ASSET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+ASSET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../assets")
 
 
 class Renderer:
