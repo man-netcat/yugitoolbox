@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Callable
 
@@ -12,19 +13,26 @@ from .set import Set
 from .sqlclasses import *
 from .tools import handle_no_result
 
+Cardquery = Callable[[Card], bool]
+
 
 class YugiDB:
     def __init__(self, connection_string: str, debug=False):
         self.name = os.path.basename(connection_string)
-        self.engine = create_engine(connection_string, echo=debug)
+        self.engine = create_engine(connection_string)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
-        self.has_koids = inspect(self.engine).has_table("koids")
-        self.has_packs = all(
-            inspect(self.engine).has_table(x) for x in ["packs", "relations"]
-        )
-        self.has_rarities = inspect(self.engine).has_table("rarities")
+        if debug:
+            logging.basicConfig()
+            logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
+
+        self.has_koids = self.has_table("koids")
+        self.has_packs = all(self.has_table(x) for x in ["packs", "relations"])
+        self.has_rarities = self.has_table("rarities")
+
+    def has_table(self, table_name: str):
+        return inspect(self.engine).has_table(table_name)
 
     def _build_filter(self, params, key, column, valuetype=str, condition=True):
         values = params.get(key)
@@ -177,7 +185,7 @@ class YugiDB:
         result = query.one()
         return self._make_card(result)
 
-    def get_cards_by_query(self, query: Callable[[Card], bool]) -> list[Card]:
+    def get_cards_by_query(self, query: Cardquery) -> list[Card]:
         return [card for card in self.cards if query(card)]
 
     ################# Archetype Functions #################
