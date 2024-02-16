@@ -164,6 +164,9 @@ class YugiDB:
             if filter_param["key"] in params
         ]
 
+        if not filters:
+            return []
+
         query = self.card_query.filter(*filters)
         results = query.all()
         return self._make_card_list(results)
@@ -253,6 +256,9 @@ class YugiDB:
             if filter_param["key"] in params
         ]
 
+        if not filters:
+            return []
+
         query = self.arch_query.filter(*filters)
         results = query.all()
         return self._make_arch_list(results)
@@ -323,6 +329,9 @@ class YugiDB:
             for filter_param in set_filter_params
             if filter_param["key"] in params
         ]
+
+        if not filters:
+            return []
 
         query = self.set_query.filter(*filters)
         results = query.all()
