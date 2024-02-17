@@ -11,7 +11,7 @@ from .constants import *
 from .enums import *
 from .set import Set
 from .sqlclasses import *
-from .tools import handle_no_result
+from .util import handle_no_result
 
 Cardquery = Callable[[Card], bool]
 
