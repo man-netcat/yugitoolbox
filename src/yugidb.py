@@ -51,8 +51,19 @@ class YugiDB:
             type_modifier = func.lower
 
         def apply_modifier(value):
-            return column(type_modifier(value))
+            # Check if value is negated
+            modified_value = (
+                type_modifier(value[1:])
+                if value.startswith("~")
+                else type_modifier(value)
+            )
+            return (
+                ~column(modified_value)
+                if value.startswith("~")
+                else column(modified_value)
+            )
 
+        # Build query, first applying AND, then applying OR
         query = or_(
             *[
                 and_(*[apply_modifier(value) for value in value_or.split(",")])
@@ -60,7 +71,10 @@ class YugiDB:
             ]
         )
 
-        return and_(condition, query)
+        # Apply condition
+        query = and_(condition, query)
+
+        return query
 
     ################# Card Functions #################
 
