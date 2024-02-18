@@ -1,7 +1,8 @@
 from unittest import TestCase, main
 
-from src.omegadb import OmegaDB
+from src.deck import Deck
 from src.enums import *
+from src.omegadb import OmegaDB
 
 
 class TestDB(TestCase):
@@ -111,13 +112,40 @@ class TestDB(TestCase):
         c.linkmarkers = [LinkMarker.Top, LinkMarker.Bottom]
         self.assertCountEqual(c.linkmarkers, [LinkMarker.Top, LinkMarker.Bottom])
 
-    # def test_deck(self):
-    #     omegacode = "M+ffLv2SpUJvAQMMO9oKsYDwLo1vjDB8NmIdy6HbV5hcbn5jgeHPrZdYYXiD8j0GGF4++wujxvadTDAcWZ3MMjFpHysM2y0pZBRbdIsJhFukVFlg+IygBxzf4drLBMNhunysOxo5mSUXdTGaH7Vn8Jq4lAmExeuPsYBwYLYx8wGp/ywgvFsrCY4/HX7HZLExmQWGnffdZYDh/LL3cHz8oi4zDJs8PsQIwyC7AQ=="
-    #     testdeck = Deck.from_omegacode(TestDB.db, omegacode)
-    #     self.assertEqual(omegacode, testdeck.omegacode)
-    #     ydke_code = "ydke://EUKKAwrmpwEK5qcBR5uPAEebjwBHm48AvadvAfx5vAKzoLECTkEDAE5BAwBOQQMAfjUBBUwyuADDhdcAnNXGA/ZJ0ACmm/QBPqRxAT6kcQE+pHEBVhgUAVYYFAFWGBQBZOgnA2ToJwNk6CcDIkiZACJImQAiSJkAdgljAnYJYwJ2CWMCVOZcAVTmXAF9e0AChKFCAYShQgGEoUIBPO4FAzzuBQM=!y7sdAIoTdQOKE3UDwLXNA9EgZgUNUFsFtWJvAqRbfAOkW3wDlk8AAoVAsQKA9rsBlI9dAQdR1QE5ySIF!URCDA1EQgwNREIMDI9adAiPWnQJvdu8Ab3bvANcanwHXGp8B1xqfASaQQgMmkEIDJpBCA0O+3QBDvt0A!"
-    #     testdeck = Deck.from_ydke(TestDB.db, ydke_code)
-    #     self.assertEqual(ydke_code, testdeck.ydke)
+    def test_deck(self):
+        omegacode = "M+ffLv2SpUJvAQMMO9oKsYDwLo1vjDB8NmIdy6HbV5hcbn5jgeHPrZdYYXiD8j0GGF4++wujxvadTDAcWZ3MMjFpHysM2y0pZBRbdIsJhFukVFlg+IygBxzf4drLBMNhunysOxo5mSUXdTGaH7Vn8Jq4lAmExeuPsYBwYLYx8wGp/ywgvFsrCY4/HX7HZLExmQWGnffdZYDh/LL3cHz8oi4zDJs8PsQIwyC7AQ=="
+        testdeck = Deck.from_omegacode(TestDB.db, omegacode)
+        self.assertEqual(omegacode, testdeck.omegacode)
+        ydke_code = "ydke://EUKKAwrmpwEK5qcBR5uPAEebjwBHm48AvadvAfx5vAKzoLECTkEDAE5BAwBOQQMAfjUBBUwyuADDhdcAnNXGA/ZJ0ACmm/QBPqRxAT6kcQE+pHEBVhgUAVYYFAFWGBQBZOgnA2ToJwNk6CcDIkiZACJImQAiSJkAdgljAnYJYwJ2CWMCVOZcAVTmXAF9e0AChKFCAYShQgGEoUIBPO4FAzzuBQM=!y7sdAIoTdQOKE3UDwLXNA9EgZgUNUFsFtWJvAqRbfAOkW3wDlk8AAoVAsQKA9rsBlI9dAQdR1QE5ySIF!URCDA1EQgwNREIMDI9adAiPWnQJvdu8Ab3bvANcanwHXGp8B1xqfASaQQgMmkEIDJpBCA0O+3QBDvt0A!"
+        testdeck = Deck.from_ydke(TestDB.db, ydke_code)
+        self.assertEqual(ydke_code, testdeck.ydke)
+
+    def test_db_search(self):
+        # Test if Odd-Eyes Wing Dragon and Odd-Eyes Venom Dragon are in the list of extra deck pendulums.
+        wingdragon = TestDB.db.get_card_by_id(58074177)
+        venomdragon = TestDB.db.get_card_by_id(45014450)
+        extradeckpends = TestDB.db.get_cards_by_value(
+            "type", "synchro,pendulum|fusion,pendulum"
+        )
+        self.assertIn(wingdragon, extradeckpends)
+        self.assertIn(venomdragon, extradeckpends)
+
+        # Link pendulums do not (yet) exist.
+        linkpends = TestDB.db.get_cards_by_value("type", "link,pendulum")
+        self.assertEqual(linkpends, [])
+
+        hexetrude = TestDB.db.get_card_by_id(46294982)
+        goldencastle = TestDB.db.get_cards_by_value(
+            "mentions", "golden castle of stromberg"
+        )
+        # Test card mentions
+        self.assertIn(hexetrude, goldencastle)
+
+        oddeyes = self.db.get_archetype_by_name("Odd-Eyes")
+        self.assertIn(wingdragon.id, oddeyes.members)
+
+        notdragons = self.db.get_cards_by_value("race", "~dragon")
+        self.assertNotIn(wingdragon, notdragons)
 
 
 if __name__ == "__main__":

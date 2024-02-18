@@ -240,13 +240,19 @@ class YugiDB:
             id=result.id,
             name=result.name,
             members=(
-                members_results.cardids.split(",") if members_results.cardids else []
+                [int(id) for id in members_results.cardids.split(",")]
+                if members_results.cardids
+                else []
             ),
             support=(
-                support_results.cardids.split(",") if support_results.cardids else []
+                [int(id) for id in support_results.cardids.split(",")]
+                if support_results.cardids
+                else []
             ),
             related=(
-                related_results.cardids.split(",") if related_results.cardids else []
+                [int(id) for id in related_results.cardids.split(",")]
+                if related_results.cardids
+                else []
             ),
         )
 
@@ -278,14 +284,14 @@ class YugiDB:
         return self._make_arch_list(results)
 
     @handle_no_result
-    def get_archetype_by_id(self, arch_id):
+    def get_archetype_by_id(self, arch_id: int):
         query = self.arch_query.filter(Setcodes.id == int(arch_id))
         result = query.one()
         return self._make_archetype(result)
 
     @handle_no_result
-    def get_archetype_by_name(self, arch_name):
-        query = self.arch_query.filter(Setcodes.name == arch_name)
+    def get_archetype_by_name(self, arch_name: str):
+        query = self.arch_query.filter(func.lower(Setcodes.name) == arch_name.lower())
         result = query.one()
         return self._make_archetype(result)
 
@@ -352,14 +358,14 @@ class YugiDB:
         return self._make_set_list(results)
 
     @handle_no_result
-    def get_set_by_id(self, set_id):
+    def get_set_by_id(self, set_id: int):
         query = self.set_query.filter(Packs.id == int(set_id))
         result = query.one()
         return self._make_set(result)
 
     @handle_no_result
-    def get_set_by_name(self, set_name):
-        query = self.set_query.filter(Packs.name == set_name)
+    def get_set_by_name(self, set_name: str):
+        query = self.set_query.filter(func.lower(Packs.name) == set_name.lower())
         result = query.one()
         return self._make_set(result)
 

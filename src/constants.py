@@ -74,7 +74,7 @@ card_filter_params = [
         "column": lambda x: func.lower(Texts.name).ilike("%" + x + "%"),
     },
     {
-        "key": "in_desc",
+        "key": "mentions",
         "column": lambda x: func.lower(Texts.desc).ilike("%" + x + "%"),
     },
 ]
