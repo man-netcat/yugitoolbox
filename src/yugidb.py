@@ -198,7 +198,7 @@ class YugiDB:
 
     @handle_no_result
     def get_card_by_name(self, card_name):
-        query = self.card_query.filter(Texts.name == card_name)
+        query = self.card_query.filter(func.lower(Texts.name) == card_name.lower())
         result = query.one()
         return self._make_card(result)
 
