@@ -140,7 +140,6 @@ class YugiDB:
         return query
 
     def _make_card(self, result) -> Card:
-        print(result._asdict())
         return Card(*result)
 
     def _make_card_list(self, results) -> list[Card]:
