@@ -344,25 +344,3 @@ class YugiDB:
         query = self.set_query.filter(func.lower(Packs.name) == set_name.lower())
         result = query.one()
         return self._make_set(result)
-
-    ################# Name/id Map Functions #################
-
-    @property
-    def card_names(self) -> list[str]:
-        query = self.session.query(Texts.name)
-        results = query.all()
-        return list(set([result.name for result in results]))
-
-    @property
-    def archetype_names(self) -> list[str]:
-        query = self.session.query(Setcodes.name)
-        results = query.all()
-        return list(set([result.name for result in results]))
-
-    @property
-    def set_names(self) -> list[str]:
-        if not self.has_packs:
-            return []
-        query = self.session.query(Packs.name)
-        results = query.all()
-        return list(set([result.name for result in results]))
