@@ -70,7 +70,7 @@ class Card:
         }
 
         properties = {
-            prop: convert_enum(getattr(self, prop))
+            prop.strip("_"): convert_enum(getattr(self, prop))
             for prop in self.__class__.__dict__
             if isinstance(getattr(self.__class__, prop), property)
             and prop not in ["tcgdate", "ocgdate"]
