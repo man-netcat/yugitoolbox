@@ -32,14 +32,20 @@ class Archetype:
 
     @property
     def members(self):
+        if not self._members_data:
+            return []
         return [int(card_id) for card_id in self._members_data.split(",")]
 
     @property
     def support(self):
+        if not self._support_data:
+            return []
         return [int(card_id) for card_id in self._support_data.split(",")]
 
     @property
     def related(self):
+        if not self._related_data:
+            return []
         return [int(card_id) for card_id in self._related_data.split(",")]
 
     @property

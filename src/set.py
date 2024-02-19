@@ -34,6 +34,8 @@ class Set:
 
     @property
     def contents(self):
+        if not self._contents_data:
+            return []
         return [int(card_id) for card_id in self._contents_data.split(",")]
 
     @property
