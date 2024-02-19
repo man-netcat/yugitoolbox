@@ -1,3 +1,4 @@
+from enum import Enum
 import logging
 import os
 from typing import Callable
@@ -35,9 +36,9 @@ class YugiDB:
         return inspect(self.engine).has_table(table_name)
 
     def _build_filter(self, params, key, column, valuetype=str, condition=True):
-        values = params.get(key)
+        values_string = params.get(key)
 
-        if not values:
+        if not values_string:
             return None
 
         if issubclass(valuetype, IntFlag):
@@ -66,8 +67,8 @@ class YugiDB:
         # Build query, first applying AND, then applying OR
         query = or_(
             *[
-                and_(*[apply_modifier(value) for value in value_or.split(",")])
-                for value_or in values.split("|")
+                and_(*[apply_modifier(value) for value in values_or.split(",")])
+                for values_or in values_string.split("|")
             ]
         )
 
@@ -139,14 +140,8 @@ class YugiDB:
         return query
 
     def _make_card(self, result) -> Card:
-        card = Card(
-            *result[:18],
-            _setdata=result.sets if self.has_packs and result.sets is not None else "",
-            _koiddata=result.koid if self.has_koids else 0,
-            _raritydata=result.tcgrarity if self.has_rarities else 0,
-        )
-
-        return card
+        print(result._asdict())
+        return Card(*result)
 
     def _make_card_list(self, results) -> list[Card]:
         return [self._make_card(result) for result in results]
@@ -168,7 +163,7 @@ class YugiDB:
         results = query.all()
         return self._make_card_list(results)
 
-    def get_cards_by_value(self, key: str, value):
+    def get_cards_by_value(self, key: str, value: str):
         return self.get_cards_by_values({key: value})
 
     def get_cards_by_values(self, params: dict) -> list[Card]:
@@ -237,8 +232,7 @@ class YugiDB:
         related_results = related_query.one()
 
         return Archetype(
-            id=result.id,
-            name=result.name,
+            *result,
             _members_data=members_results.cardids,
             _support_data=support_results.cardids,
             _related_data=related_results.cardids,
@@ -254,7 +248,7 @@ class YugiDB:
         results = query.all()
         return self._make_arch_list(results)
 
-    def get_archetypes_by_value(self, key: str, value):
+    def get_archetypes_by_value(self, key: str, value: str):
         return self.get_archetypes_by_values({key: value})
 
     def get_archetypes_by_values(self, params: dict) -> list[Archetype]:
@@ -288,37 +282,33 @@ class YugiDB:
     @property
     def set_query(self):
         if self.has_packs:
-            query = (
-                self.session.query(
-                    Packs.id,
-                    Packs.abbr,
-                    Packs.name,
-                    Packs.ocgdate,
-                    Packs.tcgdate,
-                    func.group_concat(Relations.cardid).label("cardids"),
-                )
-                .join(Relations, Packs.id == Relations.packid)
-                .group_by(Packs.name)
-            )
+            items = [
+                Packs.id,
+                Packs.abbr,
+                Packs.name,
+                Packs.tcgdate,
+                Packs.ocgdate,
+                func.group_concat(Relations.cardid).label("cardids"),
+            ]
         else:
-            query = self.session.query(false())
+            items = false()
+        query = (
+            self.session.query(items)
+            .join(Relations, Packs.id == Relations.packid)
+            .group_by(Packs.name)
+        )
         return query
 
     def _make_set_list(self, results) -> list[Set]:
         return [self._make_set(result) for result in results]
 
     def _make_set(self, result) -> Set:
-        return Set(
-            id=result.id,
-            abbr=result.abbr,
-            name=result.name,
-            _ocgdate=result.ocgdate,
-            _tcgdate=result.tcgdate,
-            _contents_data=result.cardids,
-        )
+        return Set(*result)
 
     @property
     def sets(self) -> list[Set]:
+        if not self.has_packs:
+            return []
         results = self.set_query.all()
         return self._make_set_list(results)
 
@@ -327,7 +317,7 @@ class YugiDB:
         results = query.all()
         return self._make_set_list(results)
 
-    def get_sets_by_value(self, key: str, value):
+    def get_sets_by_value(self, key: str, value: str):
         return self.get_sets_by_values({key: value})
 
     def get_sets_by_values(self, params: dict) -> list[Set]:

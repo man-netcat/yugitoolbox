@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
@@ -8,9 +8,9 @@ class Set:
     id: int
     name: str
     abbr: str
-    _contents_data: str = ""
     _tcgdate: int = 0
     _ocgdate: int = 0
+    _contents_data: str = ""
 
     def __hash__(self) -> int:
         return hash(self.name)

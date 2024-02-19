@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from functools import reduce
 from math import isnan
@@ -32,9 +32,9 @@ class Card:
     _supportcode: int = 0
     alias: int = 0
     _scriptdata: str = ""
-    _setdata: str = ""
     _koiddata: int = 0
     _raritydata: int = 0
+    _setdata: str = ""
 
     def __hash__(self):
         return hash(self.name)
