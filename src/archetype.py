@@ -5,9 +5,9 @@ from dataclasses import dataclass, field
 class Archetype:
     id: int
     name: str
-    members: list[int] = field(default_factory=list)
-    support: list[int] = field(default_factory=list)
-    related: list[int] = field(default_factory=list)
+    _members_data: str = ""
+    _support_data: str = ""
+    _related_data: str = ""
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -29,6 +29,18 @@ class Archetype:
             "support": self.support,
             "related": self.related,
         }
+
+    @property
+    def members(self):
+        return [int(card_id) for card_id in self._members_data.split(",")]
+
+    @property
+    def support(self):
+        return [int(card_id) for card_id in self._support_data.split(",")]
+
+    @property
+    def related(self):
+        return [int(card_id) for card_id in self._related_data.split(",")]
 
     @property
     def combined_cards(self) -> list[int]:

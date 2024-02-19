@@ -239,21 +239,9 @@ class YugiDB:
         return Archetype(
             id=result.id,
             name=result.name,
-            members=(
-                [int(id) for id in members_results.cardids.split(",")]
-                if members_results.cardids
-                else []
-            ),
-            support=(
-                [int(id) for id in support_results.cardids.split(",")]
-                if support_results.cardids
-                else []
-            ),
-            related=(
-                [int(id) for id in related_results.cardids.split(",")]
-                if related_results.cardids
-                else []
-            ),
+            _members_data=members_results.cardids,
+            _support_data=support_results.cardids,
+            _related_data=related_results.cardids,
         )
 
     @property
@@ -320,14 +308,13 @@ class YugiDB:
         return [self._make_set(result) for result in results]
 
     def _make_set(self, result) -> Set:
-        cardids = getattr(result, "cardids", "").split(",") if self.has_packs else []
         return Set(
             id=result.id,
             abbr=result.abbr,
             name=result.name,
             _ocgdate=result.ocgdate,
             _tcgdate=result.tcgdate,
-            contents=[int(card_id) for card_id in cardids],
+            _contents_data=result.cardids,
         )
 
     @property

@@ -8,9 +8,9 @@ class Set:
     id: int
     name: str
     abbr: str
+    _contents_data: str = ""
     _tcgdate: int = 0
     _ocgdate: int = 0
-    contents: list[int] = field(default_factory=list)
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -31,6 +31,10 @@ class Set:
             "abbr": self.abbr,
             "contents": self.contents,
         }
+
+    @property
+    def contents(self):
+        return [int(card_id) for card_id in self._contents_data.split(",")]
 
     @property
     def ocgdate(self) -> Optional[datetime]:
@@ -64,4 +68,4 @@ class Set:
 
     @property
     def set_total(self) -> int:
-        return len(self.contents)
+        return len(self._contents_data)
