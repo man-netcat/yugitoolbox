@@ -203,7 +203,7 @@ class YugiDB:
 
     @property
     def arch_query(self):
-        items = [Setcodes.name, Setcodes.id]
+        items = [Setcodes.id, Setcodes.name]
         return self.session.query(*items)
 
     def _make_arch_list(self, results) -> list[Archetype]:
@@ -281,21 +281,20 @@ class YugiDB:
     @property
     def set_query(self):
         if self.has_packs:
-            items = [
-                Packs.id,
-                Packs.abbr,
-                Packs.name,
-                Packs.tcgdate,
-                Packs.ocgdate,
-                func.group_concat(Relations.cardid).label("cardids"),
-            ]
+            query = (
+                self.session.query(
+                    Packs.id,
+                    Packs.name,
+                    Packs.abbr,
+                    Packs.tcgdate,
+                    Packs.ocgdate,
+                    func.group_concat(Relations.cardid).label("cardids"),
+                )
+                .join(Relations, Packs.id == Relations.packid)
+                .group_by(Packs.name)
+            )
         else:
-            items = false()
-        query = (
-            self.session.query(items)
-            .join(Relations, Packs.id == Relations.packid)
-            .group_by(Packs.name)
-        )
+            query = self.session.query(false())
         return query
 
     def _make_set_list(self, results) -> list[Set]:
