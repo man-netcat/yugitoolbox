@@ -2,7 +2,6 @@ import logging
 import os
 from typing import Callable
 
-from icecream import ic
 from sqlalchemy import and_, create_engine, false, func, inspect, or_
 from sqlalchemy.orm import sessionmaker
 
