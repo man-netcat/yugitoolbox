@@ -42,14 +42,14 @@ class YugiDB:
         valuetype: type = str,
         condition=True,
     ):
-        values: list | str = params.get(key)
+        values: int | list | str | IntFlag = params.get(key)
 
         if not values:
             return None
 
         if type(values) == list and issubclass(valuetype, IntFlag):
             values = ",".join([value.name.lower() for value in values])
-        elif issubclass(valuetype, IntFlag):
+        elif type(values) != str and issubclass(valuetype, IntFlag):
             values = str(values.name.lower())
         elif type(values) == int:
             values = str(values)
