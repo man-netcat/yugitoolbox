@@ -1,4 +1,3 @@
-from enum import Enum
 import logging
 import os
 from typing import Callable
@@ -35,11 +34,27 @@ class YugiDB:
     def has_table(self, table_name: str):
         return inspect(self.engine).has_table(table_name)
 
-    def _build_filter(self, params, key, column, valuetype=str, condition=True):
-        values_string = params.get(key)
+    def _build_filter(
+        self,
+        params: dict[str],
+        key: str,
+        column,
+        valuetype: type = str,
+        condition=True,
+    ):
+        values: list | str = params.get(key)
 
-        if not values_string:
+        if not values:
             return None
+
+        if type(values) == list and issubclass(valuetype, IntFlag):
+            values = ",".join([value.name.lower() for value in values])
+        elif issubclass(valuetype, IntFlag):
+            values = str(values.name.lower())
+        elif type(values) == int:
+            values = str(values)
+        elif type(values) != str:
+            raise TypeError("Invalid type for value")
 
         if issubclass(valuetype, IntFlag):
             type_modifier = {
@@ -49,8 +64,10 @@ class YugiDB:
             type_modifier = int
         elif valuetype == str:
             type_modifier = func.lower
+        else:
+            raise TypeError("Invalid type for value")
 
-        def apply_modifier(value):
+        def apply_modifier(value: str):
             # Check if value is negated
             if value.startswith("~"):
                 modified_value = type_modifier(value[1:])
@@ -63,7 +80,7 @@ class YugiDB:
         query = or_(
             *[
                 and_(*[apply_modifier(value) for value in values_or.split(",")])
-                for values_or in values_string.split("|")
+                for values_or in values.split("|")
             ]
         )
 
