@@ -47,14 +47,16 @@ class YugiDB:
         if not values:
             return None
 
-        if type(values) == list and issubclass(valuetype, IntFlag):
-            values = ",".join([value.name.lower() for value in values])
-        elif type(values) != str and issubclass(valuetype, IntFlag):
-            values = str(values.name.lower())
-        elif type(values) == int:
-            values = str(values)
-        elif type(values) != str:
-            raise TypeError("Invalid type for value")
+        if not isinstance(values, str):
+            if issubclass(valuetype, IntFlag):
+                if type(values) == list:
+                    values = ",".join([value.name.lower() for value in values])
+                else:
+                    values = str(values.name.lower())
+            elif isinstance(values, int):
+                values = str(values)
+            else:
+                raise TypeError("Invalid type for value")
 
         if issubclass(valuetype, IntFlag):
             type_modifier = {
@@ -68,13 +70,23 @@ class YugiDB:
             raise TypeError("Invalid type for value")
 
         def apply_modifier(value: str):
-            # Check if value is negated
-            if value.startswith("~"):
-                modified_value = type_modifier(value[1:])
-                return ~column(modified_value)
+            negated = value.startswith("~")
+            value = value.lstrip("~")
+            op = next((x for x in [">=", "<=", ">", "<"] if value.startswith(x)), "==")
+            modified_value = type_modifier(value.lstrip("><="))
+
+            if issubclass(valuetype, IntFlag):
+                modifier = column.op("&")(modified_value)
+            elif key in ["mentions", "in_name"]:
+                modifier = column(modified_value)
             else:
-                modified_value = type_modifier(value)
-                return column(modified_value)
+                modifier = column.op(op)(modified_value)
+
+            # Check if value is negated
+            if negated:
+                modifier = ~modifier
+
+            return modifier
 
         # Build query, first applying AND, then applying OR
         query = or_(

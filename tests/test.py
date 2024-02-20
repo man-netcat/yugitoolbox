@@ -127,7 +127,13 @@ class TestDB(TestCase):
         extradeckpends = TestDB.db.get_cards_by_value(
             "type", "synchro,pendulum|fusion,pendulum"
         )
+        synchropends = TestDB.db.get_cards_by_value(
+            "type", [Type.Synchro, Type.Pendulum]
+        )
+        synchro = TestDB.db.get_cards_by_value("type", Type.Synchro)
         self.assertIn(wingdragon, extradeckpends)
+        self.assertIn(wingdragon, synchropends)
+        self.assertIn(wingdragon, synchro)
         self.assertIn(venomdragon, extradeckpends)
 
         # Link pendulums do not (yet) exist.

@@ -5,67 +5,67 @@ from .sqlclasses import *
 card_filter_params = [
     {
         "key": "name",
-        "column": func.lower(Texts.name).op("=="),
+        "column": Texts.name,
     },
     {
         "key": "id",
-        "column": Datas.id.op("=="),
+        "column": Datas.id,
         "valuetype": int,
     },
     {
         "key": "race",
-        "column": Datas.race.op("=="),
+        "column": Datas.race,
         "valuetype": Race,
     },
     {
         "key": "attribute",
-        "column": Datas.attribute.op("=="),
+        "column": Datas.attribute,
         "valuetype": Attribute,
     },
     {
         "key": "atk",
-        "column": Datas.atk.op("=="),
+        "column": Datas.atk,
         "valuetype": int,
     },
     {
         "key": "def",
-        "column": Datas.def_.op("=="),
+        "column": Datas.def_,
         "valuetype": int,
     },
     {
         "key": "level",
-        "column": Datas.level.op("&")(0x0000FFFF).op("=="),
+        "column": Datas.level.op("&")(0x0000FFFF),
         "valuetype": int,
     },
     {
         "key": "scale",
-        "column": Datas.level.op(">>")(24).op("=="),
+        "column": Datas.level.op(">>")(24),
         "valuetype": int,
         "condition": Datas.type.op("&")(Type.Pendulum.value),
     },
     {
         "key": "koid",
-        "column": Koids.koid.op("=="),
+        "column": Koids.koid,
         "valuetype": int,
     },
     {
         "key": "type",
-        "column": Datas.type.op("&"),
+        "column": Datas.type,
         "valuetype": Type,
     },
     {
         "key": "category",
-        "column": Datas.category.op("&"),
+        "column": Datas.category,
         "valuetype": Category,
     },
     {
         "key": "genre",
-        "column": Datas.genre.op("&"),
+        "column": Datas.genre,
         "valuetype": Genre,
     },
     {
         "key": "linkmarker",
-        "column": Datas.def_.op("&"),
+        "column": Datas.def_,
         "valuetype": LinkMarker,
         "condition": Datas.type.op("&")(Type.Link.value),
     },
@@ -82,11 +82,11 @@ card_filter_params = [
 archetype_filter_params = [
     {
         "key": "name",
-        "column": func.lower(Setcodes.name).op("=="),
+        "column": Setcodes.name,
     },
     {
         "key": "id",
-        "column": Setcodes.id.op("=="),
+        "column": Setcodes.id,
         "valuetype": int,
     },
     {
@@ -99,15 +99,15 @@ archetype_filter_params = [
 set_filter_params = [
     {
         "key": "name",
-        "column": func.lower(Packs.name).op("=="),
+        "column": Packs.name,
     },
     {
         "key": "abbr",
-        "column": func.lower(Packs.abbr).op("=="),
+        "column": Packs.abbr,
     },
     {
         "key": "id",
-        "column": Packs.id.op("=="),
+        "column": Packs.id,
         "valuetype": int,
     },
     {

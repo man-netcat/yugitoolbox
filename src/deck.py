@@ -21,16 +21,15 @@ class Deck:
     main: list[tuple[int, int]]
     extra: list[tuple[int, int]]
     side: list[tuple[int, int]]
-    db: YugiDB
     cover_card: int = 0
 
-    def __str__(self) -> str:
+    def print(self, db: YugiDB):
         def format_deck_section(cards: list[tuple[int, int]], section_name: str) -> str:
             return (
                 f"{section_name} ({sum([count for _, count in cards])} cards):\n"
                 + "\n".join(
                     [
-                        f"  {self.db.get_card_by_id(cardid).name} x{count}"
+                        f"  {db.get_card_by_id(cardid).name} x{count}"
                         for cardid, count in cards
                     ]
                 )
@@ -40,7 +39,7 @@ class Deck:
         extra_str = format_deck_section(self.extra, "Extra Deck")
         side_str = format_deck_section(self.side, "Side Deck")
 
-        return "\n\n".join([main_str, extra_str, side_str])
+        print("\n\n".join([main_str, extra_str, side_str]))
 
     def __repr__(self) -> str:
         return self.name if self.name else "Anonymous Deck"
@@ -91,7 +90,7 @@ class Deck:
             byteorder="little",
         )
 
-        return cls(name, main, extra, side, db, cover_card)
+        return cls(name, main, extra, side, cover_card)
 
     @property
     def omegacode(self):
@@ -120,7 +119,7 @@ class Deck:
 
         main, extra, side = map(decode_component, ydke[len("ydke://") :].split("!")[:3])
 
-        return cls(name, main, extra, side, db)
+        return cls(name, main, extra, side)
 
     @property
     def ydke(self) -> str:
