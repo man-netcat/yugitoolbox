@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Callable
 
+from icecream import ic
 from sqlalchemy import and_, create_engine, false, func, inspect, or_
 from sqlalchemy.orm import sessionmaker
 
@@ -41,8 +42,15 @@ class YugiDB:
         column,
         valuetype: type = str,
         condition=True,
+        special={},
     ):
         values: int | list | str | IntFlag = params.get(key)
+
+        # Handle special queries
+        if isinstance(values, str):
+            for specialvalue, query in special.items():
+                if values.lower() == specialvalue:
+                    return query
 
         if not values:
             return None
@@ -190,6 +198,7 @@ class YugiDB:
         return self.get_cards_by_values({key: value})
 
     def get_cards_by_values(self, params: dict) -> list[Card]:
+        params = {k.lower(): v for k, v in params.items()}
         filters = [
             self._build_filter(params, **filter_param)
             for filter_param in card_filter_params
@@ -275,6 +284,7 @@ class YugiDB:
         return self.get_archetypes_by_values({key: value})
 
     def get_archetypes_by_values(self, params: dict) -> list[Archetype]:
+        params = {k.lower(): v for k, v in params.items()}
         filters = [
             self._build_filter(params, **filter_param)
             for filter_param in archetype_filter_params
@@ -343,6 +353,7 @@ class YugiDB:
         return self.get_sets_by_values({key: value})
 
     def get_sets_by_values(self, params: dict) -> list[Set]:
+        params = {k.lower(): v for k, v in params.items()}
         filters = [
             self._build_filter(params, **filter_param)
             for filter_param in set_filter_params
