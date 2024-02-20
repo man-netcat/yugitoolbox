@@ -42,10 +42,9 @@ class YugiDB:
             return None
 
         if issubclass(valuetype, IntFlag):
-            mapping = {k.casefold(): v for k, v in valuetype.__members__.items()}
-            type_modifier = lambda x: (
-                y.value if (y := mapping.get(x.casefold())) else None
-            )
+            type_modifier = {
+                k.casefold(): v for k, v in valuetype.__members__.items()
+            }.__getitem__
         elif valuetype == int:
             type_modifier = int
         elif valuetype == str:
@@ -53,16 +52,12 @@ class YugiDB:
 
         def apply_modifier(value):
             # Check if value is negated
-            modified_value = (
-                type_modifier(value[1:])
-                if value.startswith("~")
-                else type_modifier(value)
-            )
-            return (
-                ~column(modified_value)
-                if value.startswith("~")
-                else column(modified_value)
-            )
+            if value.startswith("~"):
+                modified_value = type_modifier(value[1:])
+                return ~column(modified_value)
+            else:
+                modified_value = type_modifier(value)
+                return column(modified_value)
 
         # Build query, first applying AND, then applying OR
         query = or_(
