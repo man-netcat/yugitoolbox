@@ -106,11 +106,13 @@ card_filter_params = [
     },
     {
         "key": "in_name",
-        "column": lambda x: func.lower(Texts.name).ilike("%" + x + "%"),
+        "column": Texts.name,
+        "valuetype": "substr",
     },
     {
         "key": "mentions",
-        "column": lambda x: func.lower(Texts.desc).ilike("%" + x + "%"),
+        "column": Texts.desc,
+        "valuetype": "substr",
     },
 ]
 
@@ -126,7 +128,8 @@ archetype_filter_params = [
     },
     {
         "key": "in_name",
-        "column": lambda x: func.lower(Setcodes.name).ilike("%" + x + "%"),
+        "column": Setcodes.name,
+        "valuetype": "substr",
     },
 ]
 
@@ -147,6 +150,7 @@ set_filter_params = [
     },
     {
         "key": "in_name",
-        "column": lambda x: func.lower(Packs.name).ilike("%" + x + "%"),
+        "column": Packs.name,
+        "valuetype": "substr",
     },
 ]

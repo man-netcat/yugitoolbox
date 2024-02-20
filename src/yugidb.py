@@ -65,27 +65,33 @@ class YugiDB:
             else:
                 raise TypeError("Invalid type for value")
 
-        if issubclass(valuetype, IntFlag):
+        if valuetype in [str, "substr"]:
+            type_modifier = func.lower
+        elif valuetype == int:
+            type_modifier = int
+        elif issubclass(valuetype, IntFlag):
             type_modifier = {
                 k.casefold(): v for k, v in valuetype.__members__.items()
             }.__getitem__
-        elif valuetype == int:
-            type_modifier = int
-        elif valuetype == str:
-            type_modifier = func.lower
         else:
             raise TypeError("Invalid type for value")
 
         def apply_modifier(value: str):
             negated = value.startswith("~")
             value = value.lstrip("~")
-            op = next((x for x in [">=", "<=", ">", "<"] if value.startswith(x)), "==")
-            modified_value = type_modifier(value.lstrip("><="))
 
-            if issubclass(valuetype, IntFlag):
+            op = next((x for x in [">=", "<=", ">", "<"] if value.startswith(x)), "==")
+            value = value.lstrip("><=")
+
+            if valuetype == "substr":
+                modified_value = type_modifier(f"%{value}%")
+            else:
+                modified_value = type_modifier(value)
+
+            if valuetype == "substr":
+                modifier = column.ilike(modified_value)
+            elif issubclass(valuetype, IntFlag):
                 modifier = column.op("&")(modified_value)
-            elif key in ["mentions", "in_name"]:
-                modifier = column(modified_value)
             else:
                 modifier = column.op(op)(modified_value)
 
