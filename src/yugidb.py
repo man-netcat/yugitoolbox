@@ -85,14 +85,12 @@ class YugiDB:
 
             if valuetype == "substr":
                 modified_value = type_modifier(f"%{value}%")
-            else:
-                modified_value = type_modifier(value)
-
-            if valuetype == "substr":
                 modifier = column.ilike(modified_value)
             elif issubclass(valuetype, IntFlag):
+                modified_value = type_modifier(value)
                 modifier = column.op("&")(modified_value)
             else:
+                modified_value = type_modifier(value)
                 modifier = column.op(op)(modified_value)
 
             # Check if value is negated

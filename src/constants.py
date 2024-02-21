@@ -18,7 +18,10 @@ card_filter_params = [
         "column": Datas.race,
         "valuetype": Race,
         "special": {
-            "?": and_(Datas.race == 0, Datas.type.op("&")(Type.Monster.value)),
+            "?": and_(
+                Datas.race == 0,
+                Datas.type.op("&")(Type.Monster.value),
+            ),
         },
     },
     {
@@ -26,7 +29,10 @@ card_filter_params = [
         "column": Datas.attribute,
         "valuetype": Attribute,
         "special": {
-            "?": and_(Datas.attribute == 0, Datas.type.op("&")(Type.Monster.value)),
+            "?": and_(
+                Datas.attribute == 0,
+                Datas.type.op("&")(Type.Monster.value),
+            ),
         },
     },
     {
@@ -35,7 +41,8 @@ card_filter_params = [
         "valuetype": int,
         "special": {
             "def": and_(
-                Datas.atk == Datas.def_, Datas.type.op("&")(Type.Monster.value)
+                Datas.atk == Datas.def_,
+                Datas.type.op("&")(Type.Monster.value),
             ),
             "?": Datas.atk == -2,
         },
@@ -46,7 +53,8 @@ card_filter_params = [
         "valuetype": int,
         "special": {
             "atk": and_(
-                Datas.atk == Datas.def_, Datas.type.op("&")(Type.Monster.value)
+                Datas.atk == Datas.def_,
+                Datas.type.op("&")(Type.Monster.value),
             ),
             "?": Datas.def_ == -2,
         },
