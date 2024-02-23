@@ -429,8 +429,12 @@ class YugiDB:
         results = self.set_query.all()
         return self._make_set_list(results)
 
-    def get_card_sets(self, card: Card) -> list[Set]:
-        query = self.set_query.filter(Relations.cardid == card.id)
+    def get_card_sets(self, cardorid: Card | int) -> list[Set]:
+        if isinstance(cardorid, Card):
+            id = cardorid.id
+        elif isinstance(cardorid, int):
+            id = cardorid
+        query = self.set_query.filter(Relations.cardid == id)
         results = query.all()
         return self._make_set_list(results)
 

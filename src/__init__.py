@@ -8,3 +8,4 @@ from .omegadb import *
 from .set import *
 from .sqlclasses import *
 from .yugidb import *
+from .functions import *

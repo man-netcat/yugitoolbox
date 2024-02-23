@@ -36,6 +36,8 @@ class Card:
     _raritydata: int = 0
     _setdata: str = ""
 
+    # TODO: Write card build classmethods. (for "regular" monsters, Pendulum, Link and S/T.)
+
     def __hash__(self):
         return hash(self.name)
 
