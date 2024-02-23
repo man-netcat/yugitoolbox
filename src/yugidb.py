@@ -5,6 +5,7 @@ from typing import Callable
 from sqlalchemy import and_, create_engine, false, func, inspect, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
 
 from .archetype import Archetype
 from .card import Card
@@ -238,44 +239,81 @@ class YugiDB:
 
     def write_card_to_database(self, card: Card):
         try:
-            # Inserting data into Datas table
-            new_data = Datas(
-                id=card.id,
-                type=card._typedata,
-                race=card._racedata,
-                attribute=card._attributedata,
-                category=card._categorydata,
-                genre=card._genredata,
-                level=card._leveldata,
-                atk=card._atkdata,
-                def_=card._defdata,
-                tcgdate=card._tcgdatedata,
-                ocgdate=card._ocgdatedata,
-                ot=card.status,
-                support=card._supportcode,
-                alias=card.alias,
-                script=card._scriptdata,
-            )
-            self.session.add(new_data)
+            # Check if the card ID already exists in the Datas table
+            card_data = self.session.query(Datas).filter_by(id=card.id).one_or_none()
 
-            # Inserting data into Texts table
-            new_text = Texts(id=card.id, name=card.name, desc=card._textdata)
-            self.session.add(new_text)
+            if card_data:
+                # Update existing record
+                card_data.type = card._typedata
+                card_data.race = card._racedata
+                card_data.attribute = card._attributedata
+                card_data.category = card._categorydata
+                card_data.genre = card._genredata
+                card_data.level = card._leveldata
+                card_data.atk = card._atkdata
+                card_data.def_ = card._defdata
+                card_data.tcgdate = card._tcgdatedata
+                card_data.ocgdate = card._ocgdatedata
+                card_data.ot = card.status
+                card_data.support = card._supportcode
+                card_data.alias = card.alias
+                card_data.script = card._scriptdata
+            else:
+                # Insert new record into Datas table
+                new_data = Datas(
+                    id=card.id,
+                    type=card._typedata,
+                    race=card._racedata,
+                    attribute=card._attributedata,
+                    category=card._categorydata,
+                    genre=card._genredata,
+                    level=card._leveldata,
+                    atk=card._atkdata,
+                    def_=card._defdata,
+                    tcgdate=card._tcgdatedata,
+                    ocgdate=card._ocgdatedata,
+                    ot=card.status,
+                    support=card._supportcode,
+                    alias=card.alias,
+                    script=card._scriptdata,
+                )
+                self.session.add(new_data)
 
-            # Inserting data into Koids table if available
+            # Insert or update data in the Texts table
+            text_data = self.session.query(Texts).filter_by(id=card.id).one_or_none()
+            if text_data:
+                text_data.name = card.name
+                text_data.desc = card._textdata
+            else:
+                new_text = Texts(id=card.id, name=card.name, desc=card._textdata)
+                self.session.add(new_text)
+
+            # Insert or update data in the Koids table if available
             if self.has_koids:
-                new_koid = Koids(id=card.id, koid=card._koiddata)
-                self.session.add(new_koid)
+                koid_data = (
+                    self.session.query(Koids).filter_by(id=card.id).one_or_none()
+                )
+                if koid_data:
+                    koid_data.koid = card._koiddata
+                else:
+                    new_koid = Koids(id=card.id, koid=card._koiddata)
+                    self.session.add(new_koid)
 
-            # Inserting data into Rarities table if available
+            # Insert or update data in the Rarities table if available
             if self.has_rarities:
-                new_rarity = Rarities(id=card.id, tcgrarity=card._raritydata)
-                self.session.add(new_rarity)
+                rarity_data = (
+                    self.session.query(Rarities).filter_by(id=card.id).one_or_none()
+                )
+                if rarity_data:
+                    rarity_data.tcgrarity = card._raritydata
+                else:
+                    new_rarity = Rarities(id=card.id, tcgrarity=card._raritydata)
+                    self.session.add(new_rarity)
 
             # Commit changes to the database
             self.session.commit()
-            print("Card data successfully written to the database.")
-        except IntegrityError as e:
+            print(f"Data for {card.name} successfully written to the database.")
+        except (IntegrityError, NoResultFound) as e:
             self.session.rollback()
             print(f"Failed to write card data to the database: {e}")
 
