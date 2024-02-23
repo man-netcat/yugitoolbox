@@ -3,6 +3,7 @@ import os
 from typing import Callable
 
 from sqlalchemy import and_, create_engine, false, func, inspect, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
 from .archetype import Archetype
@@ -234,6 +235,49 @@ class YugiDB:
 
     def get_cards_by_query(self, query: Cardquery) -> list[Card]:
         return [card for card in self.cards if query(card)]
+
+    def write_card_to_database(self, card: Card):
+        try:
+            # Inserting data into Datas table
+            new_data = Datas(
+                id=card.id,
+                type=card._typedata,
+                race=card._racedata,
+                attribute=card._attributedata,
+                category=card._categorydata,
+                genre=card._genredata,
+                level=card._leveldata,
+                atk=card._atkdata,
+                def_=card._defdata,
+                tcgdate=card._tcgdatedata,
+                ocgdate=card._ocgdatedata,
+                ot=card.status,
+                support=card._supportcode,
+                alias=card.alias,
+                script=card._scriptdata,
+            )
+            self.session.add(new_data)
+
+            # Inserting data into Texts table
+            new_text = Texts(id=card.id, name=card.name, desc=card._textdata)
+            self.session.add(new_text)
+
+            # Inserting data into Koids table if available
+            if self.has_koids:
+                new_koid = Koids(id=card.id, koid=card._koiddata)
+                self.session.add(new_koid)
+
+            # Inserting data into Rarities table if available
+            if self.has_rarities:
+                new_rarity = Rarities(id=card.id, tcgrarity=card._raritydata)
+                self.session.add(new_rarity)
+
+            # Commit changes to the database
+            self.session.commit()
+            print("Card data successfully written to the database.")
+        except IntegrityError as e:
+            self.session.rollback()
+            print(f"Failed to write card data to the database: {e}")
 
     ################# Archetype Functions #################
 

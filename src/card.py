@@ -31,7 +31,7 @@ class Card:
     _archcode: int = 0
     _supportcode: int = 0
     alias: int = 0
-    _scriptdata: str = ""
+    _scriptdata: object = None
     _koiddata: int = 0
     _raritydata: int = 0
     _setdata: str = ""
@@ -153,17 +153,17 @@ class Card:
     def type(self, new: Type | list[Type]) -> None:
         self._turn_off_flags(Type)
         if isinstance(new, Type):
-            self._typedata |= new
+            self._typedata = int(new)
         elif isinstance(new, list):
-            self._typedata |= reduce(or_, new)
+            self._typedata = int(reduce(or_, new))
         else:
             raise ValueError("Invalid type assignment")
 
-    def append_type(self, mdtype: Type) -> None:
-        self._typedata |= mdtype
+    def append_type(self, type: Type) -> None:
+        self._typedata |= type
 
-    def remove_type(self, mdtype: Type) -> None:
-        self._typedata &= ~mdtype
+    def remove_type(self, type: Type) -> None:
+        self._typedata &= ~type
 
     @property
     def category(self) -> list[Category]:
@@ -209,7 +209,7 @@ class Card:
 
     @level.setter
     def level(self, new: int):
-        self._leveldata = self.scale << 24 | self.scale << 16 | new
+        self._leveldata = self.scale << 24 | self.scale << 16 | int(new)
 
     @property
     def scale(self) -> int:
@@ -217,7 +217,7 @@ class Card:
 
     @scale.setter
     def scale(self, new: int):
-        self._leveldata = new << 24 | new << 16 | self.level
+        self._leveldata = int(new) << 24 | int(new) << 16 | self.level
 
     @property
     def atk(self) -> int:
@@ -225,7 +225,7 @@ class Card:
 
     @atk.setter
     def atk(self, new: int):
-        self._atkdata = new
+        self._atkdata = int(new)
 
     @property
     def def_(self) -> int:
@@ -237,7 +237,7 @@ class Card:
     def def_(self, new: int):
         if self.has_type(Type.Link):
             return
-        self._defdata = new
+        self._defdata = int(new)
 
     @property
     def linkmarkers(self) -> list[LinkMarker]:
@@ -250,9 +250,9 @@ class Card:
         if not self.has_type(Type.Link):
             return
         if isinstance(new, LinkMarker):
-            self._defdata = new
+            self._defdata = int(new)
         elif isinstance(new, list):
-            self._defdata = reduce(or_, new)
+            self._defdata = int(reduce(or_, new))
         else:
             raise ValueError("Invalid linkmarker assignment")
 
@@ -260,13 +260,13 @@ class Card:
         if not self.has_type(Type.Link):
             return
 
-        self._defdata |= marker
+        self._defdata |= int(marker)
 
     def remove_linkmarker(self, marker: LinkMarker) -> None:
         if not self.has_type(Type.Link):
             return
 
-        self._defdata &= ~marker
+        self._defdata &= int(~marker)
 
     @property
     def race(self) -> Race:
@@ -274,7 +274,10 @@ class Card:
 
     @race.setter
     def race(self, new: int | Race):
-        self._racedata = new
+        if isinstance(new, Race):
+            self._racedata = int(new.value)
+        else:
+            self._racedata = int(new)
 
     @property
     def attribute(self) -> Attribute:
@@ -282,7 +285,10 @@ class Card:
 
     @attribute.setter
     def attribute(self, new: int | Attribute):
-        self._attributedata = new
+        if isinstance(new, Attribute):
+            self._attributedata = int(new.value)
+        else:
+            self._attributedata = int(new)
 
     @property
     def tcgrarity(self) -> list[Rarity]:
