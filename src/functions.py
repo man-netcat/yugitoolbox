@@ -70,9 +70,11 @@ def numbers_eveil(db: YugiDB, fifth: int):
     combos = [
         combo
         for combo in combinations(number_monsters, 4)
-        if (
-            sum([mapping[card] for card in combo]) == fifth
-            and len(set([card.level for card in combo])) == 4
+        if all(
+            [
+                len(set([card.level for card in combo])) == 4,
+                sum([mapping[card] for card in combo]) == fifth,
+            ]
         )
     ]
 
