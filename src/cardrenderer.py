@@ -96,9 +96,9 @@ class Renderer:
         import random
 
         self.layers.append(f"Stickers/Holo_Sticker_{random.randint(1, 4)}.png")
-        if (card.has_type(Type.Xyz) or card.is_dark_synchro) and not card.has_type(
-            Type.Pendulum
-        ):
+        if (
+            card.has_type(Type.Xyz) or card.has_category(Category.DarkCard)
+        ) and not card.has_type(Type.Pendulum):
             self.layers.append("Text/Limitation/White/Creator.png")
         else:
             self.layers.append("Text/Limitation/Black/Creator.png")
