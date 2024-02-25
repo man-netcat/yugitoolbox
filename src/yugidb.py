@@ -3,9 +3,8 @@ import os
 from typing import Callable
 
 from sqlalchemy import and_, create_engine, false, func, inspect, or_
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm.exc import NoResultFound
 
 from .archetype import Archetype
 from .card import Card
@@ -234,7 +233,13 @@ class YugiDB:
     @handle_no_result
     def get_card_by_name(self, card_name):
         query = self.card_query.filter(func.lower(Texts.name) == card_name.lower())
-        result = query.one()
+        try:
+            result = query.one()
+        except MultipleResultsFound:
+            result = query.all()[0]
+        except NoResultFound:
+            return None
+
         return self._make_card(result)
 
     def get_cards_by_query(self, query: Cardquery) -> list[Card]:
