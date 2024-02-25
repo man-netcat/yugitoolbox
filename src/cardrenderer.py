@@ -36,7 +36,7 @@ class Renderer:
             frame = "Frames/Obelisk.png"
         elif card.has_category(Category.YellowGod):
             frame = "Frames/Ra.png"
-        elif card.is_dark_synchro:
+        elif card.has_category(Category.DarkCard):
             frame = "Frames/Dark_Synchro.png"
         elif card.is_legendary_dragon:
             frame = "Frames/Legendary_Dragon.png"
@@ -236,7 +236,7 @@ class Renderer:
 
         if card.is_spelltrap:
             self._get_property(card)
-        elif card.is_dark_synchro:
+        elif card.is_dark_synchro and not card.level == 0:
             self._get_neg_level(card)
         elif card.has_type(Type.Xyz):
             self._get_rank(card)
@@ -270,7 +270,7 @@ class Renderer:
         if (
             card.is_spelltrap
             or card.has_any_type([Type.Xyz, Type.Link])
-            or card.is_dark_synchro
+            or card.has_category(Category.DarkCard)
         ):
             text_color = "#FFF"
         else:
