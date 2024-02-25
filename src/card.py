@@ -207,7 +207,9 @@ class Card:
 
     @property
     def level(self) -> int:
-        return self._leveldata & 0x0000FFFF
+        if self._leveldata & 0x0000FFFF > 13:
+            return -2
+        return int(self._leveldata & 0x0000FFFF)
 
     @level.setter
     def level(self, new: int):
@@ -215,7 +217,7 @@ class Card:
 
     @property
     def scale(self) -> int:
-        return self._leveldata >> 24
+        return int(self._leveldata >> 24)
 
     @scale.setter
     def scale(self, new: int):
