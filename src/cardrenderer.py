@@ -322,14 +322,16 @@ class Renderer:
             "#000",
         )
         # ATK
+        atkoffset = 16 * (len(str(card.atk)) if card.atk >= 0 else 1)
+        atkcoord = 576 - atkoffset
         self._draw_text_segment(
-            str(card._atkdata) if card._atkdata >= 0 else "?",
+            str(card.atk) if card.atk >= 0 else "?",
             os.path.join(
                 ASSET_DIR,
-                "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+                "Fonts/MatrixBoldSmallCaps.otf",
             ),
-            41,
-            (511, 1077),
+            34,
+            (atkcoord, 1081),
             "#000",
         )
         if card.has_type(Type.Link):
@@ -341,17 +343,18 @@ class Renderer:
                 (722, 1083),
                 "#000",
             )
-            pass
         else:
             # DEF
+            defoffset = 16 * (len(str(card.def_)) if card.def_ >= 0 else 1)
+            defcoord = 741 - defoffset
             self._draw_text_segment(
                 str(card.def_) if card.def_ >= 0 else "?",
                 os.path.join(
                     ASSET_DIR,
-                    "Fonts/Yu-Gi-Oh! Matrix Regular Small Caps 2.ttf",
+                    "Fonts/MatrixBoldSmallCaps.otf",
                 ),
-                41,
-                (676, 1077),
+                34,
+                (defcoord, 1081),
                 "#000",
             )
 
