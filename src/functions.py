@@ -20,7 +20,7 @@ def rescue_hedgehog(
 
     normals = db.get_cards_by_values(
         {
-            "type": "monster,normal,~fusion,~synchro,~xyz,~link,~ritual,~token",
+            "type": "monster,normal,maindeck",
             "level": "<=3" if level is None else level,
             "category": "~rushcard",
             "status": status,
@@ -28,7 +28,7 @@ def rescue_hedgehog(
     )
     effects = db.get_cards_by_values(
         {
-            "type": "monster,effect,~fusion,~synchro,~xyz,~link,~ritual,~token",
+            "type": "monster,effect,maindeck",
             "level": "<=3" if level is None else level,
             "category": "~rushcard",
             "status": status,

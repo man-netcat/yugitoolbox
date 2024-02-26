@@ -20,7 +20,7 @@ card_filter_params = [
         "special": {
             "?": and_(
                 Datas.race == 0,
-                Datas.type.op("&")(Type.Monster.value),
+                Datas.type.op("&")(Type.Monster),
             ),
         },
     },
@@ -31,7 +31,7 @@ card_filter_params = [
         "special": {
             "?": and_(
                 Datas.attribute == 0,
-                Datas.type.op("&")(Type.Monster.value),
+                Datas.type.op("&")(Type.Monster),
             ),
         },
     },
@@ -42,7 +42,7 @@ card_filter_params = [
         "special": {
             "def": and_(
                 Datas.atk == Datas.def_,
-                Datas.type.op("&")(Type.Monster.value),
+                Datas.type.op("&")(Type.Monster),
             ),
             "?": Datas.atk == -2,
         },
@@ -54,7 +54,7 @@ card_filter_params = [
         "special": {
             "atk": and_(
                 Datas.atk == Datas.def_,
-                Datas.type.op("&")(Type.Monster.value),
+                Datas.type.op("&")(Type.Monster),
             ),
             "?": Datas.def_ == -2,
         },
@@ -66,25 +66,25 @@ card_filter_params = [
         "special": {
             "?": Datas.level == -2,
         },
-        # "condition": ~or_(Datas.type.op("&")(x.value) for x in [Type.Xyz, Type.Link]),
+        # "condition": ~or_(Datas.type.op("&")(x) for x in [Type.Xyz, Type.Link]),
     },
     # {
     #     "key": "rank",
     #     "column": Datas.level.op("&")(0x0000FFFF),
     #     "valuetype": int,
-    #     "condition": Datas.type.op("&")(Type.Xyz.value),
+    #     "condition": Datas.type.op("&")(Type.Xyz),
     # },
     # {
     #     "key": "link",
     #     "column": Datas.level.op("&")(0x0000FFFF),
     #     "valuetype": int,
-    #     "condition": Datas.type.op("&")(Type.Link.value),
+    #     "condition": Datas.type.op("&")(Type.Link),
     # },
     {
         "key": "scale",
         "column": Datas.level.op(">>")(24),
         "valuetype": int,
-        "condition": Datas.type.op("&")(Type.Pendulum.value),
+        "condition": Datas.type.op("&")(Type.Pendulum),
     },
     {
         "key": "koid",
@@ -97,12 +97,37 @@ card_filter_params = [
         "valuetype": Type,
         "special": {
             "trapmonster": and_(
-                Datas.type.op("&")(Type.Trap.value),
+                Datas.type.op("&")(Type.Trap),
                 Datas.level.op("!=")(0),
             ),
             "darksynchro": and_(
-                Datas.category.op("&")(Category.DarkCard.value),
-                Datas.type.op("&")(Type.Synchro.value),
+                Datas.category.op("&")(Category.DarkCard),
+                Datas.type.op("&")(Type.Synchro),
+            ),
+            "maindeck": and_(
+                ~or_(
+                    Datas.type.op("&")(x)
+                    for x in [
+                        Type.Fusion,
+                        Type.Synchro,
+                        Type.Xyz,
+                        Type.Link,
+                        Type.Token,
+                    ]
+                ),
+                Datas.type.op("&")(Type.Monster),
+            ),
+            "extradeck": and_(
+                or_(
+                    Datas.type.op("&")(x)
+                    for x in [
+                        Type.Fusion,
+                        Type.Synchro,
+                        Type.Xyz,
+                        Type.Link,
+                    ]
+                ),
+                Datas.type.op("&")(Type.Monster),
             ),
         },
     },
@@ -120,7 +145,7 @@ card_filter_params = [
         "key": "linkmarker",
         "column": Datas.def_,
         "valuetype": LinkMarker,
-        "condition": Datas.type.op("&")(Type.Link.value),
+        "condition": Datas.type.op("&")(Type.Link),
     },
     {
         "key": "in_name",

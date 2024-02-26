@@ -31,7 +31,7 @@ class YugiDB:
     def has_table(self, table_name: str):
         return inspect(self.engine).has_table(table_name)
 
-    def _build_filter(
+    def _build_query(
         self,
         params: dict[str],
         key: str,
@@ -40,7 +40,7 @@ class YugiDB:
         condition=True,
         special={},
     ):
-        def apply_modifier(value: str):
+        def _build_subquery(value: str):
             negated = value.startswith("~")
             value = value.lstrip("~")
 
@@ -54,21 +54,17 @@ class YugiDB:
                 subquery = special[value]
             elif valuetype == "substr":
                 # Handle substring queries
-                modified_value = func.lower(f"%{value}%")
-                subquery = func.lower(column.ilike(modified_value))
+                subquery = func.lower(column.ilike(func.lower(f"%{value}%")))
             elif valuetype == str:
                 # Handle exact string queries
-                modified_value = func.lower(str(value))
-                subquery = func.lower(column).op("==")(modified_value)
+                subquery = func.lower(column).op("==")(func.lower(str(value)))
             elif issubclass(valuetype, IntFlag):
                 type_modifier = {
                     k.casefold(): v for k, v in valuetype.__members__.items()
                 }
-                modified_value = type_modifier[value]
-                subquery = column.op("&")(modified_value)
+                subquery = column.op("&")(type_modifier[value])
             else:  # valuetype == int
-                modified_value = int(value)
-                subquery = column.op(op)(modified_value)
+                subquery = column.op(op)(int(value))
 
             # Check if value is negated
             if negated:
@@ -95,7 +91,7 @@ class YugiDB:
         # Build query, first applying AND, then applying OR
         query = or_(
             *[
-                and_(*[(apply_modifier(value)) for value in values_or.split(",")])
+                and_(*[(_build_subquery(value)) for value in values_or.split(",")])
                 for values_or in values.split("|")
             ]
         )
@@ -196,7 +192,7 @@ class YugiDB:
     def get_cards_by_values(self, params: dict) -> list[Card]:
         params = {k.lower(): v for k, v in params.items()}
         filters = [
-            self._build_filter(params, **filter_param)
+            self._build_query(params, **filter_param)
             for filter_param in card_filter_params
             if filter_param["key"] in params
         ]
@@ -368,7 +364,7 @@ class YugiDB:
     def get_archetypes_by_values(self, params: dict) -> list[Archetype]:
         params = {k.lower(): v for k, v in params.items()}
         filters = [
-            self._build_filter(params, **filter_param)
+            self._build_query(params, **filter_param)
             for filter_param in archetype_filter_params
             if filter_param["key"] in params
         ]
@@ -441,7 +437,7 @@ class YugiDB:
     def get_sets_by_values(self, params: dict) -> list[Set]:
         params = {k.lower(): v for k, v in params.items()}
         filters = [
-            self._build_filter(params, **filter_param)
+            self._build_query(params, **filter_param)
             for filter_param in set_filter_params
             if filter_param["key"] in params
         ]
