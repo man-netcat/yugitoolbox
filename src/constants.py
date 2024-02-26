@@ -95,6 +95,16 @@ card_filter_params = [
         "key": "type",
         "column": Datas.type,
         "valuetype": Type,
+        "special": {
+            "trapmonster": and_(
+                Datas.type.op("&")(Type.Trap.value),
+                Datas.level.op("!=")(0),
+            ),
+            "darksynchro": and_(
+                Datas.category.op("&")(Category.DarkCard.value),
+                Datas.type.op("&")(Type.Synchro.value),
+            ),
+        },
     },
     {
         "key": "category",

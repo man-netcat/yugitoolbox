@@ -153,6 +153,15 @@ class TestDB(TestCase):
         notdragons = self.db.get_cards_by_value("race", "~dragon")
         self.assertNotIn(wingdragon, notdragons)
 
+        embodiment = self.db.get_card_by_id(28649820)
+        trapmonsters = self.db.get_cards_by_value("type", "trapmonster")
+        self.assertIn(embodiment, trapmonsters)
+
+        meteoragon = TestDB.db.get_card_by_id(10497636)
+        atkequdef = self.db.get_cards_by_value("atk", "def")
+        self.assertIn(meteoragon, atkequdef)
+        
+
 
 if __name__ == "__main__":
     main()

@@ -10,13 +10,13 @@ OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 
 
 class OmegaDB(YugiDB):
-    def __init__(self, update: Literal["skip", "force", "auto"] = None, debug=False):
+    def __init__(self, update: Literal["skip", "force", "auto"] = None):
         self.dbpath = "db/omega/omega.db"
         self.dbpath_old = "db/omega/omega_old.db"
         self.update = update
         self.download()
         self.connection_string = f"sqlite:///{self.dbpath}"
-        super().__init__(self.connection_string, debug=debug)
+        super().__init__(self.connection_string)
 
     def download(self):
         def download(url: str, path: str):

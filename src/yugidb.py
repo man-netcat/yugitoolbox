@@ -18,15 +18,11 @@ Cardquery = Callable[[Card], bool]
 
 
 class YugiDB:
-    def __init__(self, connection_string: str, debug=False):
+    def __init__(self, connection_string: str):
         self.name = os.path.basename(connection_string)
         self.engine = create_engine(connection_string)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
-
-        if debug:
-            logging.basicConfig()
-            logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
 
         self.has_koids = self.has_table("koids")
         self.has_packs = all(self.has_table(x) for x in ["packs", "relations"])
@@ -44,13 +40,43 @@ class YugiDB:
         condition=True,
         special={},
     ):
-        values: int | list | str | IntFlag = params.get(key)
+        def apply_modifier(value: str):
+            negated = value.startswith("~")
+            value = value.lstrip("~")
 
-        # Handle special queries
-        if isinstance(values, str):
-            for specialvalue, query in special.items():
-                if values.lower() == specialvalue:
-                    return query
+            op = next(
+                (x for x in ["!=", ">=", "<=", ">", "<"] if value.startswith(x)), "=="
+            )
+            value = value.lstrip("><=!")
+
+            if value in special:
+                # Handle special query values
+                subquery = special[value]
+            elif valuetype == "substr":
+                # Handle substring queries
+                modified_value = func.lower(f"%{value}%")
+                subquery = func.lower(column.ilike(modified_value))
+            elif valuetype == str:
+                # Handle exact string queries
+                modified_value = func.lower(str(value))
+                subquery = func.lower(column).op("==")(modified_value)
+            elif issubclass(valuetype, IntFlag):
+                type_modifier = {
+                    k.casefold(): v for k, v in valuetype.__members__.items()
+                }
+                modified_value = type_modifier[value]
+                subquery = column.op("&")(modified_value)
+            else:  # valuetype == int
+                modified_value = int(value)
+                subquery = column.op(op)(modified_value)
+
+            # Check if value is negated
+            if negated:
+                subquery = ~subquery
+
+            return subquery
+
+        values: int | list | str | IntFlag = params.get(key)
 
         if not values:
             return None
@@ -66,47 +92,10 @@ class YugiDB:
             else:
                 raise TypeError("Invalid type for value")
 
-        if valuetype in [str, "substr"]:
-            type_modifier = func.lower
-        elif valuetype == int:
-            type_modifier = int
-        elif issubclass(valuetype, IntFlag):
-            type_modifier = {
-                k.casefold(): v for k, v in valuetype.__members__.items()
-            }.__getitem__
-        else:
-            raise TypeError("Invalid type for value")
-
-        def apply_modifier(value: str):
-            negated = value.startswith("~")
-            value = value.lstrip("~")
-
-            op = next((x for x in [">=", "<=", ">", "<"] if value.startswith(x)), "==")
-            value = value.lstrip("><=")
-
-            if valuetype == "substr":
-                modified_value = type_modifier(f"%{value}%")
-                modifier = func.lower(column.ilike(modified_value))
-            elif valuetype == str:
-                modified_value = type_modifier(value)
-                modifier = func.lower(column).op("==")(modified_value)
-            elif issubclass(valuetype, IntFlag):
-                modified_value = type_modifier(value)
-                modifier = column.op("&")(modified_value)
-            else:
-                modified_value = type_modifier(value)
-                modifier = column.op(op)(modified_value)
-
-            # Check if value is negated
-            if negated:
-                modifier = ~modifier
-
-            return modifier
-
         # Build query, first applying AND, then applying OR
         query = or_(
             *[
-                and_(*[apply_modifier(value) for value in values_or.split(",")])
+                and_(*[(apply_modifier(value)) for value in values_or.split(",")])
                 for values_or in values.split("|")
             ]
         )
