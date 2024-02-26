@@ -75,7 +75,7 @@ class Card:
             prop.strip("_"): convert_enum(getattr(self, prop))
             for prop in self.__class__.__dict__
             if isinstance(getattr(self.__class__, prop), property)
-            and prop not in ["tcgdate", "ocgdate"]
+            and prop not in ["tcgdate", "ocgdate", "script"]
         }
 
         return fields | properties
@@ -340,6 +340,10 @@ class Card:
             self._ocgdatedata = new
 
     @property
+    def ocgdatestr(self) -> str:
+        return self.ocgdate.strftime("%d/%m/%Y")
+
+    @property
     def tcgdate(self) -> Optional[datetime]:
         try:
             return datetime.fromtimestamp(self._tcgdatedata)
@@ -352,6 +356,10 @@ class Card:
             self._tcgdatedata = self._convert_to_timestamp(new)
         elif isinstance(new, int):
             self._tcgdatedata = new
+
+    @property
+    def tcgdatestr(self) -> str:
+        return self.tcgdate.strftime("%d/%m/%Y")
 
     def _convert_to_timestamp(self, value: int | datetime) -> int:
         if isinstance(value, int):
@@ -599,32 +607,15 @@ class Card:
         renderer = Renderer()
         return renderer.render_card(self, dir)
 
-    # NOTE: experimental stuff
-    # @property
-    # def script(self) -> Optional[str]:
-    #     if self._script != "":
-    #         return self._script
+    @property
+    def script(self) -> Optional[str]:
+        import requests
 
-    #     base_url = "https://raw.githubusercontent.com/Fluorohydride/ygopro-scripts/master/c%s.lua"
-    #     r = requests.get(base_url % self.id)
-    #     if not r.ok:
-    #         r = requests.get(base_url % self.alias)
-    #     return r.text if r.ok else None
+        if self._scriptdata != 1:
+            return self._scriptdata
 
-    # @property
-    # def trivia(self) -> Optional[str]:
-    #     ua = UserAgent()
-    #     base_url = "https://yugipedia.com/wiki/Card_Trivia:%s"
-    #     card_url = base_url % quote(self.name)
-    #     r = requests.get(card_url, headers={"User-Agent": ua.random})
-    #     if not r.ok:
-    #         return None
-    #     soup = BeautifulSoup(r.content, "html.parser")
-    #     res = soup.select_one("#mw-content-text > div")
-    #     if not res:
-    #         return None
-    #     div_elements = res.find_all("div")
-    #     for div_element in div_elements:
-    #         div_element.extract()
-
-    #     return res.text if res else None
+        base_url = "https://raw.githubusercontent.com/Fluorohydride/ygopro-scripts/master/c%s.lua"
+        r = requests.get(base_url % self.id)
+        if not r.ok:
+            r = requests.get(base_url % self.alias)
+        return r.text if r.ok else None
