@@ -76,6 +76,7 @@ class Card:
             for prop in self.__class__.__dict__
             if isinstance(getattr(self.__class__, prop), property)
             and prop not in ["tcgdate", "ocgdate", "script"]
+            and not any([prop.startswith(x) for x in ["has_", "is_"]])
         }
 
         return fields | properties
