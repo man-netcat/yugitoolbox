@@ -1,6 +1,6 @@
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_, or_
 
-from .enums import *
+from .enums import Type, Race, Attribute, Category, Genre, LinkMarker
 from .sqlclasses import *
 
 card_filter_params = [
@@ -19,7 +19,7 @@ card_filter_params = [
         "valuetype": Race,
         "special": {
             "?": and_(
-                Datas.race == 0,
+                Datas.race.op("==")(-2),
                 Datas.type.op("&")(Type.Monster),
             ),
         },
@@ -30,7 +30,7 @@ card_filter_params = [
         "valuetype": Attribute,
         "special": {
             "?": and_(
-                Datas.attribute == 0,
+                Datas.attribute.op("==")(-2),
                 Datas.type.op("&")(Type.Monster),
             ),
         },
@@ -44,7 +44,10 @@ card_filter_params = [
                 Datas.atk == Datas.def_,
                 Datas.type.op("&")(Type.Monster),
             ),
-            "?": Datas.atk == -2,
+            "?": and_(
+                Datas.atk.op("==")(-2),
+                Datas.type.op("&")(Type.Monster),
+            ),
         },
     },
     {
@@ -56,7 +59,10 @@ card_filter_params = [
                 Datas.atk == Datas.def_,
                 Datas.type.op("&")(Type.Monster),
             ),
-            "?": Datas.def_ == -2,
+            "?": and_(
+                Datas.def_.op("==")(-2),
+                Datas.type.op("&")(Type.Monster),
+            ),
         },
     },
     {
@@ -64,7 +70,10 @@ card_filter_params = [
         "column": Datas.level.op("&")(0x0000FFFF),
         "valuetype": int,
         "special": {
-            "?": Datas.level == -2,
+            "?": and_(
+                Datas.level.op("==")(-2),
+                Datas.type.op("&")(Type.Monster),
+            ),
         },
         # "condition": ~or_(Datas.type.op("&")(x) for x in [Type.Xyz, Type.Link]),
     },
