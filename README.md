@@ -49,6 +49,31 @@ Ancient Warriors - Majestic Yuan Ben (212806202): LIGHT Level 8 [Beast Warrior/E
 Ancient Warriors - Talented Cao Zi (212906226): FIRE Level 4 [Beast Warrior/Effect]
 ```
 
+### Creating Custom Cards
+```py
+from yugitoolbox import *
+db = OmegaDB("auto")
+
+a = db.get_archetype_by_name("Graydle")
+
+graydle_hydra = Card(id=9212239385, name="Graydle Hydra")
+
+graydle_hydra.text = """2+ monsters, including a "Graydle" Monster
+(Quick Effect): You can target up to three monsters your opponent controls. Move them to the zones this card points to.
+If this card in your Monster Zone is destroyed by battle or your opponent's Spell, Trap or monster effect, place this card in the Spell & Trap zone, and if you do, take control of as many monsters your opponent controls that this card pointed to while in the monster zone and place them in the zones this card in the Spell & Trap zone points to. When this card leaves the field, destroy all cards this card pointed to in the Spell & Trap zone.
+You can only use each effect of "Graydle Hydra" once per turn."""
+graydle_hydra.type = [Type.Monster, Type.Link, Type.Effect]
+graydle_hydra.linkmarkers = [LinkMarker.Top, LinkMarker.TopLeft, LinkMarker.TopRight]
+graydle_hydra.level = len(graydle_hydra.linkmarkers)
+graydle_hydra.atk = 3000
+graydle_hydra.race = Race.Aqua
+graydle_hydra.attribute = Attribute.WATER
+graydle_hydra.archetypes = [a.id]
+
+
+db.write_card_to_database(graydle_hydra)
+```
+
 ### Rendering card images
 Note: this is a work in progress. Rendering text is currently not fully functional.
 ```py
