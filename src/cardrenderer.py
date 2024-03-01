@@ -236,14 +236,15 @@ class Renderer:
 
         if card.is_spelltrap:
             self._get_property(card)
-        elif card.is_dark_synchro and not card.level == 0:
+        elif card.is_dark_synchro:
             self._get_neg_level(card)
         elif card.has_type(Type.Xyz):
             self._get_rank(card)
         elif card.has_type(Type.Link):
             self._get_linkmarkers(card)
-        else:
+        elif not card.has_category(Category.LevelZero):
             self._get_level(card)
+
         if card.has_type(Type.Pendulum):
             self.layers.append("Common/Pendulum_Medium/Pendulum_Scales.png")
         self._get_atk_def_link(card)
