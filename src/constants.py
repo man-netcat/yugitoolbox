@@ -1,6 +1,6 @@
 from sqlalchemy import and_, or_
 
-from .enums import Type, Race, Attribute, Category, Genre, LinkMarker
+from .enums import Attribute, Category, Genre, LinkMarker, Race, Type
 from .sqlclasses import *
 
 card_filter_params = [

@@ -1,4 +1,3 @@
-import logging
 import os
 from typing import Callable
 
@@ -33,20 +32,39 @@ class YugiDB:
 
     def _build_query(
         self,
-        params: dict[str],
+        params: dict[str, int | str | list[IntFlag] | IntFlag],
         key: str,
         column,
         valuetype: type = str,
         condition=True,
         special={},
     ):
+        values = params.get(key)
+
+        if not values:
+            return None
+
+        if not isinstance(values, str):
+            if issubclass(valuetype, IntFlag):
+                if isinstance(values, list):
+                    values = ",".join([value.name.lower() for value in values])
+                elif isinstance(values, IntFlag):
+                    values = str(values.name.lower())
+                else:
+                    raise TypeError("Invalid type for value")
+            elif isinstance(values, int):
+                values = str(values)
+            else:
+                raise TypeError("Invalid type for value")
+
+        values = values.lower()
+
         def _build_subquery(value: str):
             negated = value.startswith("~")
             value = value.lstrip("~")
 
-            op = next(
-                (x for x in ["!=", ">=", "<=", ">", "<"] if value.startswith(x)), "=="
-            )
+            ops = ["!=", ">=", "<=", ">", "<"]
+            op = next((x for x in ops if value.startswith(x)), "==")
             value = value.lstrip("><=!")
 
             if value in special:
@@ -54,17 +72,21 @@ class YugiDB:
                 subquery = special[value]
             elif valuetype == "substr":
                 # Handle substring queries
-                subquery = func.lower(column.ilike(func.lower(f"%{value}%")))
+                subquery = column.ilike(f"%{value}%")
             elif valuetype == str:
                 # Handle exact string queries
-                subquery = func.lower(column).op("==")(func.lower(str(value)))
+                subquery = column.op("==")(str(value))
+            elif valuetype == int:
+                # Handle integer queries
+                subquery = column.op(op)(int(value))
             elif issubclass(valuetype, IntFlag):
+                # Handle queries for specific types
                 type_modifier = {
                     k.casefold(): v for k, v in valuetype.__members__.items()
                 }
                 subquery = column.op("&")(type_modifier[value])
-            else:  # valuetype == int
-                subquery = column.op(op)(int(value))
+            else:
+                raise TypeError("Invalid type for value")
 
             # Check if value is negated
             if negated:
@@ -72,31 +94,14 @@ class YugiDB:
 
             return subquery
 
-        values: int | list | str | IntFlag = params.get(key)
+        # Apply AND to values
+        def map_and_values(values):
+            return and_(*map(_build_subquery, values.split(",")))
 
-        if not values:
-            return None
+        # Apply OR to values
+        query = or_(*map(map_and_values, values.split("|")))
 
-        if not isinstance(values, str):
-            if issubclass(valuetype, IntFlag):
-                if type(values) == list:
-                    values = ",".join([value.name.lower() for value in values])
-                else:
-                    values = str(values.name.lower())
-            elif isinstance(values, int):
-                values = str(values)
-            else:
-                raise TypeError("Invalid type for value")
-
-        # Build query, first applying AND, then applying OR
-        query = or_(
-            *[
-                and_(*[(_build_subquery(value)) for value in values_or.split(",")])
-                for values_or in values.split("|")
-            ]
-        )
-
-        # Apply condition
+        # AND with condition
         query = and_(condition, query)
 
         return query
@@ -127,10 +132,10 @@ class YugiDB:
         ]
 
         if self.has_koids:
-            items.append(Koids.koid.label("koid"))
+            items.append(Koids.koid)
 
         if self.has_rarities:
-            items.append(Rarities.tcgrarity.label("tcgrarity"))
+            items.append(Rarities.tcgrarity)
 
         if self.has_packs:
             subquery = (
@@ -226,9 +231,6 @@ class YugiDB:
             return None
 
         return self._make_card(result)
-
-    def get_cards_by_query(self, query: Cardquery) -> list[Card]:
-        return [card for card in self.cards if query(card)]
 
     def write_card_to_database(self, card: Card):
         try:
