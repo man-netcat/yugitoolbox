@@ -238,7 +238,7 @@ class Renderer:
             self._get_property(card)
         elif card.is_dark_synchro:
             self._get_neg_level(card)
-        elif card.has_type(Type.Xyz):
+        elif card.has_type(Type.Xyz) and not card.has_category(Category.LevelZero):
             self._get_rank(card)
         elif card.has_type(Type.Link):
             self._get_linkmarkers(card)
@@ -260,6 +260,16 @@ class Renderer:
             base_image = Image.alpha_composite(base_image, overlay)
         return base_image
 
+    def _get_text_colour(self, card: Card):
+        if (
+            card.is_spelltrap
+            or card.has_any_type([Type.Xyz, Type.Link])
+            or card.has_category(Category.DarkCard)
+        ):
+            return "#FFF"
+        else:
+            return "#000"
+
     def _draw_card_name(self, card: Card):
         font_path = os.path.join(
             ASSET_DIR,
@@ -268,14 +278,7 @@ class Renderer:
         font_size = 93
         text_position = (64, 52)
 
-        if (
-            card.is_spelltrap
-            or card.has_any_type([Type.Xyz, Type.Link])
-            or card.has_category(Category.DarkCard)
-        ):
-            text_color = "#FFF"
-        else:
-            text_color = "#000"
+        text_colour = self._get_text_colour(card)
 
         max_width = 600
         temp_image = Image.new("RGBA", CARD_SIZE, (0, 0, 0, 0))
@@ -294,7 +297,7 @@ class Renderer:
         text_draw.text(
             xy=(text_position[0] * width_scale, text_position[1]),
             text=card.name,
-            fill=text_color,
+            fill=text_colour,
             font=card_font,
         )
 
@@ -427,6 +430,8 @@ class Renderer:
             self._draw_effect(pendtext, 62, None, font_path, 19, (128, 751))
 
     def _draw_card_id(self, card: Card):
+        text_colour = self._get_text_colour(card)
+
         self._draw_text_segment(
             str(card.id),
             os.path.join(
@@ -435,7 +440,7 @@ class Renderer:
             ),
             32,
             (40, 1128),
-            "#000",
+            text_colour,
         )
 
     def _render_text(self, card: Card):
