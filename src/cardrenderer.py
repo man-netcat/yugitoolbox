@@ -96,12 +96,6 @@ class Renderer:
         import random
 
         self.layers.append(f"Stickers/Holo_Sticker_{random.randint(1, 4)}.png")
-        if (
-            card.has_type(Type.Xyz) or card.has_category(Category.DarkCard)
-        ) and not card.has_type(Type.Pendulum):
-            self.layers.append("Text/Limitation/White/Creator.png")
-        else:
-            self.layers.append("Text/Limitation/Black/Creator.png")
 
     def _get_attribute(self, card: Card):
         if card.is_skill:
@@ -226,6 +220,25 @@ class Renderer:
         self.layers.append("Text/ATK__Bar.png")
         self.layers.append("Text/Status_Bar.png")
 
+    def _get_limitation_text(self, card: Card):
+        if card.has_any_type([Type.Xyz, Type.Link, Type.Trap]) or card.has_category(
+            Category.DarkCard
+        ):
+            colour = "White"
+        else:
+            colour = "Black"
+
+        if card.has_type(Type.Token):
+            self.layers.append(f"Text/Limitation/{colour}/Limitation_Text_[TOKEN].png")
+        elif card.is_god or card.has_category(Category.DarkCard):
+            self.layers.append(
+                f"Text/Limitation/{colour}/Limitation_Text_[ILLEGAL].png"
+            )
+        else:
+            self.layers.append(f"Text/Limitation/{colour}/1st_Edition.png")
+
+        self.layers.append(f"Text/Limitation/{colour}/Creator.png")
+
     def _process_layers(self, card: Card):
         self.layers = []
 
@@ -248,6 +261,7 @@ class Renderer:
         if card.has_type(Type.Pendulum):
             self.layers.append("Common/Pendulum_Medium/Pendulum_Scales.png")
         self._get_atk_def_link(card)
+        self._get_limitation_text(card)
 
     def _build_template(
         self,
