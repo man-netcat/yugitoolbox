@@ -3,6 +3,7 @@ from datetime import datetime
 from functools import reduce
 from math import isnan
 from operator import or_
+from time import strftime
 from typing import Optional
 
 from fake_useragent import UserAgent
@@ -39,7 +40,7 @@ class Card:
     # TODO: Write card build classmethods. (for "regular" monsters, Pendulum, Link and S/T.)
 
     def __hash__(self):
-        return hash(self.name)
+        return self.id
 
     def __str__(self) -> str:
         try:
@@ -342,7 +343,10 @@ class Card:
 
     @property
     def ocgdatestr(self) -> str:
-        return self.ocgdate.strftime("%d/%m/%Y")
+        if self.ocgdate:
+            return self.ocgdate.strftime("%d/%m/%Y")
+        else:
+            return datetime.max.strftime("%d/%m/%y")
 
     @property
     def tcgdate(self) -> Optional[datetime]:
@@ -360,7 +364,10 @@ class Card:
 
     @property
     def tcgdatestr(self) -> str:
-        return self.tcgdate.strftime("%d/%m/%Y")
+        if self.tcgdate:
+            return self.tcgdate.strftime("%d/%m/%Y")
+        else:
+            return datetime.max.strftime("%d/%m/%y")
 
     def _convert_to_timestamp(self, value: int | datetime) -> int:
         if isinstance(value, int):
@@ -609,7 +616,7 @@ class Card:
         return renderer.render_card(self, dir)
 
     @property
-    def script(self) -> Optional[str]:
+    def script(self) -> object:
         import requests
 
         if self._scriptdata != 1:

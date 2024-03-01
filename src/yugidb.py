@@ -1,7 +1,7 @@
 import os
 from typing import Callable
 
-from sqlalchemy import and_, create_engine, false, func, inspect, or_
+from sqlalchemy import and_, create_engine, false, func, inspect, or_, true
 from sqlalchemy.exc import IntegrityError, MultipleResultsFound, NoResultFound
 from sqlalchemy.orm import sessionmaker
 
@@ -36,7 +36,7 @@ class YugiDB:
         key: str,
         column,
         valuetype: type = str,
-        condition=True,
+        condition=true(),
         special={},
     ):
         values = params.get(key)
@@ -44,20 +44,20 @@ class YugiDB:
         if not values:
             return None
 
-        if not isinstance(values, str):
-            if issubclass(valuetype, IntFlag):
-                if isinstance(values, list):
-                    values = ",".join([value.name.lower() for value in values])
-                elif isinstance(values, IntFlag):
-                    values = str(values.name.lower())
-                else:
-                    raise TypeError("Invalid type for value")
-            elif isinstance(values, int):
-                values = str(values)
-            else:
-                raise TypeError("Invalid type for value")
-
-        values = values.lower()
+        if isinstance(values, str):
+            conv_values = values.lower()
+        elif isinstance(values, list) and all(
+            isinstance(value, IntFlag) for value in values
+        ):
+            conv_values = ",".join(
+                [value.name.lower() for value in values if value.name]
+            )
+        elif isinstance(values, IntFlag) and values.name:
+            conv_values = str(values.name.lower())
+        elif isinstance(values, int):
+            conv_values = str(values)
+        else:
+            raise TypeError("Invalid type for value")
 
         def _build_subquery(value: str):
             negated = value.startswith("~")
@@ -95,11 +95,11 @@ class YugiDB:
             return subquery
 
         # Apply AND to values
-        def map_and_values(values):
+        def map_and_values(values: str):
             return and_(*map(_build_subquery, values.split(",")))
 
         # Apply OR to values
-        query = or_(*map(map_and_values, values.split("|")))
+        query = or_(*map(map_and_values, conv_values.split("|")))
 
         # AND with condition
         query = and_(condition, query)
@@ -180,7 +180,9 @@ class YugiDB:
         return self._make_card_list(results)
 
     def get_archetype_cards(self, arch: Archetype) -> list[Card]:
-        query = self.card_query.filter(or_(val == arch.id for val in Datas.archetypes))
+        query = self.card_query.filter(
+            or_(val.op("==")(arch.id) for val in Datas.archetypes)
+        )
         results = query.all()
         return self._make_card_list(results)
 
@@ -191,7 +193,7 @@ class YugiDB:
         results = query.all()
         return self._make_card_list(results)
 
-    def get_cards_by_value(self, key: str, value: str):
+    def get_cards_by_value(self, key: str, value: str | IntFlag | list[IntFlag]):
         return self.get_cards_by_values({key: value})
 
     def get_cards_by_values(self, params: dict) -> list[Card]:

@@ -10,7 +10,7 @@ OMEGA_BASE_URL = "https://duelistsunite.org/omega/"
 
 
 class OmegaDB(YugiDB):
-    def __init__(self, update: Literal["skip", "force", "auto"] = None):
+    def __init__(self, update: Literal["skip", "force", "auto", "ask"] = "ask"):
         self.dbpath = "db/omega/omega.db"
         self.dbpath_old = "db/omega/omega_old.db"
         self.update = update
