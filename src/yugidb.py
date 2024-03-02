@@ -201,11 +201,12 @@ class YugiDB:
         filters = [
             self._build_query(params, **filter_param)
             for filter_param in card_filter_params
-            if filter_param["key"] in params
         ]
 
         if not filters:
             return []
+
+        filters = [filter for filter in filters if filter is not None]
 
         query = self.card_query.filter(*filters)
         results = query.all()
@@ -370,11 +371,12 @@ class YugiDB:
         filters = [
             self._build_query(params, **filter_param)
             for filter_param in archetype_filter_params
-            if filter_param["key"] in params
         ]
 
         if not filters:
             return []
+
+        filters = [filter for filter in filters if filter is not None]
 
         query = self.arch_query.filter(*filters)
         results = query.all()
@@ -443,11 +445,12 @@ class YugiDB:
         filters = [
             self._build_query(params, **filter_param)
             for filter_param in set_filter_params
-            if filter_param["key"] in params
         ]
 
         if not filters:
             return []
+
+        filters = [filter for filter in filters if filter is not None]
 
         query = self.set_query.filter(*filters)
         results = query.all()

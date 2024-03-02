@@ -1,5 +1,5 @@
 from functools import wraps
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound
 
 
 def handle_no_result(func):

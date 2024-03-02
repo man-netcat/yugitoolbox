@@ -115,19 +115,21 @@ card_filter_params = [
             ),
             "maindeck": and_(
                 ~or_(
-                    Datas.type.op("&")(x)
-                    for x in [
-                        Type.Fusion,
-                        Type.Synchro,
-                        Type.Xyz,
-                        Type.Link,
-                        Type.Token,
-                    ]
+                    *(
+                        Datas.type.op("&")(x)
+                        for x in [
+                            Type.Fusion,
+                            Type.Synchro,
+                            Type.Xyz,
+                            Type.Link,
+                            Type.Token,
+                        ]
+                    )
                 ),
                 Datas.type.op("&")(Type.Monster),
             ),
-            "extradeck": and_(
-                or_(
+            "extradeck": or_(
+                *(
                     Datas.type.op("&")(x)
                     for x in [
                         Type.Fusion,
@@ -135,8 +137,7 @@ card_filter_params = [
                         Type.Xyz,
                         Type.Link,
                     ]
-                ),
-                Datas.type.op("&")(Type.Monster),
+                )
             ),
         },
     },
