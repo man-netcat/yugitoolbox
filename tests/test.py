@@ -116,9 +116,11 @@ class TestDB(TestCase):
         omegacode = "M+ffLv2SpUJvAQMMO9oKsYDwLo1vjDB8NmIdy6HbV5hcbn5jgeHPrZdYYXiD8j0GGF4++wujxvadTDAcWZ3MMjFpHysM2y0pZBRbdIsJhFukVFlg+IygBxzf4drLBMNhunysOxo5mSUXdTGaH7Vn8Jq4lAmExeuPsYBwYLYx8wGp/ywgvFsrCY4/HX7HZLExmQWGnffdZYDh/LL3cHz8oi4zDJs8PsQIwyC7AQ=="
         testdeck = Deck.from_omegacode(TestDB.db, omegacode)
         self.assertEqual(omegacode, testdeck.omegacode)
+        self.assertTrue(testdeck.is_valid)
         ydke_code = "ydke://EUKKAwrmpwEK5qcBR5uPAEebjwBHm48AvadvAfx5vAKzoLECTkEDAE5BAwBOQQMAfjUBBUwyuADDhdcAnNXGA/ZJ0ACmm/QBPqRxAT6kcQE+pHEBVhgUAVYYFAFWGBQBZOgnA2ToJwNk6CcDIkiZACJImQAiSJkAdgljAnYJYwJ2CWMCVOZcAVTmXAF9e0AChKFCAYShQgGEoUIBPO4FAzzuBQM=!y7sdAIoTdQOKE3UDwLXNA9EgZgUNUFsFtWJvAqRbfAOkW3wDlk8AAoVAsQKA9rsBlI9dAQdR1QE5ySIF!URCDA1EQgwNREIMDI9adAiPWnQJvdu8Ab3bvANcanwHXGp8B1xqfASaQQgMmkEIDJpBCA0O+3QBDvt0A!"
         testdeck = Deck.from_ydke(TestDB.db, ydke_code)
         self.assertEqual(ydke_code, testdeck.ydke)
+        self.assertTrue(testdeck.is_valid)
 
     def test_db_search(self):
         # Test if Odd-Eyes Wing Dragon and Odd-Eyes Venom Dragon are in the list of extra deck pendulums.
@@ -160,7 +162,6 @@ class TestDB(TestCase):
         meteoragon = TestDB.db.get_card_by_id(10497636)
         atkequdef = self.db.get_cards_by_value("atk", "def")
         self.assertIn(meteoragon, atkequdef)
-        
 
 
 if __name__ == "__main__":
