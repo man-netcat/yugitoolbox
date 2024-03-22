@@ -28,9 +28,9 @@ class TestDB(TestCase):
         c.attribute = Attribute.DARK
         self.assertEqual(c.attribute, Attribute.DARK)
 
-        self.assertEqual(c._atkdata, 2600)
-        c._atkdata = 2800
-        self.assertEqual(c._atkdata, 2800)
+        self.assertEqual(c.atk, 2600)
+        c.atk = 2800
+        self.assertEqual(c.atk, 2800)
 
         self.assertEqual(c.def_, 2600)
         c.def_ = 2700
@@ -113,14 +113,15 @@ class TestDB(TestCase):
         self.assertCountEqual(c.linkmarkers, [LinkMarker.Top, LinkMarker.Bottom])
 
     def test_deck(self):
-        omegacode = "M+ffLv2SpUJvAQMMO9oKsYDwLo1vjDB8NmIdy6HbV5hcbn5jgeHPrZdYYXiD8j0GGF4++wujxvadTDAcWZ3MMjFpHysM2y0pZBRbdIsJhFukVFlg+IygBxzf4drLBMNhunysOxo5mSUXdTGaH7Vn8Jq4lAmExeuPsYBwYLYx8wGp/ywgvFsrCY4/HX7HZLExmQWGnffdZYDh/LL3cHz8oi4zDJs8PsQIwyC7AQ=="
-        testdeck = Deck.from_omegacode(TestDB.db, omegacode)
-        self.assertEqual(omegacode, testdeck.omegacode)
-        self.assertTrue(testdeck.is_valid)
+        omega_code = "M+ffLv2SpUJvAQMMO9oKsYDwLo1vjDB8NmIdy6HbV5hcbn5jgeHPrZdYYXiD8j0GGF4++wujxvadTDAcWZ3MMjFpHysM2y0pZBRbdIsJhFukVFlg+IygBxzf4drLBMNhunysOxo5mSUXdTGaH7Vn8Jq4lAmExeuPsYBwYLYx8wGp/ywgvFsrCY4/HX7HZLExmQWGnffdZYDh/LL3cHz8oi4zDJs8PsQIwyC7AQ=="
+        omega_deck = Deck.from_omegacode(TestDB.db, omega_code)
+        self.assertEqual(omega_code, omega_deck.omega_code)
+        self.assertTrue(omega_deck.is_valid)
+
         ydke_code = "ydke://EUKKAwrmpwEK5qcBR5uPAEebjwBHm48AvadvAfx5vAKzoLECTkEDAE5BAwBOQQMAfjUBBUwyuADDhdcAnNXGA/ZJ0ACmm/QBPqRxAT6kcQE+pHEBVhgUAVYYFAFWGBQBZOgnA2ToJwNk6CcDIkiZACJImQAiSJkAdgljAnYJYwJ2CWMCVOZcAVTmXAF9e0AChKFCAYShQgGEoUIBPO4FAzzuBQM=!y7sdAIoTdQOKE3UDwLXNA9EgZgUNUFsFtWJvAqRbfAOkW3wDlk8AAoVAsQKA9rsBlI9dAQdR1QE5ySIF!URCDA1EQgwNREIMDI9adAiPWnQJvdu8Ab3bvANcanwHXGp8B1xqfASaQQgMmkEIDJpBCA0O+3QBDvt0A!"
-        testdeck = Deck.from_ydke(TestDB.db, ydke_code)
-        self.assertEqual(ydke_code, testdeck.ydke)
-        self.assertTrue(testdeck.is_valid)
+        ydke_deck = Deck.from_ydke(TestDB.db, ydke_code)
+        self.assertEqual(ydke_code, ydke_deck.ydke_code)
+        self.assertTrue(ydke_deck.is_valid)
 
     def test_db_search(self):
         # Test if Odd-Eyes Wing Dragon and Odd-Eyes Venom Dragon are in the list of extra deck pendulums.

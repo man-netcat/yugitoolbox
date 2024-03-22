@@ -91,7 +91,7 @@ class Deck:
         return cls(name, main, extra, side, cover_card)
 
     @property
-    def omegacode(self):
+    def omega_code(self):
         return base64.b64encode(
             zlib.compress(
                 bytearray([self.total_main + self.total_extra, self.total_side])
@@ -123,7 +123,7 @@ class Deck:
         return cls(name, main, extra, side)
 
     @property
-    def ydke(self) -> str:
+    def ydke_code(self) -> str:
         def encode_component(cards: list[tuple[Card, int]]) -> str:
             return base64.b64encode(
                 b"".join(
