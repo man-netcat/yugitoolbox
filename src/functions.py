@@ -85,7 +85,7 @@ def duality(db: YugiDB, card: Card):
     if not card.attribute in [Attribute.DARK, Attribute.LIGHT]:
         return []
 
-    targets = db.get_cards_by_values(
+    return db.get_cards_by_values(
         {
             "race": card.race,
             "level": card.level,
@@ -93,4 +93,68 @@ def duality(db: YugiDB, card: Card):
         }
     )
 
-    return targets
+
+def union_activation(db: YugiDB):
+    return {
+        card.name: [
+            res
+            for res in db.get_cards_by_values(
+                {
+                    "attribute": "light",
+                    "race": "machine",
+                    "category": "~rushcard",
+                    "type": "maindeck",
+                    "atk": f"{card.atk}",
+                }
+            )
+            if res.name != card.name
+        ]
+        for card in db.get_cards_by_values(
+            {
+                "attribute": "light",
+                "race": "machine",
+                "type": "union|normal,~token",
+                "category": "~rushcard",
+            }
+        )
+    }
+
+
+def union_controller(db: YugiDB):
+    return db.get_cards_by_values(
+        {
+            "mentions": "Union monster",
+            "type": "maindeck|spell|trap",
+            "category": "~rushcard",
+        }
+    )
+
+
+def seventh_tachyon(db: YugiDB):
+    return {
+        card.name: set(
+            db.get_cards_by_values(
+                {
+                    "level": card.level,
+                    "race": card.race,
+                    "type": "maindeck",
+                    "category": "~rushcard",
+                }
+            )
+            + db.get_cards_by_values(
+                {
+                    "level": card.level,
+                    "attribute": card.attribute,
+                    "type": "maindeck",
+                    "category": "~rushcard",
+                }
+            )
+        )
+        for card in db.get_cards_by_values(
+            {
+                "in_name": f'{"|".join(str(i) for i in range(101, 108))}',
+                "type": "extradeck",
+                "category": "~rushcard",
+            }
+        )
+    }
